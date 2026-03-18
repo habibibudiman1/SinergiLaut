@@ -18,7 +18,9 @@ import {
   Leaf,
   Heart,
   GraduationCap,
-  Anchor
+  Anchor,
+  Banknote,
+  Package
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -39,6 +41,13 @@ const activities = [
     volunteers: 45,
     slots: 60,
     icon: Leaf,
+    fundingGoal: 5000000,
+    fundingRaised: 3500000,
+    itemsNeeded: [
+      { name: "Trash Bags (pack of 100)", quantity: 20, donated: 15 },
+      { name: "Gloves (pairs)", quantity: 100, donated: 67 },
+      { name: "Trash Pickers", quantity: 30, donated: 22 },
+    ],
   },
   {
     id: 2,
@@ -51,6 +60,13 @@ const activities = [
     volunteers: 28,
     slots: 30,
     icon: Heart,
+    fundingGoal: 25000000,
+    fundingRaised: 18750000,
+    itemsNeeded: [
+      { name: "Coral Fragments", quantity: 500, donated: 380 },
+      { name: "Diving Equipment Sets", quantity: 15, donated: 10 },
+      { name: "Underwater Cement (kg)", quantity: 100, donated: 75 },
+    ],
   },
   {
     id: 3,
@@ -63,6 +79,13 @@ const activities = [
     volunteers: 120,
     slots: 200,
     icon: GraduationCap,
+    fundingGoal: 3000000,
+    fundingRaised: 2100000,
+    itemsNeeded: [
+      { name: "Educational Kits", quantity: 50, donated: 35 },
+      { name: "Marine Specimen Samples", quantity: 20, donated: 12 },
+      { name: "Microscopes", quantity: 10, donated: 6 },
+    ],
   },
   {
     id: 4,
@@ -75,6 +98,13 @@ const activities = [
     volunteers: 67,
     slots: 100,
     icon: Leaf,
+    fundingGoal: 8000000,
+    fundingRaised: 4000000,
+    itemsNeeded: [
+      { name: "Mangrove Seedlings", quantity: 1000, donated: 450 },
+      { name: "Planting Tools", quantity: 50, donated: 30 },
+      { name: "Fertilizer (kg)", quantity: 200, donated: 80 },
+    ],
   },
   {
     id: 5,
@@ -87,6 +117,13 @@ const activities = [
     volunteers: 25,
     slots: 50,
     icon: Anchor,
+    fundingGoal: 15000000,
+    fundingRaised: 12000000,
+    itemsNeeded: [
+      { name: "Photo Frames (large)", quantity: 30, donated: 25 },
+      { name: "Display Stands", quantity: 15, donated: 12 },
+      { name: "Brochures (packs)", quantity: 100, donated: 80 },
+    ],
   },
   {
     id: 6,
@@ -99,11 +136,27 @@ const activities = [
     volunteers: 35,
     slots: 40,
     icon: GraduationCap,
+    fundingGoal: 10000000,
+    fundingRaised: 6500000,
+    itemsNeeded: [
+      { name: "Sustainable Fishing Nets", quantity: 20, donated: 12 },
+      { name: "Training Manuals", quantity: 100, donated: 65 },
+      { name: "GPS Devices", quantity: 10, donated: 4 },
+    ],
   },
 ]
 
 const locations = ["All Locations", "Jakarta", "Raja Ampat", "Bali", "Surabaya", "Makassar", "Online"]
 const activityTypes = ["All Types", "Cleanup", "Restoration", "Education", "Event"]
+
+function formatCurrency(amount: number) {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount)
+}
 
 export default function ActivitiesPage() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -133,7 +186,7 @@ export default function ActivitiesPage() {
                 Conservation Activities
               </h1>
               <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-                Find volunteer opportunities that match your interests and make a real impact on ocean conservation.
+                Find volunteer opportunities or support activities with donations and items they need to succeed.
               </p>
             </div>
 
@@ -250,22 +303,51 @@ export default function ActivitiesPage() {
                         </div>
                       </div>
                       
-                      {/* Progress Bar */}
-                      <div className="mb-4">
-                        <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                      {/* Funding Progress */}
+                      <div className="mb-4 p-3 bg-secondary/50 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Banknote className="h-4 w-4 text-primary" />
+                          <span className="text-xs font-medium text-foreground">Funding Progress</span>
+                        </div>
+                        <div className="h-2 bg-background rounded-full overflow-hidden mb-1">
                           <div 
                             className="h-full bg-primary rounded-full transition-all"
-                            style={{ width: `${(activity.volunteers / activity.slots) * 100}%` }}
+                            style={{ width: `${(activity.fundingRaised / activity.fundingGoal) * 100}%` }}
                           />
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {activity.slots - activity.volunteers} slots remaining
-                        </p>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-muted-foreground">{formatCurrency(activity.fundingRaised)}</span>
+                          <span className="font-medium text-foreground">{Math.round((activity.fundingRaised / activity.fundingGoal) * 100)}%</span>
+                        </div>
                       </div>
 
-                      <Button className="w-full" asChild>
-                        <Link href={`/register?activity=${activity.id}`}>Join as Volunteer</Link>
-                      </Button>
+                      {/* Items Needed Preview */}
+                      <div className="mb-4 p-3 bg-secondary/50 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Package className="h-4 w-4 text-accent" />
+                          <span className="text-xs font-medium text-foreground">Items Needed</span>
+                        </div>
+                        <ul className="space-y-1">
+                          {activity.itemsNeeded.slice(0, 2).map((item) => (
+                            <li key={item.name} className="text-xs text-muted-foreground flex justify-between">
+                              <span className="truncate">{item.name}</span>
+                              <span className="font-medium">{item.donated}/{item.quantity}</span>
+                            </li>
+                          ))}
+                          {activity.itemsNeeded.length > 2 && (
+                            <li className="text-xs text-primary">+{activity.itemsNeeded.length - 2} more items</li>
+                          )}
+                        </ul>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Button className="flex-1" asChild>
+                          <Link href={`/register?activity=${activity.id}`}>Volunteer</Link>
+                        </Button>
+                        <Button variant="outline" className="flex-1" asChild>
+                          <Link href={`/donate/${activity.id}`}>Donate</Link>
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
@@ -276,7 +358,7 @@ export default function ActivitiesPage() {
                   <Search className="h-8 w-8 text-muted-foreground" />
                 </div>
                 <h3 className="text-lg font-semibold text-foreground mb-2">No activities found</h3>
-                <p className="text-muted-foreground">Try adjusting your search or filters to find what you're looking for.</p>
+                <p className="text-muted-foreground">Try adjusting your search or filters to find what you are looking for.</p>
               </div>
             )}
           </div>
@@ -286,17 +368,17 @@ export default function ActivitiesPage() {
         <section className="py-16 bg-primary">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="text-2xl sm:text-3xl font-bold text-primary-foreground">
-              {"Can't find what you're looking for?"}
+              Want to organize your own conservation activity?
             </h2>
             <p className="mt-4 text-primary-foreground/80">
-              Contact us to propose a new conservation activity or get personalized recommendations.
+              Register your community and propose activities that need funding and volunteer support.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button size="lg" variant="secondary" asChild>
-                <Link href="/community">Join Our Community</Link>
+                <Link href="/community/register">Register Your Community</Link>
               </Button>
               <Button size="lg" variant="outline" className="bg-transparent text-primary-foreground border-primary-foreground/30 hover:bg-primary-foreground/10 hover:text-primary-foreground" asChild>
-                <Link href="/donate">Support with Donation</Link>
+                <Link href="/community">View Communities</Link>
               </Button>
             </div>
           </div>

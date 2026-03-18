@@ -4,41 +4,58 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
-import { Heart, Check, ArrowRight, Shield, Globe, Leaf } from "lucide-react"
-
-const donationTiers = [
-  {
-    amount: 25,
-    title: "Supporter",
-    description: "Help clean 10 meters of coastline",
-    features: ["Monthly impact report", "Supporter badge", "Newsletter updates"],
-  },
-  {
-    amount: 50,
-    title: "Protector",
-    description: "Plant 5 coral fragments in damaged reefs",
-    features: ["All Supporter benefits", "Personalized certificate", "Priority event access"],
-    popular: true,
-  },
-  {
-    amount: 100,
-    title: "Guardian",
-    description: "Fund a full day of conservation activities",
-    features: ["All Protector benefits", "Name on donor wall", "Exclusive virtual tours"],
-  },
-  {
-    amount: 500,
-    title: "Champion",
-    description: "Sponsor a complete reef restoration project",
-    features: ["All Guardian benefits", "Direct project updates", "Annual impact meeting"],
-  },
-]
+import { Heart, ArrowRight, Shield, Globe, Leaf, Banknote, Package, Calendar, MapPin, Users } from "lucide-react"
 
 const impactStats = [
   { icon: Leaf, value: "50,000+", label: "Coral Fragments Planted" },
   { icon: Globe, value: "100+", label: "Coastal Communities Helped" },
   { icon: Shield, value: "25km", label: "Coastline Protected" },
 ]
+
+const featuredActivities = [
+  {
+    id: 1,
+    title: "Coastal Beach Cleanup - Jakarta Bay",
+    image: "/images/beach-cleanup.jpg",
+    date: "March 22, 2026",
+    location: "Jakarta Bay, Indonesia",
+    fundingGoal: 5000000,
+    fundingRaised: 3500000,
+    itemsNeeded: 5,
+    category: "Beach Cleanup",
+  },
+  {
+    id: 2,
+    title: "Coral Reef Restoration - Raja Ampat",
+    image: "/images/coral-restoration.jpg",
+    date: "April 15-20, 2026",
+    location: "Raja Ampat, Indonesia",
+    fundingGoal: 25000000,
+    fundingRaised: 18750000,
+    itemsNeeded: 5,
+    category: "Reef Restoration",
+  },
+  {
+    id: 4,
+    title: "Mangrove Planting Day",
+    image: "/images/mangrove-planting.jpg",
+    date: "April 5, 2026",
+    location: "Surabaya, Indonesia",
+    fundingGoal: 8000000,
+    fundingRaised: 4000000,
+    itemsNeeded: 5,
+    category: "Restoration",
+  },
+]
+
+function formatCurrency(amount: number) {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount)
+}
 
 export default function DonatePage() {
   return (
@@ -61,14 +78,64 @@ export default function DonatePage() {
           <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <div className="inline-flex items-center gap-2 bg-accent/20 text-white px-4 py-2 rounded-full mb-6">
               <Heart className="h-4 w-4" />
-              <span className="text-sm font-medium">Make an Impact Today</span>
+              <span className="text-sm font-medium">Support Conservation Activities</span>
             </div>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight text-balance">
-              Your Donation Protects Our Oceans
+              Your Donation Powers Real Conservation
             </h1>
             <p className="mt-6 text-lg text-white/90 max-w-2xl mx-auto leading-relaxed">
-              Every contribution directly funds conservation activities, from beach cleanups to coral restoration. Together, we can preserve marine ecosystems for future generations.
+              Every activity on SinergiLaut needs resources to succeed. Choose an activity and contribute money or items directly to support their specific needs.
             </p>
+            <Button size="lg" className="mt-8" asChild>
+              <Link href="/activities">
+                Browse Activities to Support
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
+            </Button>
+          </div>
+        </section>
+
+        {/* How It Works */}
+        <section className="py-16 lg:py-20 bg-secondary">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl sm:text-4xl font-bold text-foreground text-balance">
+                How Activity-Based Donations Work
+              </h2>
+              <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+                Your contributions go directly to the activities that need them most
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl font-bold text-primary">1</span>
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">Choose an Activity</h3>
+                <p className="text-muted-foreground">
+                  Browse conservation activities and find one that resonates with your passion for ocean protection.
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl font-bold text-primary">2</span>
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">Select Your Contribution</h3>
+                <p className="text-muted-foreground">
+                  Donate money to fund the activity, or choose specific items from their needs list to contribute.
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl font-bold text-primary">3</span>
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">See Your Impact</h3>
+                <p className="text-muted-foreground">
+                  Track the progress of activities you support and receive updates on how your donation made a difference.
+                </p>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -91,115 +158,156 @@ export default function DonatePage() {
           </div>
         </section>
 
-        {/* Donation Tiers */}
-        <section className="py-20 lg:py-28">
+        {/* Donation Types */}
+        <section className="py-16 lg:py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
               <h2 className="text-3xl sm:text-4xl font-bold text-foreground text-balance">
-                Choose Your Impact Level
+                Two Ways to Support
               </h2>
               <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-                Select a donation tier that works for you. All contributions are tax-deductible.
+                Choose how you want to make an impact
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {donationTiers.map((tier) => (
-                <Card 
-                  key={tier.amount} 
-                  className={`relative overflow-hidden ${tier.popular ? "border-primary border-2" : ""}`}
-                >
-                  {tier.popular && (
-                    <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-medium px-3 py-1">
-                      Most Popular
-                    </div>
-                  )}
-                  <CardContent className="p-6">
-                    <div className="mb-4">
-                      <p className="text-3xl font-bold text-foreground">${tier.amount}</p>
-                      <p className="text-sm text-muted-foreground">one-time donation</p>
-                    </div>
-                    <h3 className="text-lg font-semibold text-foreground mb-2">{tier.title}</h3>
-                    <p className="text-sm text-muted-foreground mb-6">{tier.description}</p>
-                    <ul className="space-y-3 mb-6">
-                      {tier.features.map((feature) => (
-                        <li key={feature} className="flex items-start gap-2 text-sm">
-                          <Check className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                          <span className="text-muted-foreground">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <Button 
-                      className="w-full" 
-                      variant={tier.popular ? "default" : "outline"}
-                      asChild
-                    >
-                      <Link href={`/register?role=donor&amount=${tier.amount}`}>
-                        Donate ${tier.amount}
-                      </Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              <Card className="relative overflow-hidden">
+                <CardContent className="p-8 text-center">
+                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Banknote className="h-8 w-8 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-foreground mb-3">Donate Money</h3>
+                  <p className="text-muted-foreground mb-6">
+                    Contribute funds to help activities reach their funding goals. Your donation helps cover equipment, transportation, and other operational costs.
+                  </p>
+                  <ul className="text-sm text-muted-foreground space-y-2 text-left mb-6">
+                    <li className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-primary" />
+                      Secure payment processing
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-primary" />
+                      Tax deductible receipts
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-primary" />
+                      Transparent fund tracking
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
 
-            <div className="text-center mt-12">
-              <p className="text-muted-foreground mb-4">Want to donate a custom amount?</p>
-              <Button size="lg" variant="outline" asChild>
-                <Link href="/register?role=donor">
-                  Make a Custom Donation
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
+              <Card className="relative overflow-hidden">
+                <CardContent className="p-8 text-center">
+                  <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Package className="h-8 w-8 text-accent" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-foreground mb-3">Donate Items</h3>
+                  <p className="text-muted-foreground mb-6">
+                    Each activity lists specific items they need. Choose items from their wishlist and we will ensure they get delivered to the organizers.
+                  </p>
+                  <ul className="text-sm text-muted-foreground space-y-2 text-left mb-6">
+                    <li className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-accent" />
+                      See exactly what is needed
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-accent" />
+                      Direct impact visibility
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-accent" />
+                      Track item delivery
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </section>
 
-        {/* How Your Donation Helps */}
-        <section className="py-20 lg:py-28 bg-secondary">
+        {/* Featured Activities */}
+        <section className="py-16 lg:py-20 bg-secondary">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <div className="relative h-80 lg:h-[450px] rounded-2xl overflow-hidden">
-                <Image
-                  src="/images/donation-impact.jpg"
-                  alt="Conservation impact"
-                  fill
-                  className="object-cover"
-                />
-              </div>
-              <div>
-                <h2 className="text-3xl sm:text-4xl font-bold text-foreground text-balance">
-                  Where Your Money Goes
-                </h2>
-                <p className="mt-6 text-lg text-muted-foreground leading-relaxed">
-                  {"We're committed to transparency. Here's how we allocate every dollar you donate:"}
-                </p>
-                <div className="mt-8 space-y-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-full bg-background rounded-full h-4 overflow-hidden">
-                      <div className="bg-primary h-full rounded-full" style={{ width: "70%" }} />
+            <div className="text-center mb-12">
+              <h2 className="text-3xl sm:text-4xl font-bold text-foreground text-balance">
+                Activities Seeking Support
+              </h2>
+              <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+                These activities are actively fundraising. Your donation can help them reach their goals.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
+              {featuredActivities.map((activity) => {
+                const fundingPercentage = Math.round((activity.fundingRaised / activity.fundingGoal) * 100)
+                return (
+                  <Card key={activity.id} className="overflow-hidden group hover:shadow-lg transition-shadow">
+                    <div className="relative h-48 overflow-hidden">
+                      <Image
+                        src={activity.image}
+                        alt={activity.title}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute top-4 left-4">
+                        <span className="bg-accent text-accent-foreground px-3 py-1 rounded-full text-xs font-medium">
+                          {activity.category}
+                        </span>
+                      </div>
                     </div>
-                    <span className="text-sm font-medium text-foreground w-24">70% Programs</span>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="w-full bg-background rounded-full h-4 overflow-hidden">
-                      <div className="bg-primary/70 h-full rounded-full" style={{ width: "20%" }} />
-                    </div>
-                    <span className="text-sm font-medium text-foreground w-24">20% Operations</span>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="w-full bg-background rounded-full h-4 overflow-hidden">
-                      <div className="bg-primary/40 h-full rounded-full" style={{ width: "10%" }} />
-                    </div>
-                    <span className="text-sm font-medium text-foreground w-24">10% Fundraising</span>
-                  </div>
-                </div>
-                <div className="mt-8 p-4 bg-background rounded-lg border border-border">
-                  <p className="text-sm text-muted-foreground">
-                    <strong className="text-foreground">100% Transparency:</strong> View our annual financial reports and see exactly how your donation creates impact.
-                  </p>
-                </div>
-              </div>
+                    <CardContent className="p-5">
+                      <h3 className="font-semibold text-foreground mb-2 leading-tight">{activity.title}</h3>
+                      <div className="flex flex-col gap-2 text-sm text-muted-foreground mb-4">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 flex-shrink-0" />
+                          <span>{activity.date}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 flex-shrink-0" />
+                          <span>{activity.location}</span>
+                        </div>
+                      </div>
+                      
+                      {/* Funding Progress */}
+                      <div className="mb-4 p-3 bg-secondary/50 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Banknote className="h-4 w-4 text-primary" />
+                          <span className="text-xs font-medium text-foreground">Funding Progress</span>
+                        </div>
+                        <div className="h-2 bg-background rounded-full overflow-hidden mb-1">
+                          <div 
+                            className="h-full bg-primary rounded-full transition-all"
+                            style={{ width: `${fundingPercentage}%` }}
+                          />
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-muted-foreground">{formatCurrency(activity.fundingRaised)}</span>
+                          <span className="font-medium text-foreground">{fundingPercentage}%</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                        <Package className="h-4 w-4 text-accent" />
+                        <span>{activity.itemsNeeded} items needed</span>
+                      </div>
+
+                      <Button className="w-full" asChild>
+                        <Link href={`/donate/${activity.id}`}>Support This Activity</Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+
+            <div className="text-center mt-12">
+              <Button size="lg" variant="outline" asChild>
+                <Link href="/activities">
+                  View All Activities
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
             </div>
           </div>
         </section>
@@ -211,7 +319,7 @@ export default function DonatePage() {
               Corporate Partnership Opportunities
             </h2>
             <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-              Partner with SinergiLaut to demonstrate your commitment to ocean conservation. Custom sponsorship packages available for organizations of all sizes.
+              Partner with SinergiLaut to sponsor multiple activities and demonstrate your commitment to ocean conservation. Custom sponsorship packages available.
             </p>
             <Button size="lg" className="mt-8" asChild>
               <Link href="/community">
