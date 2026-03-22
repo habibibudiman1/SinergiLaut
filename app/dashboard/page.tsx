@@ -2,204 +2,114 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Navigation } from "@/components/navigation"
-import { 
-  Users, 
-  Heart, 
-  Calendar,
-  DollarSign,
-  TrendingUp,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-  Search,
-  MoreHorizontal,
-  Eye,
-  Check,
-  X,
-  Bell,
-  ChevronDown,
-  Waves
+import { Textarea } from "@/components/ui/textarea"
+import {
+  Users, Building2, FileText, Banknote, Activity,
+  CheckCircle2, X, AlertTriangle, Search, Eye, Shield,
+  AlertCircle, MoreHorizontal, TrendingUp, Waves, Clock
 } from "lucide-react"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
 import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-} from "recharts"
-
-const monthlyData = [
-  { month: "Oct", volunteers: 120, donations: 8500 },
-  { month: "Nov", volunteers: 180, donations: 12000 },
-  { month: "Dec", volunteers: 220, donations: 18500 },
-  { month: "Jan", volunteers: 280, donations: 22000 },
-  { month: "Feb", volunteers: 350, donations: 28000 },
-  { month: "Mar", volunteers: 420, donations: 35000 },
-]
-
-const activityData = [
-  { name: "Cleanup", value: 45 },
-  { name: "Restoration", value: 30 },
-  { name: "Education", value: 18 },
-  { name: "Events", value: 7 },
-]
-
-const recentActivities = [
-  { 
-    id: 1, 
-    name: "Beach Cleanup - Jakarta Bay", 
-    date: "Mar 22, 2026",
-    status: "active",
-    volunteers: 45,
-    maxVolunteers: 60,
-  },
-  { 
-    id: 2, 
-    name: "Coral Restoration - Raja Ampat", 
-    date: "Apr 15-20, 2026",
-    status: "pending",
-    volunteers: 28,
-    maxVolunteers: 30,
-  },
-  { 
-    id: 3, 
-    name: "Marine Workshop for Schools", 
-    date: "Mar 25, 2026",
-    status: "active",
-    volunteers: 120,
-    maxVolunteers: 200,
-  },
-  { 
-    id: 4, 
-    name: "Mangrove Planting Day", 
-    date: "Apr 5, 2026",
-    status: "pending",
-    volunteers: 67,
-    maxVolunteers: 100,
-  },
-]
-
-const recentDonations = [
-  { id: 1, name: "Sarah Johnson", amount: 100, date: "Mar 19, 2026", status: "completed" },
-  { id: 2, name: "PT Ocean Corp", amount: 5000, date: "Mar 18, 2026", status: "pending" },
-  { id: 3, name: "Michael Chen", amount: 50, date: "Mar 18, 2026", status: "completed" },
-  { id: 4, name: "Emily Davis", amount: 25, date: "Mar 17, 2026", status: "completed" },
-  { id: 5, name: "Green Solutions Ltd", amount: 2500, date: "Mar 16, 2026", status: "pending" },
-]
-
-const recentVolunteers = [
-  { id: 1, name: "Ahmad Rizki", email: "ahmad@email.com", activity: "Beach Cleanup", date: "Mar 19, 2026", status: "approved" },
-  { id: 2, name: "Lisa Wang", email: "lisa@email.com", activity: "Coral Restoration", date: "Mar 18, 2026", status: "pending" },
-  { id: 3, name: "David Smith", email: "david@email.com", activity: "Marine Workshop", date: "Mar 18, 2026", status: "approved" },
-  { id: 4, name: "Maria Santos", email: "maria@email.com", activity: "Mangrove Planting", date: "Mar 17, 2026", status: "pending" },
-]
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { formatCurrency } from "@/lib/utils/helpers"
+import { toast } from "sonner"
 
 const stats = [
-  { 
-    title: "Total Volunteers", 
-    value: "2,847", 
-    change: "+12%", 
-    changeType: "positive",
-    icon: Users,
-    color: "text-primary"
-  },
-  { 
-    title: "Total Donations", 
-    value: "$124,500", 
-    change: "+23%", 
-    changeType: "positive",
-    icon: DollarSign,
-    color: "text-accent"
-  },
-  { 
-    title: "Active Activities", 
-    value: "18", 
-    change: "+3", 
-    changeType: "positive",
-    icon: Calendar,
-    color: "text-chart-4"
-  },
-  { 
-    title: "Engagement Rate", 
-    value: "87%", 
-    change: "+5%", 
-    changeType: "positive",
-    icon: TrendingUp,
-    color: "text-chart-2"
-  },
+  { label: "Total Komunitas", value: "48", icon: Building2, color: "text-primary", change: "+3 bulan ini" },
+  { label: "Pengguna Aktif", value: "2,847", icon: Users, color: "text-blue-600", change: "+127 bulan ini" },
+  { label: "Kegiatan Aktif", value: "24", icon: Activity, color: "text-green-600", change: "+5 minggu ini" },
+  { label: "Donasi Terkumpul", value: formatCurrency(157000000), icon: Banknote, color: "text-accent-foreground", change: "+18% bulan ini" },
 ]
 
-type TabType = "overview" | "activities" | "volunteers" | "donations"
+const pendingCommunities = [
+  { id: "1", name: "Coral Care Indonesia", location: "Makassar, Sulawesi Selatan", email: "info@coralcare.id", submittedDate: "2026-03-20", description: "Komunitas konservasi terumbu karang di Sulawesi" },
+  { id: "2", name: "Mangrove Watch Network", location: "Surabaya, Jawa Timur", email: "contact@mangrovewatch.id", submittedDate: "2026-03-19", description: "Jaringan pemantau mangrove Jawa Timur" },
+  { id: "3", name: "Borneo Ocean Shield", location: "Balikpapan, Kalimantan Timur", email: "shield@borneo.id", submittedDate: "2026-03-18", description: "Pelindung ekosistem pesisir Kalimantan" },
+]
 
-export default function DashboardPage() {
-  const [activeTab, setActiveTab] = useState<TabType>("overview")
-  const [searchQuery, setSearchQuery] = useState("")
+const pendingActivities = [
+  { id: "1", title: "Workshop Biologi Laut Sekolah", community: "Ocean Guardians Bali", date: "2026-03-25", submittedDate: "2026-03-21", category: "education", fundingGoal: 5000000 },
+  { id: "2", title: "Ekspedisi Reef Check Nias", community: "Coral Triangle Foundation", date: "2026-04-10", submittedDate: "2026-03-20", category: "research", fundingGoal: 25000000 },
+]
 
-  const getStatusBadge = (status: string) => {
-    const styles = {
-      active: "bg-green-100 text-green-700",
-      pending: "bg-yellow-100 text-yellow-700",
-      completed: "bg-green-100 text-green-700",
-      approved: "bg-green-100 text-green-700",
-    }
-    return styles[status as keyof typeof styles] || "bg-secondary text-muted-foreground"
+const pendingReports = [
+  { id: "1", activityTitle: "Bersih-bersih Pantai Jakarta Bay", community: "Ocean Guardians Bali", submittedDate: "2026-03-19", period: "Maret 2026", filesCount: 3 },
+  { id: "2", activityTitle: "Penanaman 5000 Mangrove Bali", community: "Green Coast Bali", submittedDate: "2026-03-18", period: "Februari 2026", filesCount: 5 },
+]
+
+const allCommunities = [
+  { id: "1", name: "Ocean Guardians Bali", location: "Bali", status: "approved", activities: 12, members: 285, isSuspended: false },
+  { id: "2", name: "Coral Triangle Foundation", location: "Jakarta", status: "approved", activities: 8, members: 134, isSuspended: false },
+  { id: "3", name: "Blue Marine Jakarta", location: "Jakarta", status: "approved", activities: 5, members: 67, isSuspended: true },
+]
+
+type Tab = "overview" | "communities" | "activities" | "reports" | "users"
+
+interface SanctionModal {
+  open: boolean
+  communityId: string | null
+  communityName: string
+}
+
+export default function AdminDashboardPage() {
+  const [activeTab, setActiveTab] = useState<Tab>("overview")
+  const [search, setSearch] = useState("")
+  const [sanctionModal, setSanctionModal] = useState<SanctionModal>({ open: false, communityId: null, communityName: "" })
+  const [sanctionForm, setSanctionForm] = useState({ type: "warning", reason: "" })
+
+  const handleApprove = (entity: string, id: string) => {
+    toast.success(`${entity} #${id} berhasil disetujui`)
+  }
+
+  const handleReject = (entity: string, id: string) => {
+    toast.error(`${entity} #${id} telah ditolak`)
+  }
+
+  const handleSanction = () => {
+    toast.warning(`Sanksi diberikan pada ${sanctionModal.communityName}`)
+    setSanctionModal({ open: false, communityId: null, communityName: "" })
   }
 
   return (
     <div className="min-h-screen bg-secondary">
       <Navigation />
-      
       <main className="pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
+              <Shield className="h-5 w-5 text-red-600" />
+            </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Admin Dashboard</h1>
-              <p className="text-muted-foreground mt-1">Monitor and manage conservation activities</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button variant="outline" size="sm" className="relative">
-                <Bell className="h-4 w-4" />
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-accent text-accent-foreground text-xs rounded-full flex items-center justify-center">
-                  3
-                </span>
-              </Button>
-              <Button size="sm">
-                <Calendar className="h-4 w-4 mr-2" />
-                Create Activity
-              </Button>
+              <p className="text-muted-foreground text-sm">Kelola platform SinergiLaut</p>
             </div>
           </div>
 
-          {/* Stats Grid */}
+          {/* Stats */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {stats.map((stat) => (
-              <Card key={stat.title}>
+              <Card key={stat.label}>
                 <CardContent className="p-5">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-start justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground">{stat.title}</p>
+                      <p className="text-sm text-muted-foreground">{stat.label}</p>
                       <p className="text-2xl font-bold text-foreground mt-1">{stat.value}</p>
-                      <p className={`text-sm mt-1 ${stat.changeType === "positive" ? "text-green-600" : "text-red-600"}`}>
-                        {stat.change} from last month
+                      <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                        <TrendingUp className="h-3 w-3 text-green-500" /> {stat.change}
                       </p>
                     </div>
-                    <div className={`w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center`}>
-                      <stat.icon className={`h-6 w-6 ${stat.color}`} />
+                    <div className="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center">
+                      <stat.icon className={`h-5 w-5 ${stat.color}`} />
                     </div>
                   </div>
                 </CardContent>
@@ -207,234 +117,216 @@ export default function DashboardPage() {
             ))}
           </div>
 
+          {/* Pending Alerts */}
+          {(pendingCommunities.length > 0 || pendingActivities.length > 0 || pendingReports.length > 0) && (
+            <div className="grid sm:grid-cols-3 gap-4 mb-8">
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl flex items-center gap-3">
+                <Clock className="h-5 w-5 text-yellow-600 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-yellow-800">{pendingCommunities.length} komunitas</p>
+                  <p className="text-xs text-yellow-600">Menunggu verifikasi</p>
+                </div>
+              </div>
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-center gap-3">
+                <Activity className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-blue-800">{pendingActivities.length} kegiatan</p>
+                  <p className="text-xs text-blue-600">Menunggu persetujuan</p>
+                </div>
+              </div>
+              <div className="p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3">
+                <FileText className="h-5 w-5 text-green-600 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-green-800">{pendingReports.length} laporan</p>
+                  <p className="text-xs text-green-600">Menunggu validasi</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Tabs */}
-          <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+          <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
             {[
-              { id: "overview", label: "Overview" },
-              { id: "activities", label: "Activities" },
-              { id: "volunteers", label: "Volunteers" },
-              { id: "donations", label: "Donations" },
+              { id: "overview", label: "Ringkasan" },
+              { id: "communities", label: "Komunitas" },
+              { id: "activities", label: "Kegiatan" },
+              { id: "reports", label: "Laporan" },
+              { id: "users", label: "Pengguna" },
             ].map((tab) => (
-              <Button
-                key={tab.id}
-                variant={activeTab === tab.id ? "default" : "outline"}
-                size="sm"
-                onClick={() => setActiveTab(tab.id as TabType)}
-              >
+              <Button key={tab.id} variant={activeTab === tab.id ? "default" : "outline"} size="sm"
+                onClick={() => setActiveTab(tab.id as Tab)}>
                 {tab.label}
               </Button>
             ))}
           </div>
 
-          {/* Overview Tab */}
+          {/* Overview */}
           {activeTab === "overview" && (
             <div className="space-y-6">
-              {/* Charts Row */}
-              <div className="grid lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Volunteer Growth</CardTitle>
-                    <CardDescription>Monthly volunteer registrations</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-[300px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={monthlyData}>
-                          <defs>
-                            <linearGradient id="colorVolunteers" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                              <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                          <XAxis dataKey="month" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                          <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                          <Tooltip 
-                            contentStyle={{ 
-                              backgroundColor: 'hsl(var(--card))', 
-                              border: '1px solid hsl(var(--border))',
-                              borderRadius: '8px'
-                            }} 
-                          />
-                          <Area 
-                            type="monotone" 
-                            dataKey="volunteers" 
-                            stroke="hsl(var(--primary))" 
-                            fillOpacity={1} 
-                            fill="url(#colorVolunteers)" 
-                            strokeWidth={2}
-                          />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Donation Trends</CardTitle>
-                    <CardDescription>Monthly donation amounts ($)</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-[300px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={monthlyData}>
-                          <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                          <XAxis dataKey="month" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                          <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                          <Tooltip 
-                            contentStyle={{ 
-                              backgroundColor: 'hsl(var(--card))', 
-                              border: '1px solid hsl(var(--border))',
-                              borderRadius: '8px'
-                            }} 
-                          />
-                          <Bar dataKey="donations" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Recent Activity Lists */}
-              <div className="grid lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                      <CardTitle className="text-lg">Recent Activities</CardTitle>
-                      <CardDescription>Latest conservation activities</CardDescription>
-                    </div>
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link href="#" onClick={() => setActiveTab("activities")}>View All</Link>
-                    </Button>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {recentActivities.slice(0, 3).map((activity) => (
-                        <div key={activity.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
-                          <div className="flex-1">
-                            <p className="font-medium text-foreground text-sm">{activity.name}</p>
-                            <p className="text-xs text-muted-foreground">{activity.date}</p>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <span className={`text-xs px-2 py-1 rounded-full capitalize ${getStatusBadge(activity.status)}`}>
-                              {activity.status}
-                            </span>
-                          </div>
+              {/* Pending Communities */}
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div><CardTitle>Komunitas Menunggu Verifikasi</CardTitle><CardDescription>Perlu tindakan admin</CardDescription></div>
+                  <Button variant="ghost" size="sm" onClick={() => setActiveTab("communities")}>Lihat Semua</Button>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {pendingCommunities.slice(0, 3).map((c) => (
+                      <div key={c.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-secondary rounded-lg border-l-4 border-l-yellow-400">
+                        <div>
+                          <p className="font-medium text-foreground">{c.name}</p>
+                          <p className="text-xs text-muted-foreground">{c.location} • Daftar: {c.submittedDate}</p>
                         </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                      <CardTitle className="text-lg">Recent Donations</CardTitle>
-                      <CardDescription>Latest donation transactions</CardDescription>
-                    </div>
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link href="#" onClick={() => setActiveTab("donations")}>View All</Link>
-                    </Button>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {recentDonations.slice(0, 3).map((donation) => (
-                        <div key={donation.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
-                          <div className="flex-1">
-                            <p className="font-medium text-foreground text-sm">{donation.name}</p>
-                            <p className="text-xs text-muted-foreground">{donation.date}</p>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <span className="font-semibold text-foreground">${donation.amount}</span>
-                            <span className={`text-xs px-2 py-1 rounded-full capitalize ${getStatusBadge(donation.status)}`}>
-                              {donation.status}
-                            </span>
-                          </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" className="text-green-700 border-green-300 hover:bg-green-50" onClick={() => handleApprove("Komunitas", c.id)}>
+                            <CheckCircle2 className="h-4 w-4 mr-1" /> Setujui
+                          </Button>
+                          <Button size="sm" variant="outline" className="text-red-700 border-red-300 hover:bg-red-50" onClick={() => handleReject("Komunitas", c.id)}>
+                            <X className="h-4 w-4 mr-1" /> Tolak
+                          </Button>
                         </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Pending Activities */}
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div><CardTitle>Kegiatan Menunggu Persetujuan</CardTitle></div>
+                  <Button variant="ghost" size="sm" onClick={() => setActiveTab("activities")}>Lihat Semua</Button>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {pendingActivities.map((a) => (
+                      <div key={a.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-secondary rounded-lg border-l-4 border-l-blue-400">
+                        <div>
+                          <p className="font-medium text-foreground">{a.title}</p>
+                          <p className="text-xs text-muted-foreground">{a.community} • {a.date} • Target: {formatCurrency(a.fundingGoal)}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" onClick={() => handleApprove("Kegiatan", a.id)}>
+                            <CheckCircle2 className="h-4 w-4 mr-1 text-green-600" /> Setujui
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => handleReject("Kegiatan", a.id)}>
+                            <X className="h-4 w-4 mr-1 text-red-600" /> Tolak
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Pending Reports */}
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div><CardTitle>Laporan Menunggu Validasi</CardTitle></div>
+                  <Button variant="ghost" size="sm" onClick={() => setActiveTab("reports")}>Lihat Semua</Button>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {pendingReports.map((r) => (
+                      <div key={r.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-secondary rounded-lg border-l-4 border-l-green-400">
+                        <div>
+                          <p className="font-medium text-foreground">{r.activityTitle}</p>
+                          <p className="text-xs text-muted-foreground">{r.community} • {r.period} • {r.filesCount} file</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline"><Eye className="h-4 w-4 mr-1" /> Review</Button>
+                          <Button size="sm" variant="outline" onClick={() => handleApprove("Laporan", r.id)}>
+                            <CheckCircle2 className="h-4 w-4 mr-1 text-green-600" /> Validasi
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           )}
 
-          {/* Activities Tab */}
-          {activeTab === "activities" && (
+          {/* Communities Management */}
+          {activeTab === "communities" && (
             <Card>
               <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div>
-                    <CardTitle>Manage Activities</CardTitle>
-                    <CardDescription>View and manage all conservation activities</CardDescription>
-                  </div>
-                  <div className="relative w-full sm:w-64">
+                  <div><CardTitle>Manajemen Komunitas</CardTitle><CardDescription>Seluruh komunitas terdaftar</CardDescription></div>
+                  <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search activities..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-9"
-                    />
+                    <Input placeholder="Cari komunitas..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 w-56" />
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
+                <div className="space-y-4 mb-6">
+                  <h3 className="text-sm font-semibold text-foreground">Pending Verifikasi ({pendingCommunities.length})</h3>
+                  {pendingCommunities.map((c) => (
+                    <div key={c.id} className="p-4 border border-yellow-200 bg-yellow-50 rounded-lg">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-foreground">{c.name}</p>
+                            <Badge className="bg-yellow-100 text-yellow-700">Pending</Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{c.location} • {c.email}</p>
+                          <p className="text-sm text-muted-foreground mt-1">{c.description}</p>
+                        </div>
+                        <div className="flex gap-2 flex-shrink-0">
+                          <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleApprove("Komunitas", c.id)}>
+                            <CheckCircle2 className="h-4 w-4 mr-1" /> Verifikasi
+                          </Button>
+                          <Button size="sm" variant="destructive" onClick={() => handleReject("Komunitas", c.id)}>
+                            <X className="h-4 w-4 mr-1" /> Tolak
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <h3 className="text-sm font-semibold text-foreground mb-3">Komunitas Aktif</h3>
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-border">
-                        <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Activity</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Date</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Volunteers</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Status</th>
-                        <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Actions</th>
+                        {["Komunitas", "Lokasi", "Kegiatan", "Anggota", "Status", "Aksi"].map((h) => (
+                          <th key={h} className="text-left py-3 px-3 text-sm font-medium text-muted-foreground">{h}</th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {recentActivities.map((activity) => (
-                        <tr key={activity.id} className="border-b border-border last:border-0">
-                          <td className="py-4 px-4">
-                            <p className="font-medium text-foreground">{activity.name}</p>
+                      {allCommunities.map((c) => (
+                        <tr key={c.id} className="border-b border-border last:border-0">
+                          <td className="py-3 px-3 font-medium text-sm text-foreground">{c.name}</td>
+                          <td className="py-3 px-3 text-sm text-muted-foreground">{c.location}</td>
+                          <td className="py-3 px-3 text-sm text-muted-foreground">{c.activities}</td>
+                          <td className="py-3 px-3 text-sm text-muted-foreground">{c.members}</td>
+                          <td className="py-3 px-3">
+                            {c.isSuspended
+                              ? <Badge className="bg-red-100 text-red-700">Disuspend</Badge>
+                              : <Badge className="bg-green-100 text-green-700">Aktif</Badge>
+                            }
                           </td>
-                          <td className="py-4 px-4 text-sm text-muted-foreground">{activity.date}</td>
-                          <td className="py-4 px-4">
-                            <div className="flex items-center gap-2">
-                              <div className="w-24 bg-secondary rounded-full h-2 overflow-hidden">
-                                <div 
-                                  className="h-full bg-primary rounded-full"
-                                  style={{ width: `${(activity.volunteers / activity.maxVolunteers) * 100}%` }}
-                                />
-                              </div>
-                              <span className="text-sm text-muted-foreground">
-                                {activity.volunteers}/{activity.maxVolunteers}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="py-4 px-4">
-                            <span className={`text-xs px-2 py-1 rounded-full capitalize ${getStatusBadge(activity.status)}`}>
-                              {activity.status}
-                            </span>
-                          </td>
-                          <td className="py-4 px-4 text-right">
+                          <td className="py-3 px-3">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
+                                <Button variant="ghost" size="sm"><MoreHorizontal className="h-4 w-4" /></Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem>
-                                  <Eye className="h-4 w-4 mr-2" /> View Details
+                                <DropdownMenuItem><Eye className="h-4 w-4 mr-2" /> Lihat Detail</DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onClick={() => setSanctionModal({ open: true, communityId: c.id, communityName: c.name })}
+                                >
+                                  <AlertTriangle className="h-4 w-4 mr-2" /> Beri Sanksi
                                 </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <Check className="h-4 w-4 mr-2" /> Approve
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="text-destructive">
-                                  <X className="h-4 w-4 mr-2" /> Cancel
-                                </DropdownMenuItem>
+                                {c.isSuspended
+                                  ? <DropdownMenuItem><CheckCircle2 className="h-4 w-4 mr-2" /> Cabut Suspend</DropdownMenuItem>
+                                  : <DropdownMenuItem className="text-destructive"><AlertCircle className="h-4 w-4 mr-2" /> Suspend</DropdownMenuItem>
+                                }
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </td>
@@ -447,151 +339,120 @@ export default function DashboardPage() {
             </Card>
           )}
 
-          {/* Volunteers Tab */}
-          {activeTab === "volunteers" && (
+          {/* Activities moderation placeholder */}
+          {activeTab === "activities" && (
             <Card>
-              <CardHeader>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div>
-                    <CardTitle>Volunteer Registrations</CardTitle>
-                    <CardDescription>Review and approve volunteer applications</CardDescription>
-                  </div>
-                  <div className="relative w-full sm:w-64">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search volunteers..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-9"
-                    />
-                  </div>
-                </div>
-              </CardHeader>
+              <CardHeader><CardTitle>Moderasi Kegiatan</CardTitle><CardDescription>Review dan setujui kegiatan yang diajukan komunitas</CardDescription></CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-border">
-                        <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Name</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Email</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Activity</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Date</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Status</th>
-                        <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {recentVolunteers.map((volunteer) => (
-                        <tr key={volunteer.id} className="border-b border-border last:border-0">
-                          <td className="py-4 px-4">
-                            <p className="font-medium text-foreground">{volunteer.name}</p>
-                          </td>
-                          <td className="py-4 px-4 text-sm text-muted-foreground">{volunteer.email}</td>
-                          <td className="py-4 px-4 text-sm text-muted-foreground">{volunteer.activity}</td>
-                          <td className="py-4 px-4 text-sm text-muted-foreground">{volunteer.date}</td>
-                          <td className="py-4 px-4">
-                            <span className={`text-xs px-2 py-1 rounded-full capitalize ${getStatusBadge(volunteer.status)}`}>
-                              {volunteer.status}
-                            </span>
-                          </td>
-                          <td className="py-4 px-4 text-right">
-                            {volunteer.status === "pending" ? (
-                              <div className="flex items-center justify-end gap-2">
-                                <Button variant="outline" size="sm" className="h-8">
-                                  <Check className="h-4 w-4 mr-1" /> Approve
-                                </Button>
-                                <Button variant="ghost" size="sm" className="h-8 text-destructive hover:text-destructive">
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            ) : (
-                              <Button variant="ghost" size="sm">
-                                <Eye className="h-4 w-4 mr-2" /> View
-                              </Button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="space-y-4">
+                  {pendingActivities.map((a) => (
+                    <div key={a.id} className="p-4 border border-border rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <p className="font-medium text-foreground">{a.title}</p>
+                        <p className="text-sm text-muted-foreground">{a.community} • {a.date}</p>
+                        <Badge className="bg-primary/10 text-primary capitalize mt-1" >{a.category}</Badge>
+                      </div>
+                      <div className="flex gap-2 flex-shrink-0">
+                        <Button size="sm" variant="outline"><Eye className="h-4 w-4 mr-1" /> Review</Button>
+                        <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleApprove("Kegiatan", a.id)}>
+                          <CheckCircle2 className="h-4 w-4 mr-1" /> Publis
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleReject("Kegiatan", a.id)}>
+                          <X className="h-4 w-4 mr-1" /> Tolak
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {/* Donations Tab */}
-          {activeTab === "donations" && (
+          {/* Reports validation placeholder */}
+          {activeTab === "reports" && (
+            <Card>
+              <CardHeader><CardTitle>Validasi Laporan</CardTitle><CardDescription>Periksa dan validasi laporan pasca kegiatan</CardDescription></CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {pendingReports.map((r) => (
+                    <div key={r.id} className="p-4 border border-border rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <p className="font-medium text-foreground">{r.activityTitle}</p>
+                        <p className="text-sm text-muted-foreground">{r.community} • {r.period} • {r.filesCount} file lampiran</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline"><Eye className="h-4 w-4 mr-1" /> Buka Laporan</Button>
+                        <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleApprove("Laporan", r.id)}>
+                          <CheckCircle2 className="h-4 w-4 mr-1" /> Validasi
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleReject("Laporan", r.id)}>
+                          <X className="h-4 w-4 mr-1" /> Tolak
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Users tab placeholder */}
+          {activeTab === "users" && (
             <Card>
               <CardHeader>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div>
-                    <CardTitle>Donation Management</CardTitle>
-                    <CardDescription>Track and verify donation transactions</CardDescription>
-                  </div>
-                  <div className="relative w-full sm:w-64">
+                <div className="flex justify-between items-center">
+                  <div><CardTitle>Manajemen Pengguna</CardTitle><CardDescription>Pantau dan kelola seluruh pengguna</CardDescription></div>
+                  <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search donations..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-9"
-                    />
+                    <Input placeholder="Cari pengguna..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 w-52" />
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-border">
-                        <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Donor</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Amount</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Date</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Status</th>
-                        <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {recentDonations.map((donation) => (
-                        <tr key={donation.id} className="border-b border-border last:border-0">
-                          <td className="py-4 px-4">
-                            <p className="font-medium text-foreground">{donation.name}</p>
-                          </td>
-                          <td className="py-4 px-4">
-                            <span className="font-semibold text-foreground">${donation.amount.toLocaleString()}</span>
-                          </td>
-                          <td className="py-4 px-4 text-sm text-muted-foreground">{donation.date}</td>
-                          <td className="py-4 px-4">
-                            <span className={`text-xs px-2 py-1 rounded-full capitalize ${getStatusBadge(donation.status)}`}>
-                              {donation.status}
-                            </span>
-                          </td>
-                          <td className="py-4 px-4 text-right">
-                            {donation.status === "pending" ? (
-                              <div className="flex items-center justify-end gap-2">
-                                <Button variant="outline" size="sm" className="h-8">
-                                  <Check className="h-4 w-4 mr-1" /> Verify
-                                </Button>
-                                <Button variant="ghost" size="sm" className="h-8 text-destructive hover:text-destructive">
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            ) : (
-                              <Button variant="ghost" size="sm">
-                                <Eye className="h-4 w-4 mr-2" /> View
-                              </Button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="text-center py-12 text-muted-foreground">
+                  <Users className="h-8 w-8 mx-auto opacity-40 mb-3" />
+                  <p>Data pengguna akan ditampilkan dari Supabase setelah konfigurasi.</p>
+                  <p className="text-sm mt-1">Pastikan environment variables sudah dikonfigurasi.</p>
                 </div>
               </CardContent>
             </Card>
           )}
         </div>
       </main>
+
+      {/* Sanction Modal */}
+      <Dialog open={sanctionModal.open} onOpenChange={(open) => setSanctionModal({ ...sanctionModal, open })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Beri Sanksi Komunitas</DialogTitle>
+            <DialogDescription>{sanctionModal.communityName}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Jenis Sanksi</Label>
+              <div className="flex gap-2">
+                {[{ v: "warning", l: "Peringatan" }, { v: "suspend", l: "Suspend" }, { v: "ban", l: "Ban Permanen" }].map((s) => (
+                  <button key={s.v} type="button"
+                    onClick={() => setSanctionForm({ ...sanctionForm, type: s.v })}
+                    className={`px-3 py-2 rounded-lg border-2 text-sm transition-all ${sanctionForm.type === s.v ? "border-destructive bg-destructive/5 text-destructive" : "border-border"}`}>
+                    {s.l}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Alasan Sanksi</Label>
+              <Textarea value={sanctionForm.reason} onChange={(e) => setSanctionForm({ ...sanctionForm, reason: e.target.value })} placeholder="Jelaskan alasan pemberian sanksi..." rows={4} />
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <Button variant="outline" className="flex-1" onClick={() => setSanctionModal({ open: false, communityId: null, communityName: "" })}>Batal</Button>
+            <Button variant="destructive" className="flex-1" onClick={handleSanction} disabled={!sanctionForm.reason}>
+              <AlertTriangle className="h-4 w-4 mr-2" /> Berikan Sanksi
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

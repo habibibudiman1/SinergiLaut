@@ -1,31 +1,30 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Geist } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { Toaster } from '@/components/ui/sonner'
+import { AuthProvider } from '@/contexts/auth-context'
 import './globals.css'
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+const geist = Geist({ subsets: ["latin"], variable: "--font-geist" })
 
 export const metadata: Metadata = {
-  title: 'SinergiLaut - Protect Our Oceans Together',
-  description: 'Join the movement to protect our oceans. Connect with marine conservation communities, volunteers, donors, and corporate sponsors.',
-  generator: 'v0.app',
+  title: {
+    default: 'SinergiLaut - Platform Konservasi Laut Indonesia',
+    template: '%s | SinergiLaut',
+  },
+  description: 'Platform konservasi laut yang mempertemukan komunitas, relawan, donatur, dan admin dalam satu sistem terintegrasi untuk melindungi ekosistem laut Indonesia.',
+  keywords: ['konservasi laut', 'volunteer', 'donasi', 'lingkungan', 'indonesia', 'ocean conservation'],
+  authors: [{ name: 'SinergiLaut Team' }],
+  openGraph: {
+    type: 'website',
+    locale: 'id_ID',
+    url: process.env.NEXT_PUBLIC_APP_URL || 'https://sinergilaut.id',
+    siteName: 'SinergiLaut',
+    title: 'SinergiLaut - Platform Konservasi Laut Indonesia',
+    description: 'Platform konservasi laut yang mempertemukan komunitas, relawan, donatur, dan admin.',
+  },
   icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
+    icon: '/icon.svg',
   },
 }
 
@@ -35,9 +34,30 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-      <body className="font-sans antialiased">
-        {children}
+    <html lang="id" suppressHydrationWarning>
+      <head>
+        {/* Google Analytics placeholder */}
+        {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
+          <>
+            <script async src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}`} />
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){dataLayer.push(arguments);}
+                  gtag('js', new Date());
+                  gtag('config', '${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}');
+                `,
+              }}
+            />
+          </>
+        )}
+      </head>
+      <body className={`${geist.variable} font-sans antialiased`} suppressHydrationWarning>
+        <AuthProvider>
+          {children}
+          <Toaster richColors position="top-right" />
+        </AuthProvider>
         <Analytics />
       </body>
     </html>

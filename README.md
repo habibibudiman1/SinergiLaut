@@ -1,35 +1,152 @@
-# SinergiLaut
+# SinergiLaut — Platform Konservasi Laut Indonesia
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [v0](https://v0.app).
+Platform full-stack yang mempertemukan komunitas konservasi laut, relawan, donatur, dan admin dalam satu sistem terintegrasi.
 
-## Built with v0
+## Tech Stack
 
-This repository is linked to a [v0](https://v0.app) project. You can continue developing by visiting the link below -- start new chats to make changes, and v0 will push commits directly to this repo. Every merge to `main` will automatically deploy.
+- **Frontend:** Next.js 15 (App Router) + TypeScript
+- **Styling:** Tailwind CSS + ShadcnUI
+- **Backend/API:** Next.js API Routes / Server Actions
+- **Database & Auth:** Supabase (PostgreSQL + Auth)
+- **Storage:** Supabase Storage
+- **Realtime:** Supabase Realtime
+- **Deployment:** Vercel / Docker
 
-[Continue working on v0 →](https://v0.app/chat/projects/prj_T7GmBxkflkYkl3ZQzh7IRKIAi9AC)
+## Cara Menjalankan Lokal
 
-## Getting Started
-
-First, run the development server:
+### 1. Clone & Install
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
+git clone <repo-url>
+cd SinergiLaut
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Setup Environment Variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+cp .env.example .env.local
+# Edit .env.local dengan nilai Supabase project Anda
+```
 
-## Learn More
+Isi nilai berikut di `.env.local`:
+- `NEXT_PUBLIC_SUPABASE_URL` — dari Supabase Dashboard → Settings → API
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` — dari Supabase Dashboard → Settings → API
+- `SUPABASE_SERVICE_ROLE_KEY` — untuk server actions (jaga kerahasiaan!)
 
-To learn more, take a look at the following resources:
+### 3. Setup Database (Supabase)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [v0 Documentation](https://v0.app/docs) - learn about v0 and how to use it.
+1. Buka [Supabase Dashboard](https://supabase.com) dan buat project baru
+2. Buka **SQL Editor** dan jalankan:
+   ```sql
+   -- Jalankan schema terlebih dahulu
+   \i supabase/schema.sql
+   
+   -- Lalu jalankan RLS policies
+   \i supabase/rls-policies.sql
+   ```
+3. Di **Authentication → Settings**, aktifkan Email confirmations (opsional untuk development)
 
-<a href="https://v0.app/chat/api/kiro/clone/habibibudiman1/SinergiLaut" alt="Open in Kiro"><img src="https://pdgvvgmkdvyeydso.public.blob.vercel-storage.com/open%20in%20kiro.svg?sanitize=true" /></a>
+### 4. Jalankan Dev Server
+
+```bash
+pnpm run dev
+```
+
+Buka [http://localhost:3000](http://localhost:3000)
+
+## Struktur Proyek
+
+```
+├── app/
+│   ├── (auth pages) login/, register/, forgot-password/
+│   ├── auth/callback/         # Supabase OAuth callback
+│   ├── admin/dashboard/       # Admin panel
+│   ├── community/dashboard/   # Community manager panel
+│   ├── user/dashboard/        # User/volunteer dashboard
+│   ├── user/profile/          # Edit profil pengguna
+│   ├── activities/            # Daftar & detail kegiatan
+│   ├── community/             # Halaman publik komunitas
+│   ├── about/                 # Tentang SinergiLaut
+│   ├── faq/                   # FAQ
+│   ├── contact/               # Kontak
+│   └── not-found.tsx          # Custom 404
+│
+├── components/
+│   ├── navigation.tsx         # Role-aware navbar
+│   ├── footer.tsx             # Footer
+│   └── ui/                    # ShadcnUI components
+│
+├── contexts/
+│   └── auth-context.tsx       # React auth context
+│
+├── lib/
+│   ├── supabase/
+│   │   ├── client.ts          # Browser Supabase client
+│   │   └── server.ts          # Server Supabase client
+│   ├── types/index.ts         # TypeScript types
+│   ├── constants.ts           # App constants
+│   └── utils/helpers.ts       # Utility functions
+│
+├── middleware.ts               # Route protection & role redirects
+├── supabase/
+│   ├── schema.sql             # Database schema (13 tables)
+│   └── rls-policies.sql       # Row Level Security policies
+├── Dockerfile                 # Production Docker image
+├── docker-compose.yml         # Docker Compose config
+└── .env.example               # Environment template
+```
+
+## User Roles
+
+| Role | Akses | Dashboard |
+|------|-------|-----------|
+| `user` | Daftar relawan, donasi, lihat kegiatan | `/user/dashboard` |
+| `community` | Buat & kelola kegiatan, upload laporan | `/community/dashboard` |
+| `admin` | Verifikasi komunitas, moderasi, sanksi | `/admin/dashboard` |
+
+## Fitur Utama
+
+### Untuk Pengguna (Volunteer/Donatur)
+- Registrasi & login dengan Supabase Auth
+- Daftar sebagai relawan di kegiatan
+- Donasi uang atau barang
+- Pantau riwayat partisipasi & donasi
+- Lihat laporan transparan pasca kegiatan
+
+### Untuk Komunitas
+- Registrasi komunitas (dengan review admin)
+- Buat & kelola kegiatan konservasi
+- Kelola pendaftaran relawan
+- Pantau donasi masuk
+- Upload laporan pasca kegiatan
+
+### Untuk Admin
+- Dashboard statistik platform
+- Verifikasi/tolak komunitas baru
+- Moderasi kegiatan (approve/reject)
+- Validasi laporan
+- Beri sanksi kepada komunitas
+
+## Deployment
+
+### Vercel (Recommended)
+
+```bash
+vercel --prod
+# Set environment variables di Vercel Dashboard
+```
+
+### Docker
+
+```bash
+docker build -t sinergil aut .
+docker run -p 3000:3000 --env-file .env.local sinergil aut
+
+# Atau dengan Docker Compose:
+docker-compose up -d
+```
+
+## Lisensi
+
+MIT License — see LICENSE file for details.

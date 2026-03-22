@@ -2,460 +2,298 @@
 
 import { useState, Suspense } from "react"
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Navigation } from "@/components/navigation"
-import { Footer } from "@/components/footer"
-import { 
-  Check, 
-  Users, 
-  Heart, 
-  ArrowRight, 
-  ArrowLeft,
-  Mail,
-  Lock,
-  User,
-  Phone,
-  Building,
-  Waves
-} from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
+import { Waves, Mail, Lock, User, Phone, Building, AlertCircle, Loader2, Check, ArrowRight, ArrowLeft } from "lucide-react"
+import { toast } from "sonner"
 
-type Role = "volunteer" | "donor" | null
+type RoleType = "user" | "community" | null
 type Step = 1 | 2 | 3
 
-const activities = [
-  { id: 1, name: "Coastal Beach Cleanup - Jakarta Bay", date: "March 22, 2026" },
-  { id: 2, name: "Coral Reef Restoration - Raja Ampat", date: "April 15-20, 2026" },
-  { id: 3, name: "Marine Biology Workshop for Schools", date: "March 25, 2026" },
-  { id: 4, name: "Mangrove Planting Day", date: "April 5, 2026" },
-]
-
 function RegisterContent() {
+  const router = useRouter()
   const searchParams = useSearchParams()
-  const activityParam = searchParams.get("activity")
-  
-  const [role, setRole] = useState<Role>(null)
+  const supabase = createClient()
+
   const [step, setStep] = useState<Step>(1)
-  const [isLogin, setIsLogin] = useState(false)
-  const [selectedActivity, setSelectedActivity] = useState(activityParam || "")
+  const [role, setRole] = useState<RoleType>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    firstName: "",
-    lastName: "",
+    confirmPassword: "",
+    fullName: "",
     phone: "",
-    organization: "",
-    donationAmount: "",
+    // Community fields
+    communityName: "",
+    communityDescription: "",
+    location: "",
+    website: "",
+    representative: "",
   })
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
   }
 
-  const handleRoleSelect = (selectedRole: Role) => {
-    setRole(selectedRole)
-    setStep(2)
-  }
-
-  const handleNext = () => {
-    if (step < 3) setStep((step + 1) as Step)
-  }
-
-  const handleBack = () => {
-    if (step > 1) setStep((step - 1) as Step)
-    if (step === 2) setRole(null)
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Simulate form submission
-    alert(`Registration successful! Welcome to SinergiLaut as a ${role}.`)
+    setIsLoading(true)
+    setError("")
+
+    if (formData.password !== formData.confirmPassword) {
+      setError("Password tidak cocok.")
+      setIsLoading(false)
+      return
+    }
+
+    if (formData.password.length < 8) {
+      setError("Password minimal 8 karakter.")
+      setIsLoading(false)
+      return
+    }
+
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email: formData.email,
+      password: formData.password,
+      options: {
+        data: {
+          full_name: formData.fullName,
+          role: role,
+          phone: formData.phone,
+        },
+      },
+    })
+
+    if (signUpError) {
+      setError(signUpError.message)
+      setIsLoading(false)
+      return
+    }
+
+    if (data.user && role === "community" && formData.communityName) {
+      // Create community record
+      const slug = formData.communityName
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, "")
+        .replace(/[\s_-]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+
+      await supabase.from("communities").insert({
+        owner_id: data.user.id,
+        name: formData.communityName,
+        slug,
+        description: formData.communityDescription,
+        location: formData.location,
+        website: formData.website,
+        verification_status: "pending",
+      })
+    }
+
+    toast.success("Pendaftaran berhasil! Silakan cek email untuk verifikasi.")
+    router.push("/login")
+    setIsLoading(false)
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navigation />
-      
-      <main className="flex-1 pt-16 bg-secondary">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
-          {/* Logo */}
-          <div className="flex justify-center mb-8">
-            <Link href="/" className="flex items-center gap-2">
-              <Waves className="h-10 w-10 text-primary" />
-              <span className="text-2xl font-bold text-foreground">SinergiLaut</span>
-            </Link>
-          </div>
-
-          {/* Progress Steps */}
-          <div className="flex items-center justify-center gap-2 mb-8">
-            {[1, 2, 3].map((s) => (
-              <div key={s} className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
-                  step >= s 
-                    ? "bg-primary text-primary-foreground" 
-                    : "bg-background text-muted-foreground border border-border"
-                }`}>
-                  {step > s ? <Check className="h-4 w-4" /> : s}
-                </div>
-                {s < 3 && (
-                  <div className={`w-12 sm:w-20 h-1 mx-2 rounded-full transition-colors ${
-                    step > s ? "bg-primary" : "bg-border"
-                  }`} />
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* Step Labels */}
-          <div className="flex items-center justify-center gap-2 mb-8 text-xs sm:text-sm text-muted-foreground">
-            <span className={step === 1 ? "text-foreground font-medium" : ""}>
-              {isLogin ? "Login" : "Sign Up"}
-            </span>
-            <span className="text-border">|</span>
-            <span className={step === 2 ? "text-foreground font-medium" : ""}>
-              Select {role === "donor" ? "Donation" : "Activity"}
-            </span>
-            <span className="text-border">|</span>
-            <span className={step === 3 ? "text-foreground font-medium" : ""}>
-              Complete
-            </span>
-          </div>
-
-          {/* Step 1: Role Selection or Login/Signup */}
-          {step === 1 && !role && (
-            <Card>
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl">Join SinergiLaut</CardTitle>
-                <CardDescription>
-                  Choose how you'd like to contribute to ocean conservation
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid sm:grid-cols-2 gap-4">
-                <button
-                  onClick={() => handleRoleSelect("volunteer")}
-                  className="group p-6 rounded-xl border-2 border-border hover:border-primary bg-background transition-all text-left"
-                >
-                  <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                    <Users className="h-6 w-6 text-primary" />
-                  </div>
-                  <h3 className="font-semibold text-foreground mb-2">Become a Volunteer</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Join activities, clean beaches, restore coral reefs, and educate communities.
-                  </p>
-                </button>
-                <button
-                  onClick={() => handleRoleSelect("donor")}
-                  className="group p-6 rounded-xl border-2 border-border hover:border-accent bg-background transition-all text-left"
-                >
-                  <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-accent/20 transition-colors">
-                    <Heart className="h-6 w-6 text-accent" />
-                  </div>
-                  <h3 className="font-semibold text-foreground mb-2">Become a Donor</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Support conservation projects financially and track your impact.
-                  </p>
-                </button>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Step 1 with Role: Login/Signup Form */}
-          {step === 1 && role && (
-            <Card>
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl">
-                  {isLogin ? "Welcome Back" : "Create Your Account"}
-                </CardTitle>
-                <CardDescription>
-                  {isLogin 
-                    ? "Sign in to access your account" 
-                    : `Register as a ${role} to get started`
-                  }
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={(e) => { e.preventDefault(); handleNext(); }}>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="email"
-                          name="email"
-                          type="email"
-                          placeholder="you@example.com"
-                          value={formData.email}
-                          onChange={handleInputChange}
-                          className="pl-10"
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="password">Password</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="password"
-                          name="password"
-                          type="password"
-                          placeholder="••••••••"
-                          value={formData.password}
-                          onChange={handleInputChange}
-                          className="pl-10"
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <Button type="submit" className="w-full mt-6">
-                    {isLogin ? "Sign In" : "Continue"}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </form>
-                <div className="mt-4 text-center text-sm">
-                  <span className="text-muted-foreground">
-                    {isLogin ? "Don't have an account? " : "Already have an account? "}
-                  </span>
-                  <button
-                    onClick={() => setIsLogin(!isLogin)}
-                    className="text-primary hover:underline font-medium"
-                  >
-                    {isLogin ? "Sign up" : "Log in"}
-                  </button>
-                </div>
-                <div className="mt-4">
-                  <Button variant="ghost" onClick={() => setRole(null)} className="w-full">
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Change Role
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Step 2: Select Activity or Donation */}
-          {step === 2 && (
-            <Card>
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl">
-                  {role === "donor" ? "Choose Your Donation" : "Select an Activity"}
-                </CardTitle>
-                <CardDescription>
-                  {role === "donor" 
-                    ? "Your contribution helps protect our oceans"
-                    : "Pick an activity to volunteer for"
-                  }
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {role === "volunteer" ? (
-                  <div className="space-y-3">
-                    {activities.map((activity) => (
-                      <button
-                        key={activity.id}
-                        onClick={() => setSelectedActivity(activity.id.toString())}
-                        className={`w-full p-4 rounded-lg border-2 text-left transition-all ${
-                          selectedActivity === activity.id.toString()
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/50"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium text-foreground">{activity.name}</p>
-                            <p className="text-sm text-muted-foreground">{activity.date}</p>
-                          </div>
-                          {selectedActivity === activity.id.toString() && (
-                            <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                              <Check className="h-4 w-4 text-primary-foreground" />
-                            </div>
-                          )}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-3 gap-3">
-                      {["25", "50", "100"].map((amount) => (
-                        <button
-                          key={amount}
-                          onClick={() => setFormData({ ...formData, donationAmount: amount })}
-                          className={`p-4 rounded-lg border-2 text-center transition-all ${
-                            formData.donationAmount === amount
-                              ? "border-accent bg-accent/5"
-                              : "border-border hover:border-accent/50"
-                          }`}
-                        >
-                          <span className="text-lg font-semibold text-foreground">${amount}</span>
-                        </button>
-                      ))}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="customAmount">Or enter custom amount</Label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                        <Input
-                          id="customAmount"
-                          name="donationAmount"
-                          type="number"
-                          placeholder="Enter amount"
-                          value={formData.donationAmount}
-                          onChange={handleInputChange}
-                          className="pl-8"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <div className="flex gap-3 mt-6">
-                  <Button variant="outline" onClick={handleBack} className="flex-1">
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back
-                  </Button>
-                  <Button 
-                    onClick={handleNext} 
-                    className="flex-1"
-                    disabled={role === "volunteer" ? !selectedActivity : !formData.donationAmount}
-                  >
-                    Continue
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Step 3: Personal/Payment Info */}
-          {step === 3 && (
-            <Card>
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl">
-                  {role === "donor" ? "Payment Information" : "Personal Information"}
-                </CardTitle>
-                <CardDescription>
-                  {role === "donor" 
-                    ? "Secure payment processing"
-                    : "Complete your volunteer profile"
-                  }
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit}>
-                  <div className="space-y-4">
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="firstName">First Name</Label>
-                        <div className="relative">
-                          <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            id="firstName"
-                            name="firstName"
-                            placeholder="John"
-                            value={formData.firstName}
-                            onChange={handleInputChange}
-                            className="pl-10"
-                            required
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="lastName">Last Name</Label>
-                        <Input
-                          id="lastName"
-                          name="lastName"
-                          placeholder="Doe"
-                          value={formData.lastName}
-                          onChange={handleInputChange}
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="phone"
-                          name="phone"
-                          type="tel"
-                          placeholder="+62 812 3456 7890"
-                          value={formData.phone}
-                          onChange={handleInputChange}
-                          className="pl-10"
-                          required
-                        />
-                      </div>
-                    </div>
-                    {role === "donor" && (
-                      <>
-                        <div className="space-y-2">
-                          <Label htmlFor="organization">Organization (Optional)</Label>
-                          <div className="relative">
-                            <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                              id="organization"
-                              name="organization"
-                              placeholder="Your company name"
-                              value={formData.organization}
-                              onChange={handleInputChange}
-                              className="pl-10"
-                            />
-                          </div>
-                        </div>
-                        <div className="p-4 bg-secondary rounded-lg border border-border">
-                          <p className="text-sm text-muted-foreground mb-2">Donation Amount</p>
-                          <p className="text-2xl font-bold text-foreground">${formData.donationAmount}</p>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Lock className="h-4 w-4" />
-                          <span>Your payment is secured with SSL encryption</span>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  <div className="flex gap-3 mt-6">
-                    <Button variant="outline" onClick={handleBack} className="flex-1">
-                      <ArrowLeft className="mr-2 h-4 w-4" />
-                      Back
-                    </Button>
-                    <Button type="submit" className="flex-1">
-                      {role === "donor" ? "Complete Donation" : "Complete Registration"}
-                      <Check className="ml-2 h-4 w-4" />
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Help Link */}
-          <p className="text-center text-sm text-muted-foreground mt-8">
-            Need help? <Link href="#" className="text-primary hover:underline">Contact Support</Link>
-          </p>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-secondary px-4 py-12">
+      <div className="w-full max-w-lg">
+        <div className="flex justify-center mb-8">
+          <Link href="/" className="flex items-center gap-2">
+            <Waves className="h-10 w-10 text-primary" />
+            <span className="text-2xl font-bold text-foreground">SinergiLaut</span>
+          </Link>
         </div>
-      </main>
 
-      <Footer />
+        {/* Progress */}
+        <div className="flex items-center justify-center gap-2 mb-8">
+          {[1, 2, 3].map((s) => (
+            <div key={s} className="flex items-center">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
+                step >= s ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground border border-border"
+              }`}>
+                {step > s ? <Check className="h-4 w-4" /> : s}
+              </div>
+              {s < 3 && <div className={`w-16 h-1 mx-2 rounded-full ${step > s ? "bg-primary" : "bg-border"}`} />}
+            </div>
+          ))}
+        </div>
+
+        {/* Step 1: Choose Role */}
+        {step === 1 && (
+          <Card>
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl">Bergabung dengan SinergiLaut</CardTitle>
+              <CardDescription>Pilih bagaimana Anda ingin berkontribusi</CardDescription>
+            </CardHeader>
+            <CardContent className="grid sm:grid-cols-2 gap-4">
+              <button
+                onClick={() => { setRole("user"); setStep(2) }}
+                className="group p-6 rounded-xl border-2 border-border hover:border-primary bg-background transition-all text-left"
+              >
+                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                  <User className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-semibold text-foreground mb-2">Volunteer / Donatur</h3>
+                <p className="text-sm text-muted-foreground">Ikut kegiatan konservasi, donasi, dan pantau dampak Anda.</p>
+              </button>
+              <button
+                onClick={() => { setRole("community"); setStep(2) }}
+                className="group p-6 rounded-xl border-2 border-border hover:border-primary bg-background transition-all text-left"
+              >
+                <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-accent/20 transition-colors">
+                  <Building className="h-6 w-6 text-accent" />
+                </div>
+                <h3 className="font-semibold text-foreground mb-2">Komunitas / Organisasi</h3>
+                <p className="text-sm text-muted-foreground">Buat dan kelola kegiatan konservasi, rekrut relawan, terima donasi.</p>
+              </button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step 2: Account Info */}
+        {step === 2 && (
+          <Card>
+            <CardHeader className="text-center">
+              <CardTitle>Buat Akun</CardTitle>
+              <CardDescription>
+                {role === "community" ? "Akun pengelola komunitas" : "Akun volunteer / donatur"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={(e) => { e.preventDefault(); setStep(3) }} className="space-y-4">
+                {error && (
+                  <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-sm text-destructive">
+                    <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label>Nama Lengkap</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input name="fullName" placeholder="Nama lengkap" value={formData.fullName} onChange={handleChange} className="pl-10" required />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input name="email" type="email" placeholder="email@example.com" value={formData.email} onChange={handleChange} className="pl-10" required />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Nomor Telepon</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input name="phone" type="tel" placeholder="+62 812 3456 7890" value={formData.phone} onChange={handleChange} className="pl-10" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input name="password" type="password" placeholder="Minimal 8 karakter" value={formData.password} onChange={handleChange} className="pl-10" required minLength={8} />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Konfirmasi Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input name="confirmPassword" type="password" placeholder="Ulangi password" value={formData.confirmPassword} onChange={handleChange} className="pl-10" required />
+                  </div>
+                </div>
+                <div className="flex gap-3 mt-2">
+                  <Button type="button" variant="outline" onClick={() => { setStep(1); setRole(null) }} className="flex-1">
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
+                  </Button>
+                  <Button type="submit" className="flex-1">
+                    Lanjutkan <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step 3: Community Info (if community) or Confirmation */}
+        {step === 3 && (
+          <Card>
+            <CardHeader className="text-center">
+              <CardTitle>{role === "community" ? "Info Komunitas" : "Konfirmasi Pendaftaran"}</CardTitle>
+              <CardDescription>
+                {role === "community" ? "Data komunitas Anda" : "Periksa data sebelum mendaftar"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {error && (
+                  <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-sm text-destructive">
+                    <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                )}
+
+                {role === "community" ? (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Nama Komunitas / Organisasi</Label>
+                      <Input name="communityName" placeholder="Nama komunitas" value={formData.communityName} onChange={handleChange} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Deskripsi Singkat</Label>
+                      <Input name="communityDescription" placeholder="Deskripsi komunitas" value={formData.communityDescription} onChange={handleChange} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Lokasi</Label>
+                      <Input name="location" placeholder="Kota, Provinsi" value={formData.location} onChange={handleChange} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Website (opsional)</Label>
+                      <Input name="website" type="url" placeholder="https://..." value={formData.website} onChange={handleChange} />
+                    </div>
+                    <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
+                      ⚠️ Komunitas akan diverifikasi admin sebelum bisa mempublikasikan kegiatan (1-3 hari kerja).
+                    </div>
+                  </>
+                ) : (
+                  <div className="p-4 bg-secondary rounded-lg space-y-2 text-sm">
+                    <p><span className="text-muted-foreground">Nama:</span> <span className="font-medium">{formData.fullName}</span></p>
+                    <p><span className="text-muted-foreground">Email:</span> <span className="font-medium">{formData.email}</span></p>
+                    <p><span className="text-muted-foreground">Role:</span> <span className="font-medium capitalize">{role}</span></p>
+                  </div>
+                )}
+
+                <div className="flex gap-3 mt-2">
+                  <Button type="button" variant="outline" onClick={() => setStep(2)} className="flex-1">
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
+                  </Button>
+                  <Button type="submit" className="flex-1" disabled={isLoading}>
+                    {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Mendaftar...</> : <><Check className="mr-2 h-4 w-4" /> Daftar</>}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+
+        <p className="text-center text-sm text-muted-foreground mt-6">
+          Sudah punya akun?{" "}
+          <Link href="/login" className="text-primary hover:underline font-medium">Masuk di sini</Link>
+        </p>
+      </div>
     </div>
   )
 }
 
 export default function RegisterPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <Waves className="h-10 w-10 text-primary mx-auto mb-4 animate-pulse" />
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    }>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Waves className="h-10 w-10 text-primary animate-pulse" /></div>}>
       <RegisterContent />
     </Suspense>
   )
