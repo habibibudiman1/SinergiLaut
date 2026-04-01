@@ -135,8 +135,13 @@ export interface Donation {
   donor_email: string
   type: DonationType
   amount: number | null
-  payment_method: string | null
-  payment_reference: string | null
+  // Midtrans payment fields
+  midtrans_order_id: string | null
+  midtrans_snap_token: string | null
+  midtrans_transaction_id: string | null
+  midtrans_payment_type: string | null
+  midtrans_va_number: string | null
+  midtrans_expiry_time: string | null
   status: DonationStatus
   note: string | null
   is_anonymous: boolean
@@ -153,8 +158,10 @@ export interface DonationItem {
   donation_id: string
   item_name: string
   quantity: number
+  item_condition: string        // new | good | fair
   description: string | null
   tracking_number: string | null
+  courier: string | null        // JNE | J&T | SiCepat | dll.
   created_at: string
 }
 

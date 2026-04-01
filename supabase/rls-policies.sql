@@ -1,6 +1,7 @@
 -- ============================================
 -- SinergiLaut - Row Level Security Policies
 -- Run AFTER schema.sql
+-- Last updated: 2026-04-01
 -- ============================================
 
 -- Enable RLS on all tables
@@ -381,5 +382,64 @@ DROP POLICY IF EXISTS "Service role can insert audit logs" ON audit_logs;
 CREATE POLICY "Service role can insert audit logs"
   ON audit_logs FOR INSERT WITH CHECK (true);
 
+-- ============================================
+-- NEW TABLES: Enable RLS
+-- ============================================
+
+ALTER TABLE disbursements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE journey_milestones ENABLE ROW LEVEL SECURITY;
 
 -- ============================================
+-- DISBURSEMENTS policies
+-- Alur: Donor → Midtrans → SinergiLaut → Admin konfirmasi → Komunitas
+-- ============================================
+
+-- Admin dapat melihat semua disbursement
+DROP POLICY IF EXISTS "Admin can view all disbursements" ON disbursements;
+CREATE POLICY "Admin can view all disbursements"
+  ON disbursements FOR SELECT USING (is_admin());
+
+-- Komunitas dapat melihat disbursement untuk komunitas mereka
+DROP POLICY IF EXISTS "Community can view own disbursements" ON disbursements;
+CREATE POLICY "Community can view own disbursements"
+  ON disbursements FOR SELECT
+  USING (owns_community(community_id));
+
+-- Hanya admin yang dapat membuat disbursement
+DROP POLICY IF EXISTS "Admin can create disbursements" ON disbursements;
+CREATE POLICY "Admin can create disbursements"
+  ON disbursements FOR INSERT WITH CHECK (is_admin());
+
+-- Hanya admin yang dapat mengupdate status disbursement
+DROP POLICY IF EXISTS "Admin can update disbursements" ON disbursements;
+CREATE POLICY "Admin can update disbursements"
+  ON disbursements FOR UPDATE USING (is_admin());
+
+-- ============================================
+-- JOURNEY MILESTONES policies
+-- ============================================
+
+-- Semua orang (termasuk anonymous) dapat membaca milestone yang dipublish
+DROP POLICY IF EXISTS "Public can read published milestones" ON journey_milestones;
+CREATE POLICY "Public can read published milestones"
+  ON journey_milestones FOR SELECT USING (is_published = true);
+
+-- Admin dapat membaca semua milestone (termasuk yang belum dipublish)
+DROP POLICY IF EXISTS "Admin can read all milestones" ON journey_milestones;
+CREATE POLICY "Admin can read all milestones"
+  ON journey_milestones FOR SELECT USING (is_admin());
+
+-- Hanya admin yang dapat membuat milestone
+DROP POLICY IF EXISTS "Admin can create milestones" ON journey_milestones;
+CREATE POLICY "Admin can create milestones"
+  ON journey_milestones FOR INSERT WITH CHECK (is_admin());
+
+-- Hanya admin yang dapat mengupdate milestone
+DROP POLICY IF EXISTS "Admin can update milestones" ON journey_milestones;
+CREATE POLICY "Admin can update milestones"
+  ON journey_milestones FOR UPDATE USING (is_admin());
+
+-- Hanya admin yang dapat menghapus milestone
+DROP POLICY IF EXISTS "Admin can delete milestones" ON journey_milestones;
+CREATE POLICY "Admin can delete milestones"
+  ON journey_milestones FOR DELETE USING (is_admin());

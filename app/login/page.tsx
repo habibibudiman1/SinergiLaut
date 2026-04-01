@@ -138,27 +138,7 @@ function LoginContent() {
               </Link>
             </div>
 
-            {/* Demo accounts */}
-            <div className="mt-6 p-4 bg-secondary rounded-lg border border-border">
-              <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wide">Akun Demo</p>
-              <div className="space-y-2">
-                {[
-                  { role: "Admin", email: "admin@sinergilaut.id", password: "password123" },
-                  { role: "Komunitas", email: "komunitas@sinergilaut.id", password: "password123" },
-                  { role: "Pengguna", email: "user@sinergilaut.id", password: "password123" },
-                ].map((acc) => (
-                  <button
-                    key={acc.role}
-                    type="button"
-                    onClick={() => { setEmail(acc.email); setPassword(acc.password) }}
-                    className="w-full text-left p-2 rounded-md hover:bg-background transition-colors text-xs"
-                  >
-                    <span className="font-medium text-foreground">{acc.role}:</span>{" "}
-                    <span className="text-muted-foreground">{acc.email}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
+
           </CardContent>
         </Card>
 
