@@ -64,6 +64,11 @@ export default async function HomePage() {
           </div>
 
           <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div className="flex justify-center mb-8">
+              <div className="w-24 h-24 sm:w-32 sm:h-32 bg-white shadow-xl shadow-black/10 rounded-3xl flex items-center justify-center p-5 ring-4 ring-white/20 transform transition-transform hover:scale-105 duration-300">
+                <Image src="/images/SinergiLautLogo-transparent.png" alt="SinergiLaut Logo" width={120} height={120} className="w-full h-auto object-contain" priority />
+              </div>
+            </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight text-balance">
               Join the Movement to Protect Our Oceans
             </h1>

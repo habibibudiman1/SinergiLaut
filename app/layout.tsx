@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     description: 'Platform konservasi laut yang mempertemukan komunitas, relawan, donatur, dan admin.',
   },
   icons: {
-    icon: '/icon.svg',
+    icon: '/favicon.png',
   },
 }
 

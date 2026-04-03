@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { createClient } from "@/lib/supabase/client"
 import { Waves, Mail, CheckCircle2, Loader2 } from "lucide-react"
+import Image from "next/image"
 import { toast } from "sonner"
 
 export default function ForgotPasswordPage() {
@@ -37,7 +38,7 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-8">
           <Link href="/" className="flex items-center gap-2">
-            <Waves className="h-10 w-10 text-primary" />
+            <Image src="/images/SinergiLautLogo-transparent.png" alt="SinergiLaut Logo" width={40} height={40} className="h-10 w-auto" />
             <span className="text-2xl font-bold text-foreground">SinergiLaut</span>
           </Link>
         </div>

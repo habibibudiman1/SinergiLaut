@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { createClient } from "@/lib/supabase/client"
 import { Waves, Mail, Lock, AlertCircle, Loader2 } from "lucide-react"
+import Image from "next/image"
 import { toast } from "sonner"
 import { Suspense } from "react"
 
@@ -66,7 +67,7 @@ function LoginContent() {
         {/* Logo */}
         <div className="flex justify-center mb-8">
           <Link href="/" className="flex items-center gap-2">
-            <Waves className="h-10 w-10 text-primary" />
+            <Image src="/images/SinergiLautLogo-transparent.png" alt="SinergiLaut Logo" width={40} height={40} className="h-10 w-auto" />
             <span className="text-2xl font-bold text-foreground">SinergiLaut</span>
           </Link>
         </div>
@@ -154,7 +155,7 @@ export default function LoginPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center">
-        <Waves className="h-10 w-10 text-primary animate-pulse" />
+        <Image src="/images/SinergiLautLogo-transparent.png" alt="SinergiLaut Logo" width={40} height={40} className="h-10 w-auto animate-pulse" />
       </div>
     }>
       <LoginContent />

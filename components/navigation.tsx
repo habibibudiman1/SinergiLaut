@@ -4,7 +4,8 @@ import Link from "next/link"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/auth-context"
-import { Menu, X, Waves, Bell, ChevronDown, LogOut, User, LayoutDashboard, Settings, Shield, Building2 } from "lucide-react"
+import { Menu, X, Bell, ChevronDown, LogOut, User, LayoutDashboard, Settings, Shield, Building2 } from "lucide-react"
+import Image from "next/image"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -77,7 +78,7 @@ export function Navigation() {
           {/* Logo */}
           <div className="flex-1 flex justify-start">
             <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-              <Waves className="h-8 w-8 text-primary" />
+              <Image src="/images/SinergiLautLogo-transparent.png" alt="SinergiLaut Logo" width={32} height={32} className="h-8 w-auto" />
               <span className="text-xl font-bold text-foreground">SinergiLaut</span>
             </Link>
           </div>

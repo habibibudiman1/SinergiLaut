@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Waves } from "lucide-react"
+import Image from "next/image"
 
 const footerLinks = {
   resources: [
@@ -22,7 +22,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
           <div className="lg:col-span-1">
             <Link href="/" className="flex items-center gap-2 mb-4">
-              <Waves className="h-8 w-8" />
+              <Image src="/images/SinergiLautLogo-transparent.png" alt="SinergiLaut Logo" width={32} height={32} className="h-8 w-auto" />
               <span className="text-xl font-bold">SinergiLaut</span>
             </Link>
             <p className="text-sm text-background/70 leading-relaxed">
