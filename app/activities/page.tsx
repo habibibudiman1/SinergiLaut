@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -28,123 +28,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-
-const activities = [
-  {
-    id: 1,
-    title: "Coastal Beach Cleanup - Jakarta Bay",
-    description: "Join our weekly beach cleanup initiative to remove plastic waste and debris from Jakarta Bay's coastline.",
-    image: "/images/beach-cleanup.jpg",
-    date: "March 22, 2026",
-    location: "Jakarta Bay, Indonesia",
-    type: "cleanup",
-    volunteers: 45,
-    slots: 60,
-    icon: Leaf,
-    fundingGoal: 5000000,
-    fundingRaised: 3500000,
-    itemsNeeded: [
-      { name: "Trash Bags (pack of 100)", quantity: 20, donated: 15 },
-      { name: "Gloves (pairs)", quantity: 100, donated: 67 },
-      { name: "Trash Pickers", quantity: 30, donated: 22 },
-    ],
-  },
-  {
-    id: 2,
-    title: "Coral Reef Restoration - Raja Ampat",
-    description: "Participate in our coral planting program to restore damaged reef ecosystems in Raja Ampat.",
-    image: "/images/coral-restoration.jpg",
-    date: "April 15-20, 2026",
-    location: "Raja Ampat, Indonesia",
-    type: "restoration",
-    volunteers: 28,
-    slots: 30,
-    icon: Heart,
-    fundingGoal: 25000000,
-    fundingRaised: 18750000,
-    itemsNeeded: [
-      { name: "Coral Fragments", quantity: 500, donated: 380 },
-      { name: "Diving Equipment Sets", quantity: 15, donated: 10 },
-      { name: "Underwater Cement (kg)", quantity: 100, donated: 75 },
-    ],
-  },
-  {
-    id: 3,
-    title: "Marine Biology Workshop for Schools",
-    description: "Educational workshop teaching students about marine ecosystems and conservation practices.",
-    image: "/images/education-workshop.jpg",
-    date: "March 25, 2026",
-    location: "Online Event",
-    type: "education",
-    volunteers: 120,
-    slots: 200,
-    icon: GraduationCap,
-    fundingGoal: 3000000,
-    fundingRaised: 2100000,
-    itemsNeeded: [
-      { name: "Educational Kits", quantity: 50, donated: 35 },
-      { name: "Marine Specimen Samples", quantity: 20, donated: 12 },
-      { name: "Microscopes", quantity: 10, donated: 6 },
-    ],
-  },
-  {
-    id: 4,
-    title: "Mangrove Planting Day",
-    description: "Help plant mangrove seedlings to protect coastal areas and provide marine habitats.",
-    image: "/images/mangrove-planting.jpg",
-    date: "April 5, 2026",
-    location: "Surabaya, Indonesia",
-    type: "restoration",
-    volunteers: 67,
-    slots: 100,
-    icon: Leaf,
-    fundingGoal: 8000000,
-    fundingRaised: 4000000,
-    itemsNeeded: [
-      { name: "Mangrove Seedlings", quantity: 1000, donated: 450 },
-      { name: "Planting Tools", quantity: 50, donated: 30 },
-      { name: "Fertilizer (kg)", quantity: 200, donated: 80 },
-    ],
-  },
-  {
-    id: 5,
-    title: "Ocean Photography Exhibition",
-    description: "Community event showcasing underwater photography to raise awareness about marine conservation.",
-    image: "/images/ocean-photography.jpg",
-    date: "April 10-12, 2026",
-    location: "Bali, Indonesia",
-    type: "event",
-    volunteers: 25,
-    slots: 50,
-    icon: Anchor,
-    fundingGoal: 15000000,
-    fundingRaised: 12000000,
-    itemsNeeded: [
-      { name: "Photo Frames (large)", quantity: 30, donated: 25 },
-      { name: "Display Stands", quantity: 15, donated: 12 },
-      { name: "Brochures (packs)", quantity: 100, donated: 80 },
-    ],
-  },
-  {
-    id: 6,
-    title: "Sustainable Fishing Workshop",
-    description: "Training local fishermen on sustainable fishing practices to protect marine biodiversity.",
-    image: "/images/fishing-workshop.jpg",
-    date: "March 28, 2026",
-    location: "Makassar, Indonesia",
-    type: "education",
-    volunteers: 35,
-    slots: 40,
-    icon: GraduationCap,
-    fundingGoal: 10000000,
-    fundingRaised: 6500000,
-    itemsNeeded: [
-      { name: "Sustainable Fishing Nets", quantity: 20, donated: 12 },
-      { name: "Training Manuals", quantity: 100, donated: 65 },
-      { name: "GPS Devices", quantity: 10, donated: 4 },
-    ],
-  },
-]
+import { createClient } from "@/lib/supabase/client"
+import { DUMMY_ACTIVITIES as initialDummyActivities } from "@/lib/data/dummy-activities"
+import { formatDate } from "@/lib/utils/helpers"
 
 const locations = ["All Locations", "Jakarta", "Raja Ampat", "Bali", "Surabaya", "Makassar", "Online"]
 const activityTypes = ["All Types", "Cleanup", "Restoration", "Education", "Event"]
@@ -162,8 +48,43 @@ export default function ActivitiesPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedLocation, setSelectedLocation] = useState("All Locations")
   const [selectedType, setSelectedType] = useState("All Types")
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [supabaseActivities, setSupabaseActivities] = useState<any[]>([])
 
-  const filteredActivities = activities.filter((activity) => {
+  useEffect(() => {
+    async function fetchActivities() {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from("activities")
+        .select(`*, community:communities(name)`)
+        .eq("status", "published")
+        .order("created_at", { ascending: false })
+
+      if (data) {
+        const mapped = data.map((d: any) => ({
+          id: d.id,
+          title: d.title,
+          description: d.description,
+          image: d.cover_image_url || "/images/placeholder.jpg",
+          date: formatDate(d.start_date || new Date().toISOString()),
+          location: d.location || "Online",
+          type: d.category || "other",
+          volunteers: d.volunteer_count || 0,
+          slots: d.volunteer_quota || 0,
+          icon: Leaf,
+          fundingGoal: d.funding_goal || 0,
+          fundingRaised: d.funding_raised || 0,
+          itemsNeeded: [] // Fallback for real activities lacking detailed item arrays
+        }))
+        setSupabaseActivities(mapped)
+      }
+    }
+    fetchActivities()
+  }, [])
+
+  const allActivities = [...supabaseActivities, ...initialDummyActivities]
+
+  const filteredActivities = allActivities.filter((activity) => {
     const matchesSearch = activity.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          activity.description.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesLocation = selectedLocation === "All Locations" || 
@@ -328,7 +249,7 @@ export default function ActivitiesPage() {
                           <span className="text-xs font-medium text-foreground">Items Needed</span>
                         </div>
                         <ul className="space-y-1">
-                          {activity.itemsNeeded.slice(0, 2).map((item) => (
+                          {activity.itemsNeeded.slice(0, 2).map((item: any) => (
                             <li key={item.name} className="text-xs text-muted-foreground flex justify-between">
                               <span className="truncate">{item.name}</span>
                               <span className="font-medium">{item.donated}/{item.quantity}</span>
@@ -342,10 +263,10 @@ export default function ActivitiesPage() {
 
                       <div className="flex gap-2">
                         <Button className="flex-1" asChild>
-                          <Link href={`/register?activity=${activity.id}`}>Volunteer</Link>
+                          <Link href={`/activities/${activity.id}`}>Volunteer</Link>
                         </Button>
                         <Button variant="outline" className="flex-1" asChild>
-                          <Link href={`/donate/${activity.id}`}>Donate</Link>
+                          <Link href={`/activities/${activity.id}`}>Donate</Link>
                         </Button>
                       </div>
                     </CardContent>

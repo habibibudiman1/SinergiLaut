@@ -2,12 +2,6 @@ import Link from "next/link"
 import { Waves } from "lucide-react"
 
 const footerLinks = {
-  platform: [
-    { href: "/activities", label: "Activities" },
-    { href: "/donate", label: "Donate" },
-    { href: "/community", label: "Community" },
-    { href: "/dashboard", label: "Dashboard" },
-  ],
   resources: [
     { href: "#", label: "About Us" },
     { href: "#", label: "Impact Report" },
@@ -36,21 +30,7 @@ export function Footer() {
             </p>
           </div>
 
-          <div>
-            <h3 className="font-semibold mb-4">Platform</h3>
-            <ul className="space-y-3">
-              {footerLinks.platform.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-background/70 hover:text-background transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+
 
           <div>
             <h3 className="font-semibold mb-4">Resources</h3>

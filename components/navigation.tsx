@@ -13,23 +13,26 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { getInitials } from "@/lib/utils/helpers"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { toast } from "sonner"
 
 const publicNavLinks = [
   { href: "/activities", label: "Kegiatan" },
   { href: "/community", label: "Komunitas" },
+  { href: "/endowment", label: "Dana Abadi" },
   { href: "/about", label: "Tentang" },
 ]
 
 const userNavLinks = [
   { href: "/activities", label: "Kegiatan" },
   { href: "/community", label: "Komunitas" },
+  { href: "/endowment", label: "Dana Abadi" },
   { href: "/user/dashboard", label: "Dashboard" },
 ]
 
 const communityNavLinks = [
   { href: "/activities", label: "Kegiatan" },
+  { href: "/endowment", label: "Dana Abadi" },
   { href: "/community/dashboard", label: "Dashboard Komunitas" },
 ]
 
@@ -38,12 +41,14 @@ const adminNavLinks = [
   { href: "/admin/communities", label: "Komunitas" },
   { href: "/admin/activities", label: "Kegiatan" },
   { href: "/admin/reports", label: "Laporan" },
+  { href: "/endowment", label: "Dana Abadi" },
 ]
 
 export function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { user, profile, role, signOut, isLoading } = useAuth()
   const router = useRouter()
+  const pathname = usePathname()
 
   const navLinks = !user || !role
     ? publicNavLinks
@@ -68,28 +73,40 @@ export function Navigation() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-            <Waves className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold text-foreground">SinergiLaut</span>
-          </Link>
+          <div className="flex-1 flex justify-start">
+            <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+              <Waves className="h-8 w-8 text-primary" />
+              <span className="text-xl font-bold text-foreground">SinergiLaut</span>
+            </Link>
+          </div>
 
           {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-6">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {link.label}
-              </Link>
-            ))}
+          <nav className="hidden md:flex items-center justify-center gap-8 flex-none">
+            {navLinks.map((link) => {
+              const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href + "/"));
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`text-base font-semibold transition-all relative ${
+                    isActive
+                      ? "text-primary"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {link.label}
+                  {isActive && (
+                    <span className="absolute -bottom-[26px] left-0 right-0 h-1 bg-primary rounded-t-lg mx-auto w-full" />
+                  )}
+                </Link>
+              );
+            })}
           </nav>
 
           {/* Desktop Auth */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center justify-end gap-3 flex-1">
             {isLoading ? (
               <div className="w-8 h-8 rounded-full bg-secondary animate-pulse" />
             ) : user && profile ? (
@@ -170,16 +187,23 @@ export function Navigation() {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-border">
             <nav className="flex flex-col gap-3">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-1"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {navLinks.map((link) => {
+                const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href + "/"));
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`text-base font-semibold px-2 py-2 rounded-md transition-colors ${
+                      isActive 
+                        ? "bg-primary/10 text-primary" 
+                        : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+                    }`}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
 
               <div className="flex flex-col gap-2 pt-4 border-t border-border">
                 {user && profile ? (

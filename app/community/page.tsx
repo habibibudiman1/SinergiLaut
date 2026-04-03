@@ -364,21 +364,22 @@ export default function CommunityPage() {
             </div>
 
             {/* Search and Filter */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-8">
-              <div className="relative flex-1">
+            <div className="flex flex-col gap-6 mb-10 items-center">
+              <div className="relative w-full max-w-xl">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   placeholder="Search communities by name or location..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 h-12"
+                  className="pl-10 h-12 w-full rounded-full bg-background"
                 />
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap justify-center gap-2">
                 <Button
                   variant={selectedFocus === null ? "default" : "outline"}
                   size="sm"
                   onClick={() => setSelectedFocus(null)}
+                  className="rounded-full"
                 >
                   All
                 </Button>
@@ -388,6 +389,7 @@ export default function CommunityPage() {
                     variant={selectedFocus === focus ? "default" : "outline"}
                     size="sm"
                     onClick={() => setSelectedFocus(focus)}
+                    className="rounded-full"
                   >
                     {focus}
                   </Button>

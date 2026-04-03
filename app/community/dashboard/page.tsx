@@ -11,7 +11,7 @@ import { useAuth } from "@/contexts/auth-context"
 import {
   Plus, Search, Calendar, Users, Heart, Banknote, FileText,
   Eye, Edit, MoreHorizontal, CheckCircle2, AlertCircle,
-  Upload, TrendingUp, ArrowUpRight
+  Upload, TrendingUp
 } from "lucide-react"
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
@@ -42,11 +42,8 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   submitted: { label: "Disubmit", className: "bg-blue-100 text-blue-700" },
 }
 
-type Tab = "overview" | "activities" | "reports"
-
 export default function CommunityDashboardPage() {
   const { profile } = useAuth()
-  const [activeTab, setActiveTab] = useState<Tab>("overview")
   const [search, setSearch] = useState("")
 
   const filtered = activities.filter(a =>
@@ -95,135 +92,70 @@ export default function CommunityDashboardPage() {
             ))}
           </div>
 
-          <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
-            {[{ id: "overview", label: "Ringkasan" }, { id: "activities", label: "Kelola Kegiatan" }, { id: "reports", label: "Laporan" }].map((tab) => (
-              <Button key={tab.id} variant={activeTab === tab.id ? "default" : "outline"} size="sm" onClick={() => setActiveTab(tab.id as Tab)}>
-                {tab.label}
-              </Button>
-            ))}
-          </div>
+          {/* Kelola Kegiatan */}
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div><CardTitle>Kelola Kegiatan</CardTitle><CardDescription>Katalog kegiatan komunitas Anda</CardDescription></div>
+                <div className="flex gap-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input placeholder="Cari kegiatan..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 w-56" />
+                  </div>
+                  <Button asChild><Link href="/community/dashboard/activities/create"><Plus className="mr-2 h-4 w-4" /> Buat</Link></Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid sm:grid-cols-2 gap-4">
+                {filtered.map((a) => (
+                  <div key={a.id} className="p-5 border border-border rounded-xl hover:border-primary/30 hover:shadow-sm transition-all bg-background">
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <h3 className="font-semibold text-foreground text-sm line-clamp-2">{a.title}</h3>
+                      <Badge className={`shrink-0 ${statusConfig[a.status]?.className}`}>{statusConfig[a.status]?.label}</Badge>
+                    </div>
 
-          {activeTab === "overview" && (
-            <div className="grid lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div><CardTitle>Kegiatan Terbaru</CardTitle><CardDescription>Status kegiatan aktif</CardDescription></div>
-                  <Button variant="ghost" size="sm" onClick={() => setActiveTab("activities")}>Lihat Semua <ArrowUpRight className="ml-1 h-3 w-3" /></Button>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {activities.slice(0, 3).map((a) => (
-                      <div key={a.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
-                        <div>
-                          <p className="text-sm font-medium text-foreground line-clamp-1">{a.title}</p>
-                          <p className="text-xs text-muted-foreground">{a.volunteers}/{a.quota} relawan • {formatCurrency(a.donations)}</p>
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Calendar className="h-3.5 w-3.5" />
+                        <span>{a.date}</span>
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {a.volunteers}/{a.quota} relawan</span>
+                        <span className="flex items-center gap-1"><Banknote className="h-3.5 w-3.5" /> {formatCurrency(a.donations)}</span>
+                      </div>
+                      {a.hasReport && (
+                        <div className="flex items-center gap-2 text-xs">
+                          <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="text-muted-foreground">Laporan:</span>
+                          <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${statusConfig[a.reportStatus!]?.className}`}>{statusConfig[a.reportStatus!]?.label}</Badge>
                         </div>
-                        <Badge className={statusConfig[a.status]?.className}>{statusConfig[a.status]?.label}</Badge>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Status Laporan</CardTitle>
-                  <CardDescription>Laporan yang perlu diupload</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {activities.filter(a => a.status === "published").map((a) => (
-                      <div key={a.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
-                        <p className="text-sm font-medium text-foreground line-clamp-1">{a.title}</p>
-                        {a.hasReport
-                          ? <Badge className={statusConfig[a.reportStatus!]?.className}>{statusConfig[a.reportStatus!]?.label}</Badge>
-                          : <Button size="sm" variant="outline" asChild><Link href="#"><Upload className="h-3 w-3 mr-1" /> Upload</Link></Button>
-                        }
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {activeTab === "activities" && (
-            <Card>
-              <CardHeader>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div><CardTitle>Kelola Kegiatan</CardTitle><CardDescription>Buat, edit, dan pantau kegiatan</CardDescription></div>
-                  <div className="flex gap-3">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input placeholder="Cari..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 w-48" />
+                      )}
+                      {!a.hasReport && a.status === "published" && (
+                        <div className="flex items-center gap-2 text-xs">
+                          <AlertCircle className="h-3.5 w-3.5 text-orange-500" />
+                          <span className="text-orange-600">Laporan belum diupload</span>
+                        </div>
+                      )}
                     </div>
-                    <Button asChild><Link href="/community/dashboard/activities/create"><Plus className="mr-2 h-4 w-4" /> Buat</Link></Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-border">
-                        {["Kegiatan", "Tanggal", "Relawan", "Donasi", "Status", "Aksi"].map((h) => (
-                          <th key={h} className="text-left py-3 px-3 text-sm font-medium text-muted-foreground">{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filtered.map((a) => (
-                        <tr key={a.id} className="border-b border-border last:border-0">
-                          <td className="py-3 px-3 font-medium text-foreground text-sm max-w-[160px] truncate">{a.title}</td>
-                          <td className="py-3 px-3 text-sm text-muted-foreground whitespace-nowrap">{a.date}</td>
-                          <td className="py-3 px-3 text-sm text-muted-foreground">{a.volunteers}/{a.quota}</td>
-                          <td className="py-3 px-3 text-sm text-muted-foreground whitespace-nowrap">{formatCurrency(a.donations)}</td>
-                          <td className="py-3 px-3"><Badge className={statusConfig[a.status]?.className}>{statusConfig[a.status]?.label}</Badge></td>
-                          <td className="py-3 px-3">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm"><MoreHorizontal className="h-4 w-4" /></Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem asChild><Link href={`/activities/${a.id}`}><Eye className="h-4 w-4 mr-2" /> Lihat</Link></DropdownMenuItem>
-                                <DropdownMenuItem asChild><Link href={`/community/dashboard/activities/${a.id}/edit`}><Edit className="h-4 w-4 mr-2" /> Edit</Link></DropdownMenuItem>
-                                <DropdownMenuItem asChild><Link href={`/community/dashboard/activities/${a.id}/volunteers`}><Users className="h-4 w-4 mr-2" /> Relawan</Link></DropdownMenuItem>
-                                <DropdownMenuItem asChild><Link href={`/community/dashboard/activities/${a.id}/donors`}><Heart className="h-4 w-4 mr-2" /> Donatur</Link></DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          )}
 
-          {activeTab === "reports" && (
-            <Card>
-              <CardHeader><CardTitle>Laporan Kegiatan</CardTitle><CardDescription>Upload laporan pasca kegiatan untuk transparansi</CardDescription></CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {activities.filter(a => a.status === "published" || a.status === "completed").map((a) => (
-                    <div key={a.id} className="p-4 border border-border rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div>
-                        <p className="font-medium text-foreground">{a.title}</p>
-                        <p className="text-sm text-muted-foreground">{a.date}</p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        {a.hasReport
-                          ? <><Badge className={statusConfig[a.reportStatus!]?.className}>{statusConfig[a.reportStatus!]?.label}</Badge><Button size="sm" variant="outline" asChild><Link href="#">Lihat</Link></Button></>
-                          : <><Badge className="bg-orange-100 text-orange-700"><AlertCircle className="h-3 w-3 mr-1" /> Belum Ada</Badge><Button size="sm" asChild><Link href="#"><Upload className="h-3 w-3 mr-1" /> Upload</Link></Button></>
-                        }
-                      </div>
+                    <div className="pt-3 border-t border-border">
+                      <Button size="sm" className="w-full text-xs h-9" asChild>
+                        <Link href={`/activities/${a.id}`}><Eye className="h-3.5 w-3.5 mr-1.5" /> Kelola Kegiatan</Link>
+                      </Button>
                     </div>
-                  ))}
+                  </div>
+                ))}
+              </div>
+
+              {filtered.length === 0 && (
+                <div className="text-center py-12">
+                  <Calendar className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-40" />
+                  <p className="text-muted-foreground text-sm">Tidak ada kegiatan ditemukan.</p>
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              )}
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>

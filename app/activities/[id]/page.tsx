@@ -20,33 +20,154 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import {
   Calendar, MapPin, Users, Heart, Package, ArrowLeft,
   CheckCircle2, Banknote, Star, Shield, FileText, Loader2,
-  Plus, Trash2, AlertCircle, Phone
+  AlertCircle, Phone, QrCode, CreditCard, ChevronRight, Clock
 } from "lucide-react"
 import { formatCurrency, calcPercentage, formatDate } from "@/lib/utils/helpers"
 import { toast } from "sonner"
 import { useAuth } from "@/contexts/auth-context"
 import { createClient } from "@/lib/supabase/client"
 import { registerVolunteer } from "@/lib/actions/volunteer.actions"
-import { createMoneyDonation, createItemDonation } from "@/lib/actions/donation.actions"
+import { createMoneyDonation } from "@/lib/actions/donation.actions"
 import type { Activity, VolunteerRegistration, Donation } from "@/lib/types"
+import { DUMMY_ACTIVITIES, SUCCESSFUL_ACTIVITIES, mapDummyToSupabaseActivity } from "@/lib/data/dummy-activities"
 
-type TabType = "detail" | "volunteer" | "donate" | "reports" | "feedback"
+type TabType = "detail" | "volunteer" | "donate" | "items" | "reports" | "feedback"
 
-interface DonationItem {
-  itemName: string
-  quantity: string
-  itemCondition: "new" | "good" | "fair"
-  description: string
-  trackingNumber: string
-  courier: string
+const MARKUP_PERCENT = 10 // 10% markup on item prices
+/** Calculate marked-up price using integer math to avoid floating point errors */
+function calcMarkup(basePrice: number): number {
+  return Math.round(basePrice * (100 + MARKUP_PERCENT) / 100)
 }
-
-const COURIERS = ["JNE", "J&T Express", "SiCepat", "AnterAja", "Pos Indonesia", "Ninja Xpress", "GoSend", "Grab Express"]
 const SKILLS_OPTIONS = ["Fotografi / Videografi", "Medis / P3K", "Logistik", "Navigasi Laut", "Menyelam (PADI)", "Bahasa Asing", "Memasak", "Pendidikan / Mengajar"]
 const T_SHIRT_SIZES = ["S", "M", "L", "XL", "XXL"]
+
+/* ── Volunteer Management Component (Community View) ── */
+function VolunteerManagement({ activity, volunteerPercent, setActivity }: {
+  activity: any;
+  volunteerPercent: number;
+  setActivity: React.Dispatch<React.SetStateAction<any>>;
+}) {
+  const DUMMY_VOLUNTEERS = [
+    { id: "v1", name: "Ahmad Fauzi", email: "ahmad@email.com", phone: "081234567890", skills: ["Fotografi / Videografi", "Logistik"], tShirtSize: "L", reason: "Ingin berkontribusi untuk lingkungan laut", status: "pending" },
+    { id: "v2", name: "Siti Rahma", email: "siti@email.com", phone: "082345678901", skills: ["Medis / P3K", "Bahasa Asing"], tShirtSize: "M", reason: "Sebagai mahasiswa kelautan ingin terlibat langsung", status: "pending" },
+    { id: "v3", name: "Budi Santoso", email: "budi@email.com", phone: "083456789012", skills: ["Menyelam (PADI)", "Navigasi Laut"], tShirtSize: "XL", reason: "Sudah berpengalaman diving dan ingin bantu konservasi", status: "approved" },
+    { id: "v4", name: "Dewi Lestari", email: "dewi@email.com", phone: "084567890123", skills: ["Pendidikan / Mengajar"], tShirtSize: "S", reason: "Ingin mengajarkan anak-anak tentang laut", status: "approved" },
+    { id: "v5", name: "Rizky Pratama", email: "rizky@email.com", phone: "085678901234", skills: ["Logistik", "Memasak"], tShirtSize: "L", reason: "", status: "rejected" },
+  ];
+
+  const [volunteers, setVolunteers] = useState(DUMMY_VOLUNTEERS);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const approvedCount = volunteers.filter(v => v.status === "approved").length;
+  const pendingCount = volunteers.filter(v => v.status === "pending").length;
+
+  const handleAction = (id: string, action: "approved" | "rejected") => {
+    setVolunteers(prev => prev.map(v => v.id === id ? { ...v, status: action } : v));
+    if (action === "approved") {
+      toast.success("Relawan berhasil disetujui! ✅");
+      setActivity((prev: any) => prev ? { ...prev, volunteer_count: prev.volunteer_count + 1 } : prev);
+    } else {
+      toast.info("Pendaftaran relawan ditolak.");
+    }
+  };
+
+  const statusBadge = (status: string) => {
+    if (status === "approved") return <Badge className="bg-green-100 text-green-700">Disetujui</Badge>;
+    if (status === "rejected") return <Badge className="bg-red-100 text-red-700">Ditolak</Badge>;
+    return <Badge className="bg-yellow-100 text-yellow-700">Menunggu</Badge>;
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5" /> Kelola Relawan</CardTitle>
+        <div className="flex items-center gap-3 mt-2">
+          <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
+            <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${volunteerPercent}%` }} />
+          </div>
+          <span className="text-sm font-semibold text-foreground whitespace-nowrap">{activity.volunteer_count} dari {activity.volunteer_quota} orang</span>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {/* Summary */}
+          <div className="grid grid-cols-3 gap-3 mb-2">
+            <div className="text-center p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg">
+              <p className="text-2xl font-bold text-yellow-600">{pendingCount}</p>
+              <p className="text-xs text-muted-foreground">Menunggu</p>
+            </div>
+            <div className="text-center p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
+              <p className="text-2xl font-bold text-green-600">{approvedCount}</p>
+              <p className="text-xs text-muted-foreground">Disetujui</p>
+            </div>
+            <div className="text-center p-3 bg-secondary rounded-lg">
+              <p className="text-2xl font-bold text-foreground">{volunteers.length}</p>
+              <p className="text-xs text-muted-foreground">Total Pendaftar</p>
+            </div>
+          </div>
+
+          {/* Volunteer List */}
+          {volunteers.map((v) => (
+            <div key={v.id} className={`border rounded-xl overflow-hidden transition-all ${v.status === "pending" ? "border-yellow-300 bg-yellow-50/30 dark:bg-yellow-950/10" : "border-border"}`}>
+              <button
+                type="button"
+                onClick={() => setExpandedId(expandedId === v.id ? null : v.id)}
+                className="w-full flex items-center justify-between p-4 text-left hover:bg-secondary/50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-sm font-bold text-primary">
+                    {v.name[0]}
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm text-foreground">{v.name}</p>
+                    <p className="text-xs text-muted-foreground">{v.email}</p>
+                  </div>
+                </div>
+                {statusBadge(v.status)}
+              </button>
+
+              {expandedId === v.id && (
+                <div className="px-4 pb-4 border-t border-border pt-4 space-y-3">
+                  <div className="grid sm:grid-cols-2 gap-3 text-sm">
+                    <div><span className="text-muted-foreground">Telepon:</span> <span className="font-medium">{v.phone}</span></div>
+                    <div><span className="text-muted-foreground">Ukuran Kaos:</span> <span className="font-medium">{v.tShirtSize}</span></div>
+                  </div>
+                  <div>
+                    <span className="text-sm text-muted-foreground">Keahlian:</span>
+                    <div className="flex flex-wrap gap-1.5 mt-1">
+                      {v.skills.map(s => <Badge key={s} variant="secondary" className="text-xs">{s}</Badge>)}
+                    </div>
+                  </div>
+                  {v.reason && (
+                    <div>
+                      <span className="text-sm text-muted-foreground">Alasan:</span>
+                      <p className="text-sm text-foreground mt-0.5">{v.reason}</p>
+                    </div>
+                  )}
+
+                  {v.status === "pending" && (
+                    <div className="flex gap-2 pt-2">
+                      <Button size="sm" className="flex-1 bg-green-600 hover:bg-green-700" onClick={() => handleAction(v.id, "approved")}>
+                        <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" /> Setujui
+                      </Button>
+                      <Button size="sm" variant="outline" className="flex-1 text-red-600 border-red-200 hover:bg-red-50" onClick={() => handleAction(v.id, "rejected")}>
+                        Tolak
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function ActivityDetailPage() {
   const params = useParams()
@@ -58,7 +179,7 @@ export default function ActivityDetailPage() {
     community: { id: string; name: string; logo_url: string | null; is_verified: boolean }
     reports: { id: string; title: string; status: string; created_at: string }[]
     feedbacks: { id: string; rating: number; comment: string | null; created_at: string; user: { full_name: string | null } }[]
-    items_needed: { item_name: string; target: number; donated: number }[]
+    items_needed: { item_name: string; target: number; donated: number; unit_price?: number }[]
   } | null>(null)
   const [isLoadingActivity, setIsLoadingActivity] = useState(true)
   const [activeTab, setActiveTab] = useState<TabType>("detail")
@@ -75,13 +196,60 @@ export default function ActivityDetailPage() {
 
   // Donation form state
   const [donateForm, setDonateForm] = useState({
-    type: "money" as "money" | "item",
+    type: "money" as "money" | "fulfillment",
     amount: "", paymentMethod: "",
     donorName: "", donorEmail: "", note: "", isAnonymous: false,
   })
-  const [donationItems, setDonationItems] = useState<DonationItem[]>([{
-    itemName: "", quantity: "1", itemCondition: "new", description: "", trackingNumber: "", courier: "JNE",
-  }])
+  // Fulfillment cart: index corresponds to items_needed index, value is quantity selected
+  const [fulfillmentCart, setFulfillmentCart] = useState<number[]>([])
+
+  // ── Payment Simulation State & Timer ──────────────────────
+  const [paymentSim, setPaymentSim] = useState<{
+    isOpen: boolean;
+    step: "method" | "qr";
+    amount: number;
+    method: string;
+    timeLeft: number;
+  }>({ isOpen: false, step: "method", amount: 0, method: "", timeLeft: 30 })
+
+  useEffect(() => {
+    if (!paymentSim.isOpen || paymentSim.step !== "qr") return;
+    
+    if (paymentSim.timeLeft <= 0) {
+      toast.error("Waktu pembayaran habis. Silakan diulang.");
+      setPaymentSim(prev => ({ ...prev, isOpen: false }));
+      setActiveTab("detail");
+      router.refresh();
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setPaymentSim(prev => ({ ...prev, timeLeft: prev.timeLeft - 1 }));
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [paymentSim.isOpen, paymentSim.step, paymentSim.timeLeft, router]);
+
+  const handlePaymentSuccess = () => {
+    toast.success("Pembayaran berhasil! 🎉 Simulasi selesai.");
+    setPaymentSim(prev => ({ ...prev, isOpen: false }));
+    setActiveTab("detail");
+    if (activity) {
+      // Update funding + item donated counts if fulfillment
+      const updatedItems = activity.items_needed?.map((item, index) => ({
+        ...item,
+        donated: item.donated + (fulfillmentCart[index] || 0)
+      })) || [];
+
+      setActivity({
+        ...activity,
+        funding_raised: (activity.funding_raised || 0) + paymentSim.amount,
+        items_needed: updatedItems
+      });
+    }
+    // Reset fulfillment cart
+    setFulfillmentCart(prev => prev.map(() => 0));
+  };
 
   // ── Fetch Activity ────────────────────────────────────────
   useEffect(() => {
@@ -89,6 +257,23 @@ export default function ActivityDetailPage() {
 
     async function fetchActivity() {
       setIsLoadingActivity(true)
+
+      // Dummy data interception for testing
+      const allDummies = [...DUMMY_ACTIVITIES, ...SUCCESSFUL_ACTIVITIES]
+      const dummyActivity = allDummies.find(a => String(a.id) === String(params.id))
+      if (dummyActivity) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setActivity(mapDummyToSupabaseActivity(dummyActivity) as any)
+        
+        // If it's a completed activity, default the active tab to 'reports' to highlight its success
+        if ((dummyActivity as any).status === "completed") {
+          setActiveTab("reports")
+        }
+
+        setIsLoadingActivity(false)
+        return
+      }
+
       const { data, error } = await supabase
         .from("activities")
         .select(`
@@ -167,6 +352,20 @@ export default function ActivityDetailPage() {
 
   const fundingPercent = calcPercentage(activity.funding_raised, activity.funding_goal)
   const volunteerPercent = calcPercentage(activity.volunteer_count, activity.volunteer_quota)
+  
+  const totalItemNeeded = activity.items_needed?.reduce((acc: number, cur: any) => acc + cur.target, 0) || 0;
+  const totalItemDonated = activity.items_needed?.reduce((acc: number, cur: any) => acc + (cur.donated || 0), 0) || 0;
+  const itemPercent = totalItemNeeded > 0 ? calcPercentage(totalItemDonated, totalItemNeeded) : 0;
+
+  // Donation timeframe: 6 months from published/created date
+  const publishedDateStr = activity.published_at || activity.created_at || new Date().toISOString();
+  const publishedDate = new Date(publishedDateStr);
+  const deadlineDate = new Date(publishedDate);
+  deadlineDate.setMonth(deadlineDate.getMonth() + 6);
+  
+  const now = new Date();
+  const timeDiff = deadlineDate.getTime() - now.getTime();
+  const daysLeft = Math.max(0, Math.ceil(timeDiff / (1000 * 3600 * 24)));
 
   // ── Handle toggle skill ───────────────────────────────────
   function toggleSkill(skill: string) {
@@ -181,6 +380,7 @@ export default function ActivityDetailPage() {
   // ── Handle volunteer submit ───────────────────────────────
   async function handleVolunteerSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!activity) return
     if (!volunteerForm.agreed) { toast.error("Harap setujui syarat & ketentuan."); return }
     if (!user) { toast.error("Anda harus login terlebih dahulu."); router.push("/login"); return }
     if (alreadyRegistered) { toast.info(`Anda sudah terdaftar. Status: ${alreadyRegistered.status}`); return }
@@ -213,6 +413,7 @@ export default function ActivityDetailPage() {
   // ── Handle donate submit ──────────────────────────────────
   async function handleDonateSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!activity) return
     setIsSubmitting(true)
 
     if (donateForm.type === "money") {
@@ -223,113 +424,64 @@ export default function ActivityDetailPage() {
         return
       }
 
-      const result = await createMoneyDonation({
-        activityId: activity.id,
-        userId: user?.id ?? null,
-        donorName: donateForm.donorName,
-        donorEmail: donateForm.donorEmail,
-        amount,
-        note: donateForm.note,
-        isAnonymous: donateForm.isAnonymous,
-      })
-
-      if (result.success && result.snapToken) {
-        // Buka Midtrans Snap payment UI
-        const snapClientKey = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY
-        if (!snapClientKey) {
-          toast.error("Konfigurasi payment tidak tersedia.")
-          setIsSubmitting(false)
-          return
-        }
-
-        // Load Midtrans Snap.js dynamically
-        const script = document.createElement("script")
-        script.src = process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === "true"
-          ? "https://app.midtrans.com/snap/snap.js"
-          : "https://app.sandbox.midtrans.com/snap/snap.js"
-        script.setAttribute("data-client-key", snapClientKey)
-        script.onload = () => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ;(window as any).snap?.pay(result.snapToken, {
-            onSuccess: () => {
-              toast.success("Pembayaran berhasil! 🎉 Terima kasih atas donasi Anda.")
-              setActiveTab("detail")
-              router.refresh()
-            },
-            onPending: () => {
-              toast.info("Pembayaran sedang diproses. Silakan selesaikan pembayaran.")
-              setActiveTab("detail")
-            },
-            onError: () => {
-              toast.error("Pembayaran gagal. Silakan coba lagi.")
-            },
-            onClose: () => {
-              toast("Pembayaran dibatalkan.")
-            },
-          })
-        }
-        document.head.appendChild(script)
-      } else {
-        toast.error(result.error ?? "Gagal membuat transaksi. Silakan coba lagi.")
-      }
+      // Simulasi Payment Gateway Bypass DB
+      setTimeout(() => {
+        setPaymentSim({
+          isOpen: true,
+          step: "method",
+          amount: amount,
+          method: "",
+          timeLeft: 30
+        });
+        setIsSubmitting(false);
+      }, 500);
     } else {
-      // Donasi barang
-      const validItems = donationItems.filter(i => i.itemName.trim() && parseInt(i.quantity) > 0)
-      if (validItems.length === 0) {
-        toast.error("Masukkan minimal 1 barang donasi.")
+      // Fulfillment barang - calculate total from cart
+      if (!activity.items_needed || !fulfillmentCart.some(q => q > 0)) {
+        toast.error("Pilih minimal 1 barang untuk di-fulfill.")
         setIsSubmitting(false)
         return
       }
 
-      const result = await createItemDonation({
-        activityId: activity.id,
-        userId: user?.id ?? null,
-        donorName: donateForm.donorName,
-        donorEmail: donateForm.donorEmail,
-        note: donateForm.note,
-        isAnonymous: donateForm.isAnonymous,
-        items: validItems.map(i => ({
-          itemName: i.itemName,
-          quantity: parseInt(i.quantity),
-          itemCondition: i.itemCondition,
-          description: i.description,
-          trackingNumber: i.trackingNumber,
-          courier: i.courier,
-        })),
-      })
+      const totalAmount = activity.items_needed.reduce((sum, item, index) => {
+        const qty = fulfillmentCart[index] || 0
+        const markedUpPrice = calcMarkup(item.unit_price || 0)
+        return sum + (markedUpPrice * qty)
+      }, 0)
 
-      if (result.success) {
-        toast.success(`Donasi ${result.itemCount} barang berhasil dicatat! ✅ Komunitas akan segera menghubungi Anda.`)
-        setActiveTab("detail")
-        setDonationItems([{ itemName: "", quantity: "1", itemCondition: "new", description: "", trackingNumber: "", courier: "JNE" }])
-      } else {
-        toast.error(result.error ?? "Gagal menyimpan donasi barang.")
+      if (totalAmount <= 0) {
+        toast.error("Total pembayaran tidak valid.")
+        setIsSubmitting(false)
+        return
       }
+
+      // Open payment simulation with total fulfillment amount
+      setTimeout(() => {
+        setPaymentSim({
+          isOpen: true,
+          step: "method",
+          amount: totalAmount,
+          method: "",
+          timeLeft: 30
+        });
+        setIsSubmitting(false);
+      }, 500);
     }
 
     setIsSubmitting(false)
-  }
-
-  // ── Donation Item helpers ─────────────────────────────────
-  function addDonationItem() {
-    setDonationItems(prev => [...prev, { itemName: "", quantity: "1", itemCondition: "new", description: "", trackingNumber: "", courier: "JNE" }])
-  }
-  function removeDonationItem(index: number) {
-    setDonationItems(prev => prev.filter((_, i) => i !== index))
-  }
-  function updateDonationItem(index: number, field: keyof DonationItem, value: string) {
-    setDonationItems(prev => prev.map((item, i) => i === index ? { ...item, [field]: value } : item))
   }
 
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
       <main className="flex-1 pt-16">
-        {/* Breadcrumb */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <Link href="/activities" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-4 w-4" /> Kembali ke Daftar Kegiatan
-          </Link>
+        {/* Breadcrumb / Back Button */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-4">
+          <Button variant="outline" size="sm" className="gap-2 text-foreground hover:bg-secondary" asChild>
+            <Link href="/activities">
+              <ArrowLeft className="h-4 w-4" /> Kembali ke Daftar Kegiatan
+            </Link>
+          </Button>
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
@@ -377,11 +529,12 @@ export default function ActivityDetailPage() {
               {/* Tabs */}
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {[
-                  { id: "detail", label: "Detail" },
-                  { id: "volunteer", label: "Daftar Relawan" },
-                  { id: "donate", label: "Donasi" },
-                  { id: "reports", label: "Laporan" },
-                  { id: "feedback", label: "Ulasan" },
+                  { id: "detail", label: "Detail" } as const,
+                  { id: "volunteer", label: profile?.role === "community" ? "Kelola Relawan" : "Daftar Relawan" } as const,
+                  ...(profile?.role === "community" && activity.items_needed && activity.items_needed.length > 0 ? [{ id: "items", label: "Kelola Barang" } as const] : []),
+                  ...(profile?.role !== "community" ? [{ id: "donate", label: "Donasi" } as const] : []),
+                  { id: "reports", label: "Laporan" } as const,
+                  { id: "feedback", label: "Ulasan" } as const,
                 ].map((tab) => (
                   <Button key={tab.id} variant={activeTab === tab.id ? "default" : "outline"} size="sm"
                     onClick={() => setActiveTab(tab.id as TabType)}>
@@ -434,115 +587,162 @@ export default function ActivityDetailPage() {
                 </div>
               )}
 
-              {/* ── Tab: Volunteer Form ──────────────────────── */}
+              {/* ── Tab: Volunteer ──────────────────────────── */}
               {activeTab === "volunteer" && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5" /> Daftar Sebagai Relawan</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {!user && !authLoading ? (
-                      <div className="text-center py-8">
-                        <AlertCircle className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                        <p className="text-muted-foreground mb-4">Anda harus login untuk mendaftar sebagai relawan.</p>
-                        <Button asChild><Link href="/login">Login Sekarang</Link></Button>
-                      </div>
-                    ) : alreadyRegistered ? (
-                      <div className="text-center py-8">
-                        <CheckCircle2 className="h-10 w-10 text-green-500 mx-auto mb-3" />
-                        <p className="font-semibold text-foreground mb-1">Anda Sudah Terdaftar!</p>
-                        <p className="text-muted-foreground text-sm mb-3">
-                          Status pendaftaran Anda: <Badge className={
-                            alreadyRegistered.status === "approved" ? "bg-green-100 text-green-700" :
-                            alreadyRegistered.status === "rejected" ? "bg-red-100 text-red-700" :
-                            "bg-yellow-100 text-yellow-700"
-                          }>{alreadyRegistered.status}</Badge>
-                        </p>
-                        {alreadyRegistered.status === "pending" && (
-                          <p className="text-xs text-muted-foreground">Pengelola sedang mereview pendaftaran Anda.</p>
-                        )}
-                      </div>
-                    ) : (
-                      <form onSubmit={handleVolunteerSubmit} className="space-y-5">
-                        {/* Data Diri */}
-                        <div>
-                          <h4 className="font-medium text-foreground mb-3 text-sm uppercase tracking-wide">Data Diri</h4>
-                          <div className="grid sm:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label>Nama Lengkap *</Label>
-                              <Input value={volunteerForm.fullName} onChange={e => setVolunteerForm({ ...volunteerForm, fullName: e.target.value })} required placeholder="Nama lengkap sesuai KTP" />
-                            </div>
-                            <div className="space-y-2">
-                              <Label>Email *</Label>
-                              <Input type="email" value={volunteerForm.email} onChange={e => setVolunteerForm({ ...volunteerForm, email: e.target.value })} required placeholder="email@example.com" />
-                            </div>
-                            <div className="space-y-2">
-                              <Label>Nomor Telepon *</Label>
-                              <Input type="tel" value={volunteerForm.phone} onChange={e => setVolunteerForm({ ...volunteerForm, phone: e.target.value })} required placeholder="+62 8xx xxxx xxxx" />
-                            </div>
-                            <div className="space-y-2">
-                              <Label>Ukuran Kaos</Label>
-                              <div className="flex gap-2">
-                                {T_SHIRT_SIZES.map(size => (
-                                  <button key={size} type="button" onClick={() => setVolunteerForm({ ...volunteerForm, tShirtSize: size })}
-                                    className={`px-3 py-1.5 rounded-lg border-2 text-sm transition-all ${volunteerForm.tShirtSize === size ? "border-primary bg-primary/5 font-semibold" : "border-border hover:border-primary/40"}`}>
-                                    {size}
-                                  </button>
-                                ))}
+                profile?.role === "community" ? (
+                  /* ── Community View: Kelola Relawan ── */
+                  <VolunteerManagement activity={activity} volunteerPercent={volunteerPercent} setActivity={setActivity} />
+                ) : (
+                  /* ── User View: Daftar Relawan Form ── */
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5" /> Daftar Sebagai Relawan</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {!user && !authLoading ? (
+                        <div className="text-center py-8">
+                          <AlertCircle className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                          <p className="text-muted-foreground mb-4">Anda harus login untuk mendaftar sebagai relawan.</p>
+                          <Button asChild><Link href="/login">Login Sekarang</Link></Button>
+                        </div>
+                      ) : alreadyRegistered ? (
+                        <div className="text-center py-8">
+                          <CheckCircle2 className="h-10 w-10 text-green-500 mx-auto mb-3" />
+                          <p className="font-semibold text-foreground mb-1">Anda Sudah Terdaftar!</p>
+                          <p className="text-muted-foreground text-sm mb-3">
+                            Status pendaftaran Anda: <Badge className={
+                              alreadyRegistered.status === "approved" ? "bg-green-100 text-green-700" :
+                              alreadyRegistered.status === "rejected" ? "bg-red-100 text-red-700" :
+                              "bg-yellow-100 text-yellow-700"
+                            }>{alreadyRegistered.status}</Badge>
+                          </p>
+                          {alreadyRegistered.status === "pending" && (
+                            <p className="text-xs text-muted-foreground">Pengelola sedang mereview pendaftaran Anda.</p>
+                          )}
+                        </div>
+                      ) : (
+                        <form onSubmit={handleVolunteerSubmit} className="space-y-5">
+                          {/* Data Diri */}
+                          <div>
+                            <h4 className="font-medium text-foreground mb-3 text-sm uppercase tracking-wide">Data Diri</h4>
+                            <div className="grid sm:grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label>Nama Lengkap *</Label>
+                                <Input value={volunteerForm.fullName} onChange={e => setVolunteerForm({ ...volunteerForm, fullName: e.target.value })} required placeholder="Nama lengkap sesuai KTP" />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Email *</Label>
+                                <Input type="email" value={volunteerForm.email} onChange={e => setVolunteerForm({ ...volunteerForm, email: e.target.value })} required placeholder="email@example.com" />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Nomor Telepon *</Label>
+                                <Input type="tel" value={volunteerForm.phone} onChange={e => setVolunteerForm({ ...volunteerForm, phone: e.target.value })} required placeholder="+62 8xx xxxx xxxx" />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Ukuran Kaos</Label>
+                                <div className="flex gap-2">
+                                  {T_SHIRT_SIZES.map(size => (
+                                    <button key={size} type="button" onClick={() => setVolunteerForm({ ...volunteerForm, tShirtSize: size })}
+                                      className={`px-3 py-1.5 rounded-lg border-2 text-sm transition-all ${volunteerForm.tShirtSize === size ? "border-primary bg-primary/5 font-semibold" : "border-border hover:border-primary/40"}`}>
+                                      {size}
+                                    </button>
+                                  ))}
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
 
-                        {/* Kontak Darurat */}
-                        <div>
-                          <h4 className="font-medium text-foreground mb-3 text-sm uppercase tracking-wide flex items-center gap-1">
-                            <Phone className="h-4 w-4" /> Kontak Darurat
-                          </h4>
-                          <div className="grid sm:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label>Nama Kontak Darurat</Label>
-                              <Input value={volunteerForm.emergencyContactName} onChange={e => setVolunteerForm({ ...volunteerForm, emergencyContactName: e.target.value })} placeholder="Nama orang tua / pasangan" />
-                            </div>
-                            <div className="space-y-2">
-                              <Label>Telepon Kontak Darurat</Label>
-                              <Input type="tel" value={volunteerForm.emergencyContactPhone} onChange={e => setVolunteerForm({ ...volunteerForm, emergencyContactPhone: e.target.value })} placeholder="+62 8xx xxxx xxxx" />
+                          {/* Kontak Darurat */}
+                          <div>
+                            <h4 className="font-medium text-foreground mb-3 text-sm uppercase tracking-wide flex items-center gap-1">
+                              <Phone className="h-4 w-4" /> Kontak Darurat
+                            </h4>
+                            <div className="grid sm:grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label>Nama Kontak Darurat</Label>
+                                <Input value={volunteerForm.emergencyContactName} onChange={e => setVolunteerForm({ ...volunteerForm, emergencyContactName: e.target.value })} placeholder="Nama orang tua / pasangan" />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Telepon Kontak Darurat</Label>
+                                <Input type="tel" value={volunteerForm.emergencyContactPhone} onChange={e => setVolunteerForm({ ...volunteerForm, emergencyContactPhone: e.target.value })} placeholder="+62 8xx xxxx xxxx" />
+                              </div>
                             </div>
                           </div>
-                        </div>
 
-                        {/* Keahlian */}
-                        <div>
-                          <h4 className="font-medium text-foreground mb-3 text-sm uppercase tracking-wide">Keahlian yang Dimiliki</h4>
-                          <div className="flex flex-wrap gap-2">
-                            {SKILLS_OPTIONS.map(skill => (
-                              <button key={skill} type="button" onClick={() => toggleSkill(skill)}
-                                className={`px-3 py-1.5 rounded-full border text-xs transition-all ${volunteerForm.skills.includes(skill) ? "border-primary bg-primary text-primary-foreground" : "border-border hover:border-primary/40"}`}>
-                                {skill}
-                              </button>
-                            ))}
+                          {/* Keahlian */}
+                          <div>
+                            <h4 className="font-medium text-foreground mb-3 text-sm uppercase tracking-wide">Keahlian yang Dimiliki</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {SKILLS_OPTIONS.map(skill => (
+                                <button key={skill} type="button" onClick={() => toggleSkill(skill)}
+                                  className={`px-3 py-1.5 rounded-full border text-xs transition-all ${volunteerForm.skills.includes(skill) ? "border-primary bg-primary text-primary-foreground" : "border-border hover:border-primary/40"}`}>
+                                  {skill}
+                                </button>
+                              ))}
+                            </div>
                           </div>
-                        </div>
 
-                        {/* Alasan */}
-                        <div className="space-y-2">
-                          <Label>Alasan Ingin Bergabung (opsional)</Label>
-                          <Textarea value={volunteerForm.reason} onChange={e => setVolunteerForm({ ...volunteerForm, reason: e.target.value })} placeholder="Ceritakan motivasi Anda ikut serta dalam kegiatan ini..." rows={3} />
-                        </div>
+                          {/* Alasan */}
+                          <div className="space-y-2">
+                            <Label>Alasan Ingin Bergabung (opsional)</Label>
+                            <Textarea value={volunteerForm.reason} onChange={e => setVolunteerForm({ ...volunteerForm, reason: e.target.value })} placeholder="Ceritakan motivasi Anda ikut serta dalam kegiatan ini..." rows={3} />
+                          </div>
 
-                        {/* Persetujuan */}
-                        <div className="flex items-start gap-3 p-4 bg-secondary rounded-lg">
-                          <input id="agreed" type="checkbox" checked={volunteerForm.agreed} onChange={e => setVolunteerForm({ ...volunteerForm, agreed: e.target.checked })} className="mt-1 w-4 h-4 accent-primary" />
-                          <Label htmlFor="agreed" className="text-sm text-muted-foreground leading-relaxed cursor-pointer">
-                            Saya menyetujui <Link href="/faq" className="text-primary hover:underline">syarat & ketentuan</Link> SinergiLaut, bersedia mengikuti arahan panitia kegiatan, dan menjamin kebenaran data yang diisi.
-                          </Label>
-                        </div>
+                          {/* Persetujuan */}
+                          <div className="flex items-start gap-3 p-4 bg-secondary rounded-lg">
+                            <input id="agreed" type="checkbox" checked={volunteerForm.agreed} onChange={e => setVolunteerForm({ ...volunteerForm, agreed: e.target.checked })} className="mt-1 w-4 h-4 accent-primary" />
+                            <Label htmlFor="agreed" className="text-sm text-muted-foreground leading-relaxed cursor-pointer">
+                              Saya menyetujui <Link href="/faq" className="text-primary hover:underline">syarat & ketentuan</Link> SinergiLaut, bersedia mengikuti arahan panitia kegiatan, dan menjamin kebenaran data yang diisi.
+                            </Label>
+                          </div>
 
-                        <Button type="submit" className="w-full" size="lg" disabled={isSubmitting || !volunteerForm.agreed}>
-                          {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Mendaftar...</> : "Daftar Sebagai Relawan"}
-                        </Button>
-                      </form>
-                    )}
+                          <Button type="submit" className="w-full" size="lg" disabled={isSubmitting || !volunteerForm.agreed}>
+                            {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Mendaftar...</> : "Daftar Sebagai Relawan"}
+                          </Button>
+                        </form>
+                      )}
+                    </CardContent>
+                  </Card>
+                )
+              )}
+
+              {/* ── Tab: Kelola Barang (Community Only) ──────────────── */}
+              {activeTab === "items" && profile?.role === "community" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Package className="h-5 w-5" /> Kelola Barang (Fulfillment)</CardTitle>
+                    <div className="text-sm text-muted-foreground mt-1">Pantau progres pengumpulan barang yang diajukan.</div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {activity.items_needed?.map((item: any, idx: number) => {
+                        const prog = item.target > 0 ? calcPercentage(item.donated || 0, item.target) : 0;
+                        return (
+                          <div key={idx} className="p-4 border border-border rounded-xl bg-background/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div className="flex-1">
+                              <p className="font-semibold text-foreground text-sm mb-1">{item.item_name}</p>
+                              <div className="flex items-center gap-2 mb-2">
+                                <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden">
+                                  <div className="h-full bg-blue-500 rounded-full" style={{ width: `${prog}%` }} />
+                                </div>
+                                <span className="text-xs font-medium w-9 text-right text-muted-foreground">{prog}%</span>
+                              </div>
+                              <p className="text-xs text-muted-foreground">Terkumpul {item.donated || 0} dari {item.target} unit</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-xs text-muted-foreground mb-0.5">Harga per unit</p>
+                              <p className="text-sm font-medium">{formatCurrency(item.unit_price)}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {(!activity.items_needed || activity.items_needed.length === 0) && (
+                        <div className="text-center py-6">
+                          <Package className="h-8 w-8 text-muted-foreground mx-auto mb-2 opacity-50" />
+                          <p className="text-sm text-muted-foreground">Kegiatan ini tidak membutuhkan pengumpulan barang.</p>
+                        </div>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               )}
@@ -559,9 +759,14 @@ export default function ActivityDetailPage() {
                       <Button variant={donateForm.type === "money" ? "default" : "outline"} size="sm" onClick={() => setDonateForm({ ...donateForm, type: "money" })}>
                         <Banknote className="h-4 w-4 mr-2" /> Donasi Uang
                       </Button>
-                      {activity.allow_item_donation && (
-                        <Button variant={donateForm.type === "item" ? "default" : "outline"} size="sm" onClick={() => setDonateForm({ ...donateForm, type: "item" })}>
-                          <Package className="h-4 w-4 mr-2" /> Donasi Barang
+                      {activity.allow_item_donation && activity.items_needed && activity.items_needed.length > 0 && (
+                        <Button variant={donateForm.type === "fulfillment" ? "default" : "outline"} size="sm" onClick={() => {
+                          setDonateForm({ ...donateForm, type: "fulfillment" })
+                          if (fulfillmentCart.length === 0 && activity.items_needed) {
+                            setFulfillmentCart(new Array(activity.items_needed.length).fill(0))
+                          }
+                        }}>
+                          <Package className="h-4 w-4 mr-2" /> Fulfillment Barang
                         </Button>
                       )}
                     </div>
@@ -599,92 +804,112 @@ export default function ActivityDetailPage() {
                               placeholder="Atau masukkan nominal lain (min. Rp 1.000)" />
                           </div>
 
-                          {/* Info pembayaran via Midtrans */}
+                          {/* Info pembayaran Simulasi */}
                           <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                            <p className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-1">💳 Pembayaran via Midtrans</p>
+                            <p className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-1">💳 Simulasi Payment Gateway</p>
                             <p className="text-xs text-blue-600 dark:text-blue-400">
-                              Setelah klik "Bayar", Anda akan diarahkan ke halaman pembayaran Midtrans. Tersedia pilihan: Transfer Bank (BCA, Mandiri, BNI, BRI), QRIS, GoPay, OVO, ShopeePay, dan kartu kredit.
+                              Setelah submit, Anda akan dialihkan ke modul simulasi pembayaran (termasuk generasi QRIS dan hitung mundur 30 detik).
                             </p>
                           </div>
                         </>
                       )}
 
-                      {/* ─── Form Donasi Barang ─── */}
-                      {donateForm.type === "item" && (
+                      {/* ─── Form Fulfillment Barang ─── */}
+                      {donateForm.type === "fulfillment" && activity.items_needed && activity.items_needed.length > 0 && (
                         <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <Label className="text-sm font-medium">Daftar Barang Donasi *</Label>
-                            <Button type="button" size="sm" variant="outline" onClick={addDonationItem}>
-                              <Plus className="h-3 w-3 mr-1" /> Tambah Barang
-                            </Button>
-                          </div>
-
-                          {donationItems.map((item, index) => (
-                            <div key={index} className="p-4 border border-border rounded-xl space-y-3 bg-secondary/30">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Barang #{index + 1}</span>
-                                {donationItems.length > 1 && (
-                                  <button type="button" onClick={() => removeDonationItem(index)} className="text-red-500 hover:text-red-700">
-                                    <Trash2 className="h-4 w-4" />
-                                  </button>
-                                )}
-                              </div>
-
-                              <div className="grid sm:grid-cols-2 gap-3">
-                                <div className="space-y-1">
-                                  <Label className="text-xs">Nama Barang *</Label>
-                                  <Input value={item.itemName} onChange={e => updateDonationItem(index, "itemName", e.target.value)}
-                                    required placeholder="Contoh: Kantong Sampah" />
-                                </div>
-                                <div className="space-y-1">
-                                  <Label className="text-xs">Jumlah *</Label>
-                                  <Input type="number" min="1" value={item.quantity} onChange={e => updateDonationItem(index, "quantity", e.target.value)} required />
-                                </div>
-                              </div>
-
-                              <div className="space-y-1">
-                                <Label className="text-xs">Kondisi Barang</Label>
-                                <div className="flex gap-2">
-                                  {[
-                                    { value: "new", label: "Baru" },
-                                    { value: "good", label: "Masih Bagus" },
-                                    { value: "fair", label: "Cukup Baik" },
-                                  ].map(cond => (
-                                    <button key={cond.value} type="button"
-                                      onClick={() => updateDonationItem(index, "itemCondition", cond.value)}
-                                      className={`px-3 py-1.5 rounded-lg border text-xs transition-all ${item.itemCondition === cond.value ? "border-primary bg-primary/5 font-semibold" : "border-border hover:border-primary/40"}`}>
-                                      {cond.label}
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-
-                              <div className="space-y-1">
-                                <Label className="text-xs">Deskripsi (merek, spesifikasi, dsb.)</Label>
-                                <Input value={item.description} onChange={e => updateDonationItem(index, "description", e.target.value)} placeholder="Contoh: Merek Bintang, ukuran 60L" />
-                              </div>
-
-                              <div className="grid sm:grid-cols-2 gap-3">
-                                <div className="space-y-1">
-                                  <Label className="text-xs">Nomor Resi Pengiriman</Label>
-                                  <Input value={item.trackingNumber} onChange={e => updateDonationItem(index, "trackingNumber", e.target.value)} placeholder="Isi setelah barang dikirim" />
-                                </div>
-                                <div className="space-y-1">
-                                  <Label className="text-xs">Jasa Pengiriman</Label>
-                                  <select value={item.courier} onChange={e => updateDonationItem(index, "courier", e.target.value)}
-                                    className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
-                                    {COURIERS.map(c => <option key={c} value={c}>{c}</option>)}
-                                  </select>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-
-                          <div className="p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                            <p className="text-xs text-amber-700 dark:text-amber-400">
-                              📦 Setelah submit, komunitas akan memberikan alamat pengiriman melalui email yang Anda daftarkan. Silakan isi nomor resi pengiriman setelah barang dikirim.
+                          <div className="p-4 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-lg mb-2">
+                            <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300 mb-1">📦 Fulfillment Barang Kegiatan</p>
+                            <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                              Pilih barang yang ingin Anda belikan untuk kegiatan ini. Harga sudah termasuk biaya operasional ({MARKUP_PERCENT}%). Pembayaran menggunakan simulasi payment gateway.
                             </p>
                           </div>
+
+                          <div className="space-y-3">
+                            {activity.items_needed.map((item, index) => {
+                              const remaining = item.target - item.donated
+                              const markedUpPrice = calcMarkup(item.unit_price || 0)
+                              const qty = fulfillmentCart[index] || 0
+                              const isMaxed = remaining <= 0
+
+                              return (
+                                <div key={index} className={`p-4 border rounded-xl transition-all ${qty > 0 ? "border-primary bg-primary/5" : "border-border bg-secondary/30"} ${isMaxed ? "opacity-50" : ""}`}>
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="flex-1">
+                                      <h4 className="font-semibold text-sm text-foreground">{item.item_name}</h4>
+                                      <div className="flex items-center gap-3 mt-1">
+                                        <span className="text-xs text-muted-foreground">
+                                          Dibutuhkan: <strong>{item.target}</strong> — Terpenuhi: <strong>{item.donated}</strong> — Sisa: <strong className="text-primary">{remaining > 0 ? remaining : 0}</strong>
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-2 mt-2">
+                                        <span className="text-xs line-through text-muted-foreground">{formatCurrency(item.unit_price || 0)}</span>
+                                        <span className="text-sm font-bold text-primary">{formatCurrency(markedUpPrice)}</span>
+                                        <Badge variant="secondary" className="text-[10px] py-0">+{MARKUP_PERCENT}%</Badge>
+                                      </div>
+                                    </div>
+
+                                    {!isMaxed && (
+                                      <div className="flex items-center gap-2 shrink-0">
+                                        <button type="button" onClick={() => {
+                                          const newCart = [...fulfillmentCart]
+                                          newCart[index] = Math.max(0, (newCart[index] || 0) - 1)
+                                          setFulfillmentCart(newCart)
+                                        }} className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-lg font-bold hover:bg-secondary transition-colors disabled:opacity-30" disabled={qty <= 0}>
+                                          −
+                                        </button>
+                                        <span className="w-8 text-center text-sm font-bold">{qty}</span>
+                                        <button type="button" onClick={() => {
+                                          const newCart = [...fulfillmentCart]
+                                          newCart[index] = Math.min(remaining, (newCart[index] || 0) + 1)
+                                          setFulfillmentCart(newCart)
+                                        }} className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-lg font-bold hover:bg-secondary transition-colors disabled:opacity-30" disabled={qty >= remaining}>
+                                          +
+                                        </button>
+                                      </div>
+                                    )}
+                                    {isMaxed && (
+                                      <Badge className="bg-green-100 text-green-700 shrink-0">Terpenuhi ✓</Badge>
+                                    )}
+                                  </div>
+
+                                  {/* Progress bar */}
+                                  <div className="mt-3">
+                                    <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+                                      <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${Math.min(100, ((item.donated + qty) / item.target) * 100)}%` }} />
+                                    </div>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+
+                          {/* Cart Summary */}
+                          {fulfillmentCart.some(q => q > 0) && (
+                            <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl space-y-2">
+                              <h4 className="font-semibold text-sm text-foreground mb-2">Ringkasan Belanja</h4>
+                              {activity.items_needed.map((item, index) => {
+                                const qty = fulfillmentCart[index] || 0
+                                if (qty === 0) return null
+                                const markedUpPrice = calcMarkup(item.unit_price || 0)
+                                return (
+                                  <div key={index} className="flex justify-between text-sm">
+                                    <span className="text-muted-foreground">{item.item_name} × {qty}</span>
+                                    <span className="font-medium">{formatCurrency(markedUpPrice * qty)}</span>
+                                  </div>
+                                )
+                              })}
+                              <div className="border-t border-border pt-2 mt-2 flex justify-between font-bold">
+                                <span>Total</span>
+                                <span className="text-primary">{formatCurrency(
+                                  activity.items_needed.reduce((sum, item, index) => {
+                                    const qty = fulfillmentCart[index] || 0
+                                    const markedUpPrice = calcMarkup(item.unit_price || 0)
+                                    return sum + (markedUpPrice * qty)
+                                  }, 0)
+                                )}</span>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -700,12 +925,18 @@ export default function ActivityDetailPage() {
                         <Label htmlFor="anon" className="text-sm text-muted-foreground cursor-pointer">Sembunyikan nama saya (donasi anonim)</Label>
                       </div>
 
-                      <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
+                      <Button type="submit" size="lg" className="w-full" disabled={isSubmitting || (donateForm.type === "fulfillment" && !fulfillmentCart.some(q => q > 0))}>
                         {isSubmitting
                           ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Memproses...</>
                           : donateForm.type === "money"
                             ? <><Banknote className="mr-2 h-4 w-4" />Bayar {donateForm.amount ? formatCurrency(parseInt(donateForm.amount) || 0) : "Sekarang"}</>
-                            : <><Package className="mr-2 h-4 w-4" />Konfirmasi Donasi Barang</>
+                            : <><Package className="mr-2 h-4 w-4" />Bayar Fulfillment {formatCurrency(
+                                (activity?.items_needed || []).reduce((sum, item, index) => {
+                                  const qty = fulfillmentCart[index] || 0
+                                  const markedUpPrice = calcMarkup(item.unit_price || 0)
+                                  return sum + (markedUpPrice * qty)
+                                }, 0)
+                              )}</>
                         }
                       </Button>
                     </form>
@@ -767,7 +998,17 @@ export default function ActivityDetailPage() {
             {/* ── Sidebar ──────────────────────────────────── */}
             <div className="space-y-6">
               <Card className="sticky top-20">
-                <CardHeader><CardTitle className="text-lg">Progres Kegiatan</CardTitle></CardHeader>
+                <CardHeader>
+                  <CardTitle className="text-lg">Progres Kegiatan</CardTitle>
+                  <div className="flex items-center gap-1.5 mt-1 text-sm bg-orange-50 dark:bg-orange-950/30 p-2 rounded-md border border-orange-100 dark:border-orange-900/50">
+                    <Clock className={`h-4 w-4 ${daysLeft > 0 ? "text-orange-500" : "text-red-500"}`} />
+                    {daysLeft > 0 ? (
+                      <span className="text-orange-600 dark:text-orange-400 font-medium tracking-tight">Sisa waktu pengumpulan: {daysLeft} hari lagi</span>
+                    ) : (
+                      <span className="text-red-600 dark:text-red-400 font-medium tracking-tight">Batas waktu pengumpulan habis</span>
+                    )}
+                  </div>
+                </CardHeader>
                 <CardContent className="space-y-5">
                   <div>
                     <div className="flex justify-between text-sm mb-1">
@@ -795,6 +1036,22 @@ export default function ActivityDetailPage() {
                     </p>
                   </div>
 
+                  {totalItemNeeded > 0 && (
+                    <div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-muted-foreground flex items-center gap-1"><Package className="h-4 w-4" /> Barang</span>
+                        <span className="font-semibold text-foreground">{itemPercent}%</span>
+                      </div>
+                      <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                        <div className="h-full bg-blue-500 rounded-full" style={{ width: `${itemPercent}%` }} />
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {totalItemDonated} dari {totalItemNeeded} barang terkumpul
+                      </p>
+                    </div>
+                  )}
+
+                  {profile?.role !== "community" && (
                   <div className="space-y-3 pt-2">
                     <Button className="w-full" onClick={() => setActiveTab("volunteer")} disabled={alreadyRegistered != null}>
                       <Users className="mr-2 h-4 w-4" />
@@ -804,12 +1061,79 @@ export default function ActivityDetailPage() {
                       <Heart className="mr-2 h-4 w-4" /> Donasi Sekarang
                     </Button>
                   </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
           </div>
         </div>
       </main>
+
+      {/* Payment Gateway Simulation Dialog */}
+      <Dialog open={paymentSim.isOpen} onOpenChange={(open) => !open && setPaymentSim(prev => ({ ...prev, isOpen: false }))}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {paymentSim.step === "method" ? "Pilih Metode Pembayaran" : "Selesaikan Pembayaran"}
+            </DialogTitle>
+            <DialogDescription>
+              {paymentSim.step === "method" 
+                ? "Pilih metode yang ingin Anda gunakan untuk donasi." 
+                : "Silakan scan QR Code di bawah untuk menyelesaikan pembayaran."}
+            </DialogDescription>
+          </DialogHeader>
+
+          {paymentSim.step === "method" ? (
+            <div className="space-y-4 py-4">
+              <div className="flex justify-between items-center bg-secondary/50 p-4 rounded-lg">
+                <span className="text-sm font-medium">Total Tagihan</span>
+                <span className="font-bold text-primary">{formatCurrency(paymentSim.amount)}</span>
+              </div>
+              <div className="space-y-2">
+                {["QRIS", "Transfer BCA", "GoPay", "OVO"].map(method => (
+                  <button
+                    key={method}
+                    onClick={() => {
+                      setPaymentSim(prev => ({ ...prev, step: "qr", method, timeLeft: 30 }));
+                    }}
+                    className="w-full flex items-center justify-between p-4 border rounded-xl hover:border-primary hover:bg-primary/5 transition-all text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      {method === "QRIS" ? <QrCode className="h-6 w-6 text-muted-foreground" /> : <CreditCard className="h-6 w-6 text-muted-foreground" />}
+                      <span className="font-medium text-sm">{method}</span>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6 py-4 flex flex-col items-center text-center">
+              <div className="bg-white p-4 rounded-2xl border-2 border-dashed border-primary/50 flex items-center justify-center mx-auto" style={{ width: "220px", height: "220px" }}>
+                <QrCode className="h-40 w-40 text-zinc-900" />
+              </div>
+              
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Metode Pembayaran: <strong className="text-foreground">{paymentSim.method}</strong></p>
+                <p className="text-3xl font-bold text-primary mb-2">{formatCurrency(paymentSim.amount)}</p>
+                <div className="bg-destructive/10 text-destructive px-4 py-2 rounded-full text-sm font-bold mt-4 animate-pulse mx-auto inline-block">
+                  Selesaikan dalam {Math.floor(paymentSim.timeLeft / 60)}:{(paymentSim.timeLeft % 60).toString().padStart(2, '0')}
+                </div>
+              </div>
+
+              <div className="w-full grid grid-cols-2 gap-3 mt-4">
+                <Button variant="outline" className="w-full" onClick={() => setPaymentSim(prev => ({ ...prev, isOpen: false }))}>
+                  Batal
+                </Button>
+                <Button className="w-full" onClick={handlePaymentSuccess}>
+                  Submit (Simulasi Sukses)
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <Footer />
     </div>
   )
