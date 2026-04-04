@@ -50,25 +50,53 @@ function VolunteerManagement({ activity, volunteerPercent, setActivity }: {
   volunteerPercent: number;
   setActivity: React.Dispatch<React.SetStateAction<any>>;
 }) {
-  const DUMMY_VOLUNTEERS = [
-    { id: "v1", name: "Ahmad Fauzi", email: "ahmad@email.com", phone: "081234567890", skills: ["Fotografi / Videografi", "Logistik"], tShirtSize: "L", reason: "Ingin berkontribusi untuk lingkungan laut", status: "pending" },
-    { id: "v2", name: "Siti Rahma", email: "siti@email.com", phone: "082345678901", skills: ["Medis / P3K", "Bahasa Asing"], tShirtSize: "M", reason: "Sebagai mahasiswa kelautan ingin terlibat langsung", status: "pending" },
-    { id: "v3", name: "Budi Santoso", email: "budi@email.com", phone: "083456789012", skills: ["Menyelam (PADI)", "Navigasi Laut"], tShirtSize: "XL", reason: "Sudah berpengalaman diving dan ingin bantu konservasi", status: "approved" },
-    { id: "v4", name: "Dewi Lestari", email: "dewi@email.com", phone: "084567890123", skills: ["Pendidikan / Mengajar"], tShirtSize: "S", reason: "Ingin mengajarkan anak-anak tentang laut", status: "approved" },
-    { id: "v5", name: "Rizky Pratama", email: "rizky@email.com", phone: "085678901234", skills: ["Logistik", "Memasak"], tShirtSize: "L", reason: "", status: "rejected" },
-  ];
+  const [volunteers, setVolunteers] = useState<any[]>([]);
 
-  const [volunteers, setVolunteers] = useState(DUMMY_VOLUNTEERS);
+  useEffect(() => {
+    if (activity && activity.volunteer_registrations) {
+      setVolunteers(activity.volunteer_registrations.map((v: any) => ({
+        id: v.id,
+        name: v.full_name,
+        email: v.email,
+        phone: v.phone,
+        skills: v.skills || [],
+        tShirtSize: v.t_shirt_size || "-",
+        reason: v.reason || "",
+        status: v.status
+      })))
+    }
+  }, [activity?.volunteer_registrations]);
+
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const approvedCount = volunteers.filter(v => v.status === "approved").length;
   const pendingCount = volunteers.filter(v => v.status === "pending").length;
 
-  const handleAction = (id: string, action: "approved" | "rejected") => {
+  const handleAction = async (id: string, action: "approved" | "rejected") => {
+    // NOTE: This updates the local list for immediate visual feedback
     setVolunteers(prev => prev.map(v => v.id === id ? { ...v, status: action } : v));
+    
+    const supabase = createClient()
+    
+    // Update the registration status in DB
+    const { error: regError } = await supabase.from('volunteer_registrations').update({ status: action }).eq('id', id)
+    
+    if (regError) {
+      toast.error("Gagal mengupdate status relawan di database.")
+      return
+    }
+
     if (action === "approved") {
-      toast.success("Relawan berhasil disetujui! ✅");
-      setActivity((prev: any) => prev ? { ...prev, volunteer_count: prev.volunteer_count + 1 } : prev);
+      // Actually save the count increment to the database!
+      const newCount = activity.volunteer_count + 1
+      const { error } = await supabase.from('activities').update({ volunteer_count: newCount }).eq('id', activity.id)
+      
+      if (!error) {
+        toast.success("Relawan berhasil disetujui! ✅")
+        setActivity((prev: any) => prev ? { ...prev, volunteer_count: newCount } : prev)
+      } else {
+        toast.error("Gagal mengupdate total count database.")
+      }
     } else {
       toast.info("Pendaftaran relawan ditolak.");
     }
@@ -138,7 +166,7 @@ function VolunteerManagement({ activity, volunteerPercent, setActivity }: {
                   <div>
                     <span className="text-sm text-muted-foreground">Keahlian:</span>
                     <div className="flex flex-wrap gap-1.5 mt-1">
-                      {v.skills.map(s => <Badge key={s} variant="secondary" className="text-xs">{s}</Badge>)}
+                      {v.skills.map((s: string) => <Badge key={s} variant="secondary" className="text-xs">{s}</Badge>)}
                     </div>
                   </div>
                   {v.reason && (
@@ -227,22 +255,37 @@ export default function ActivityDetailPage() {
     return () => clearInterval(timer);
   }, [paymentSim.isOpen, paymentSim.step, paymentSim.timeLeft, router]);
 
-  const handlePaymentSuccess = () => {
+  const handlePaymentSuccess = async () => {
     toast.success("Pembayaran berhasil! 🎉 Simulasi selesai.");
     setPaymentSim(prev => ({ ...prev, isOpen: false }));
     setActiveTab("detail");
     if (activity) {
+      const newFundingRaised = (activity.funding_raised || 0) + paymentSim.amount;
       // Update funding + item donated counts if fulfillment
       const updatedItems = activity.items_needed?.map((item, index) => ({
         ...item,
         donated: item.donated + (fulfillmentCart[index] || 0)
       })) || [];
 
-      setActivity({
-        ...activity,
-        funding_raised: (activity.funding_raised || 0) + paymentSim.amount,
-        items_needed: updatedItems
-      });
+      // Save to database
+      const { error } = await supabase
+        .from('activities')
+        .update({
+          funding_raised: newFundingRaised,
+          items_needed: updatedItems
+        })
+        .eq('id', activity.id);
+
+      if (error) {
+        toast.error("Gagal menyimpan progres ke database");
+        console.error(error);
+      } else {
+        setActivity({
+          ...activity,
+          funding_raised: newFundingRaised,
+          items_needed: updatedItems
+        });
+      }
     }
     // Reset fulfillment cart
     setFulfillmentCart(prev => prev.map(() => 0));
@@ -261,7 +304,8 @@ export default function ActivityDetailPage() {
           *,
           community:communities(id, name, logo_url, is_verified),
           reports(id, title, status, created_at),
-          feedbacks(id, rating, comment, created_at, user:profiles(full_name))
+          feedbacks(id, rating, comment, created_at, user:profiles(full_name)),
+          volunteer_registrations(*)
         `)
         .eq("id", params.id as string)
         .single()

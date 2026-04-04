@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Navigation } from "@/components/navigation"
@@ -48,11 +48,22 @@ export default function CreateActivityPage() {
     category: "cleanup",
     startDate: "",
     endDate: "",
+    executionDate: "",
     location: "",
     volunteerQuota: "",
     fundingGoal: "",
     allowItemDonation: false,
   })
+
+  // ── Validasi Min Date ─────────────────────────────────────
+  const [minStartDateTime, setMinStartDateTime] = useState("")
+
+  useEffect(() => {
+    const d = new Date()
+    d.setMonth(d.getMonth() + 6)
+    const offset = d.getTimezoneOffset() * 60000
+    setMinStartDateTime((new Date(d.getTime() - offset)).toISOString().slice(0, 16))
+  }, [])
 
   // ── Cover Image Handlers ──────────────────────────────────
   const handleDragOver = (e: React.DragEvent) => {
@@ -137,6 +148,34 @@ export default function CreateActivityPage() {
     setIsLoading(true)
 
     try {
+      // ── Validasi Waktu Kegiatan ────────────────────────────────
+      const minExecution = new Date()
+      minExecution.setMonth(minExecution.getMonth() + 6)
+      minExecution.setSeconds(0, 0) // clear sec/mins for accurate comparison
+
+      const startD = new Date(form.startDate)
+      
+      if (form.endDate) {
+        const endD = new Date(form.endDate)
+        if (endD < startD) {
+          throw new Error("Waktu selesai pengumpulan dana tidak boleh sebelum waktu mulai.")
+        }
+      }
+
+      if (!form.executionDate) {
+        throw new Error("Tanggal Pelaksanaan Kegiatan harus diisi.")
+      }
+
+      const execD = new Date(form.executionDate)
+      if (execD < minExecution) {
+        throw new Error("Tanggal Pelaksanaan Kegiatan harus minimal 6 bulan dari sekarang.")
+      }
+      if (form.endDate && execD < new Date(form.endDate)) {
+        throw new Error("Tanggal Pelaksanaan tidak boleh sebelum masa pengumpulan dana berakhir.")
+      } else if (execD < startD) {
+        throw new Error("Tanggal Pelaksanaan tidak boleh sebelum masa pengumpulan dana dimulai.")
+      }
+
       const supabase = createClient()
       const { data: userData, error: authError } = await supabase.auth.getUser()
       if (authError || !userData.user) throw new Error("Gagal mengambil sesi pengguna. Pastikan Anda sudah login.")
@@ -213,6 +252,7 @@ export default function CreateActivityPage() {
           status: isDraft ? 'draft' : 'pending_review',
           start_date: new Date(form.startDate).toISOString(),
           end_date: form.endDate ? new Date(form.endDate).toISOString() : null,
+          execution_date: new Date(form.executionDate).toISOString(),
           location: form.location,
           volunteer_quota: parseInt(form.volunteerQuota) || 0,
           funding_goal: parseInt(form.fundingGoal) || 0,
@@ -283,13 +323,18 @@ export default function CreateActivityPage() {
               <CardContent className="space-y-4">
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="startDate">Tanggal & Waktu Mulai *</Label>
+                    <Label htmlFor="startDate">Mulai Pengumpulan Dana *</Label>
                     <Input id="startDate" name="startDate" type="datetime-local" value={form.startDate} onChange={handleChange} required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="endDate">Tanggal & Waktu Selesai</Label>
-                    <Input id="endDate" name="endDate" type="datetime-local" value={form.endDate} onChange={handleChange} />
+                    <Label htmlFor="endDate">Tutup Pengumpulan Dana</Label>
+                    <Input id="endDate" name="endDate" type="datetime-local" value={form.endDate} onChange={handleChange} min={form.startDate} />
                   </div>
+                </div>
+                <div className="space-y-2">
+                   <Label htmlFor="executionDate">Tanggal Pelaksanaan Kegiatan *</Label>
+                   <Input id="executionDate" name="executionDate" type="datetime-local" value={form.executionDate} onChange={handleChange} min={minStartDateTime} required />
+                   <p className="text-xs text-muted-foreground mt-1">Kegiatan fisik harus direncanakan minimal 6 bulan dari sekarang.</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="location">Lokasi Kegiatan *</Label>

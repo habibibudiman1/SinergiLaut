@@ -186,6 +186,7 @@ model activities {
   status             activity_status   @default(draft)
   start_date         DateTime          @db.Timestamptz()
   end_date           DateTime?         @db.Timestamptz()
+  execution_date     DateTime?         @db.Timestamptz()
   location           String
   latitude           Decimal?          @db.Decimal(9, 6)
   longitude          Decimal?          @db.Decimal(9, 6)
