@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { order_id, transaction_status, fraud_status, payment_type, transaction_id, va_numbers } = notification
-    const supabase = createClient()
+    const supabase = await createClient()
 
     // 2. Resolve status
     const newStatus = resolveDonationStatus(transaction_status, fraud_status)
@@ -113,8 +113,8 @@ export async function POST(req: NextRequest) {
         .eq("id", donation.activity_id)
         .single()
 
-      if (activity && (activity.communities as { owner_id: string } | null)?.owner_id) {
-        const communityOwner = (activity.communities as { owner_id: string }).owner_id
+      if (activity?.communities && Array.isArray(activity.communities) ? activity.communities[0]?.owner_id : (activity?.communities as any)?.owner_id) {
+        const communityOwner = Array.isArray(activity.communities) ? activity.communities[0].owner_id : (activity.communities as any).owner_id
         const formattedAmount = new Intl.NumberFormat("id-ID", {
           style: "currency", currency: "IDR", minimumFractionDigits: 0,
         }).format(donation.amount ?? 0)
@@ -122,7 +122,7 @@ export async function POST(req: NextRequest) {
         await supabase.from("notifications").insert({
           user_id: communityOwner,
           title: "Donasi Berhasil Diterima! 🎉",
-          message: `${donation.donor_name} berhasil mendonasikan ${formattedAmount} untuk kegiatan "${activity.title}".`,
+          message: `${donation.donor_name} berhasil mendonasikan ${formattedAmount} untuk kegiatan "${activity?.title}".`,
           type: "success",
           link: `/community/dashboard`,
         })

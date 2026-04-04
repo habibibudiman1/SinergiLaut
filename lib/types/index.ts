@@ -23,6 +23,16 @@ export interface Profile {
   bio: string | null
   role: UserRole
   is_active: boolean
+  // Volunteer verification
+  volunteer_status: VerificationStatus
+  date_of_birth: string | null
+  nik: string | null
+  gender: string | null
+  address: string | null
+  ktp_url: string | null
+  volunteer_verified_by: string | null
+  volunteer_verified_at: string | null
+  volunteer_reject_note: string | null
   created_at: string
   updated_at: string
 }

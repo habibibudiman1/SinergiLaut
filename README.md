@@ -55,6 +55,46 @@ pnpm run dev
 
 Buka [http://localhost:3000](http://localhost:3000)
 
+### 5. Seed Data Dummy (Opsional)
+
+Untuk mengisi database dengan data dummy yang lengkap:
+
+```bash
+npx tsx prisma/seed.ts
+```
+
+Script ini akan membuat **9 user, 3 komunitas, 6 kegiatan**, dan data terkait lainnya secara otomatis.
+
+> ⚠️ **Perhatian:** Menjalankan seed akan menghapus data dummy sebelumnya dan membuat ulang. Data non-dummy yang sudah ada tidak terpengaruh.
+
+## 🔑 Demo Login Credentials
+
+Semua akun demo menggunakan password: **`Password123!`**
+
+### Admin
+
+| Email | Password | Role |
+|-------|----------|------|
+| `admin@sinergilaut.id` | `Password123!` | Admin |
+
+### Community Manager
+
+| Email | Password | Komunitas |
+|-------|----------|-----------|
+| `lautbiru@gmail.com` | `Password123!` | Laut Biru Nusantara |
+| `karangjaga@gmail.com` | `Password123!` | Karang Jaga Indonesia |
+| `pesisir@gmail.com` | `Password123!` | Pesisir Bersih Movement |
+
+### User (Relawan / Donatur)
+
+| Email | Password | Nama |
+|-------|----------|------|
+| `dewi@gmail.com` | `Password123!` | Dewi Lestari |
+| `rian@gmail.com` | `Password123!` | Rian Permana |
+| `maya@gmail.com` | `Password123!` | Maya Putri |
+| `fajar@gmail.com` | `Password123!` | Fajar Nugroho |
+| `anisa@gmail.com` | `Password123!` | Anisa Rahma |
+
 ## Struktur Proyek
 
 ```

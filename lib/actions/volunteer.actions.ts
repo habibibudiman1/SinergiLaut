@@ -5,7 +5,7 @@
  * Semua operasi CRUD untuk volunteer_registrations ke Supabase
  */
 
-import { createClient } from "@/lib/supabase/client"
+import { createClient } from "@/lib/supabase/server"
 import type { VolunteerRegistration, VolunteerStatus } from "@/lib/types"
 
 export interface RegisterVolunteerPayload {
@@ -24,7 +24,7 @@ export interface RegisterVolunteerPayload {
 
 /** Mendaftarkan user sebagai relawan untuk suatu kegiatan */
 export async function registerVolunteer(payload: RegisterVolunteerPayload) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   // Cek apakah user sudah terdaftar sebelumnya
   const { data: existing } = await supabase
@@ -70,7 +70,7 @@ export async function registerVolunteer(payload: RegisterVolunteerPayload) {
 
 /** Ambil semua pendaftar relawan untuk activity tertentu (untuk pengelola komunitas) */
 export async function getActivityVolunteers(activityId: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data, error } = await supabase
     .from("volunteer_registrations")
@@ -94,7 +94,7 @@ export async function updateVolunteerStatus(
   registrationId: string,
   status: Extract<VolunteerStatus, "approved" | "rejected" | "attended">
 ) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data, error } = await supabase
     .from("volunteer_registrations")
@@ -113,7 +113,7 @@ export async function updateVolunteerStatus(
 
 /** Ambil riwayat pendaftaran relawan untuk user yang sedang login */
 export async function getMyVolunteerRegistrations(userId: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data, error } = await supabase
     .from("volunteer_registrations")

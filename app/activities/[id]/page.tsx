@@ -24,7 +24,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import {
   Calendar, MapPin, Users, Heart, Package, ArrowLeft,
   CheckCircle2, Banknote, Star, Shield, FileText, Loader2,
-  AlertCircle, Phone, QrCode, CreditCard, ChevronRight, Clock
+  AlertCircle, Phone, QrCode, CreditCard, ChevronRight, Clock,
+  ShieldAlert
 } from "lucide-react"
 import { formatCurrency, calcPercentage, formatDate } from "@/lib/utils/helpers"
 import { toast } from "sonner"
@@ -172,7 +173,7 @@ function VolunteerManagement({ activity, volunteerPercent, setActivity }: {
 export default function ActivityDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const { user, profile, isLoading: authLoading } = useAuth()
+  const { user, profile, isLoading: authLoading, isVolunteerVerified } = useAuth()
   const supabase = createClient()
 
   const [activity, setActivity] = useState<Activity & {
@@ -187,11 +188,9 @@ export default function ActivityDetailPage() {
   const [alreadyRegistered, setAlreadyRegistered] = useState<VolunteerRegistration | null>(null)
   const [myDonations, setMyDonations] = useState<Donation[]>([])
 
-  // Volunteer form state
+  // Volunteer form state (simplified: only name, age, phone)
   const [volunteerForm, setVolunteerForm] = useState({
-    fullName: "", email: "", phone: "", reason: "",
-    emergencyContactName: "", emergencyContactPhone: "",
-    skills: [] as string[], tShirtSize: "M", agreed: false,
+    fullName: "", age: "", phone: "", agreed: false,
   })
 
   // Donation form state
@@ -301,11 +300,19 @@ export default function ActivityDetailPage() {
   // ── Pre-fill form jika sudah login ───────────────────────
   useEffect(() => {
     if (profile) {
+      // Calculate age from date_of_birth
+      let age = ""
+      if (profile.date_of_birth) {
+        const dob = new Date(profile.date_of_birth)
+        const today = new Date()
+        const calcAge = today.getFullYear() - dob.getFullYear()
+        age = calcAge.toString()
+      }
       setVolunteerForm(prev => ({
         ...prev,
         fullName: profile.full_name ?? "",
-        email: profile.email,
         phone: profile.phone ?? "",
+        age,
       }))
       setDonateForm(prev => ({
         ...prev,
@@ -367,15 +374,7 @@ export default function ActivityDetailPage() {
   const timeDiff = deadlineDate.getTime() - now.getTime();
   const daysLeft = Math.max(0, Math.ceil(timeDiff / (1000 * 3600 * 24)));
 
-  // ── Handle toggle skill ───────────────────────────────────
-  function toggleSkill(skill: string) {
-    setVolunteerForm(prev => ({
-      ...prev,
-      skills: prev.skills.includes(skill)
-        ? prev.skills.filter(s => s !== skill)
-        : [...prev.skills, skill],
-    }))
-  }
+
 
   // ── Handle volunteer submit ───────────────────────────────
   async function handleVolunteerSubmit(e: React.FormEvent) {
@@ -383,20 +382,19 @@ export default function ActivityDetailPage() {
     if (!activity) return
     if (!volunteerForm.agreed) { toast.error("Harap setujui syarat & ketentuan."); return }
     if (!user) { toast.error("Anda harus login terlebih dahulu."); router.push("/login"); return }
+    if (!isVolunteerVerified) { toast.error("Data diri Anda belum diverifikasi. Silakan lengkapi di halaman profil."); return }
     if (alreadyRegistered) { toast.info(`Anda sudah terdaftar. Status: ${alreadyRegistered.status}`); return }
+
+    if (!volunteerForm.age || parseInt(volunteerForm.age) < 15) { toast.error("Usia minimal 15 tahun."); return }
 
     setIsSubmitting(true)
     const result = await registerVolunteer({
       activityId: activity.id,
       userId: user.id,
       fullName: volunteerForm.fullName,
-      email: volunteerForm.email,
+      email: profile?.email ?? "",
       phone: volunteerForm.phone,
-      reason: volunteerForm.reason,
-      emergencyContactName: volunteerForm.emergencyContactName,
-      emergencyContactPhone: volunteerForm.emergencyContactPhone,
-      skills: volunteerForm.skills,
-      tShirtSize: volunteerForm.tShirtSize,
+      reason: `Umur: ${volunteerForm.age} tahun`,
       agreedToTerms: volunteerForm.agreed,
     })
 
@@ -605,6 +603,28 @@ export default function ActivityDetailPage() {
                           <p className="text-muted-foreground mb-4">Anda harus login untuk mendaftar sebagai relawan.</p>
                           <Button asChild><Link href="/login">Login Sekarang</Link></Button>
                         </div>
+                      ) : !isVolunteerVerified && profile?.role === "user" ? (
+                        /* ── GATING: Belum Verified ── */
+                        <div className="text-center py-8">
+                          <ShieldAlert className="h-10 w-10 text-yellow-500 mx-auto mb-3" />
+                          <p className="font-semibold text-foreground mb-1">Data Diri Belum Diverifikasi</p>
+                          <p className="text-muted-foreground text-sm mb-4">
+                            {profile?.volunteer_status === "pending" && profile?.nik
+                              ? "Data diri Anda sedang direview oleh admin. Harap tunggu."
+                              : "Silahkan lengkapi data diri di profil untuk mendaftar sebagai relawan."}
+                          </p>
+                          {profile?.volunteer_status === "rejected" && profile?.volunteer_reject_note && (
+                            <div className="mb-4 p-3 bg-red-50 dark:bg-red-950/20 rounded-lg text-sm text-red-600">
+                              Alasan penolakan: {profile.volunteer_reject_note}
+                            </div>
+                          )}
+                          <Button asChild>
+                            <Link href="/user/profile">
+                              <ShieldAlert className="mr-2 h-4 w-4" />
+                              {profile?.volunteer_status === "rejected" ? "Perbaiki Data Diri" : "Lengkapi Data Diri"}
+                            </Link>
+                          </Button>
+                        </div>
                       ) : alreadyRegistered ? (
                         <div className="text-center py-8">
                           <CheckCircle2 className="h-10 w-10 text-green-500 mx-auto mb-3" />
@@ -622,70 +642,23 @@ export default function ActivityDetailPage() {
                         </div>
                       ) : (
                         <form onSubmit={handleVolunteerSubmit} className="space-y-5">
-                          {/* Data Diri */}
+                          {/* Simplified form: Nama, Umur, No. Telp */}
                           <div>
-                            <h4 className="font-medium text-foreground mb-3 text-sm uppercase tracking-wide">Data Diri</h4>
-                            <div className="grid sm:grid-cols-2 gap-4">
+                            <h4 className="font-medium text-foreground mb-3 text-sm uppercase tracking-wide">Data Kontak</h4>
+                            <div className="grid sm:grid-cols-3 gap-4">
                               <div className="space-y-2">
                                 <Label>Nama Lengkap *</Label>
-                                <Input value={volunteerForm.fullName} onChange={e => setVolunteerForm({ ...volunteerForm, fullName: e.target.value })} required placeholder="Nama lengkap sesuai KTP" />
+                                <Input value={volunteerForm.fullName} onChange={e => setVolunteerForm({ ...volunteerForm, fullName: e.target.value })} required placeholder="Nama lengkap" />
                               </div>
                               <div className="space-y-2">
-                                <Label>Email *</Label>
-                                <Input type="email" value={volunteerForm.email} onChange={e => setVolunteerForm({ ...volunteerForm, email: e.target.value })} required placeholder="email@example.com" />
+                                <Label>Umur *</Label>
+                                <Input type="number" min={15} max={100} value={volunteerForm.age} onChange={e => setVolunteerForm({ ...volunteerForm, age: e.target.value })} required placeholder="Umur (tahun)" />
                               </div>
                               <div className="space-y-2">
-                                <Label>Nomor Telepon *</Label>
+                                <Label>No. Telepon *</Label>
                                 <Input type="tel" value={volunteerForm.phone} onChange={e => setVolunteerForm({ ...volunteerForm, phone: e.target.value })} required placeholder="+62 8xx xxxx xxxx" />
                               </div>
-                              <div className="space-y-2">
-                                <Label>Ukuran Kaos</Label>
-                                <div className="flex gap-2">
-                                  {T_SHIRT_SIZES.map(size => (
-                                    <button key={size} type="button" onClick={() => setVolunteerForm({ ...volunteerForm, tShirtSize: size })}
-                                      className={`px-3 py-1.5 rounded-lg border-2 text-sm transition-all ${volunteerForm.tShirtSize === size ? "border-primary bg-primary/5 font-semibold" : "border-border hover:border-primary/40"}`}>
-                                      {size}
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
                             </div>
-                          </div>
-
-                          {/* Kontak Darurat */}
-                          <div>
-                            <h4 className="font-medium text-foreground mb-3 text-sm uppercase tracking-wide flex items-center gap-1">
-                              <Phone className="h-4 w-4" /> Kontak Darurat
-                            </h4>
-                            <div className="grid sm:grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label>Nama Kontak Darurat</Label>
-                                <Input value={volunteerForm.emergencyContactName} onChange={e => setVolunteerForm({ ...volunteerForm, emergencyContactName: e.target.value })} placeholder="Nama orang tua / pasangan" />
-                              </div>
-                              <div className="space-y-2">
-                                <Label>Telepon Kontak Darurat</Label>
-                                <Input type="tel" value={volunteerForm.emergencyContactPhone} onChange={e => setVolunteerForm({ ...volunteerForm, emergencyContactPhone: e.target.value })} placeholder="+62 8xx xxxx xxxx" />
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Keahlian */}
-                          <div>
-                            <h4 className="font-medium text-foreground mb-3 text-sm uppercase tracking-wide">Keahlian yang Dimiliki</h4>
-                            <div className="flex flex-wrap gap-2">
-                              {SKILLS_OPTIONS.map(skill => (
-                                <button key={skill} type="button" onClick={() => toggleSkill(skill)}
-                                  className={`px-3 py-1.5 rounded-full border text-xs transition-all ${volunteerForm.skills.includes(skill) ? "border-primary bg-primary text-primary-foreground" : "border-border hover:border-primary/40"}`}>
-                                  {skill}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Alasan */}
-                          <div className="space-y-2">
-                            <Label>Alasan Ingin Bergabung (opsional)</Label>
-                            <Textarea value={volunteerForm.reason} onChange={e => setVolunteerForm({ ...volunteerForm, reason: e.target.value })} placeholder="Ceritakan motivasi Anda ikut serta dalam kegiatan ini..." rows={3} />
                           </div>
 
                           {/* Persetujuan */}
@@ -1053,10 +1026,23 @@ export default function ActivityDetailPage() {
 
                   {profile?.role !== "community" && (
                   <div className="space-y-3 pt-2">
-                    <Button className="w-full" onClick={() => setActiveTab("volunteer")} disabled={alreadyRegistered != null}>
-                      <Users className="mr-2 h-4 w-4" />
-                      {alreadyRegistered ? `Terdaftar (${alreadyRegistered.status})` : "Daftar Relawan"}
-                    </Button>
+                    {/* Gated volunteer button */}
+                    {!isVolunteerVerified && profile?.role === "user" ? (
+                      <div>
+                        <Button className="w-full" variant="outline" disabled>
+                          <Users className="mr-2 h-4 w-4" /> Daftar Relawan
+                        </Button>
+                        <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1.5 flex items-center gap-1">
+                          <ShieldAlert className="h-3 w-3 flex-shrink-0" />
+                          <Link href="/user/profile" className="hover:underline">Silahkan lengkapi data diri di profil</Link>
+                        </p>
+                      </div>
+                    ) : (
+                      <Button className="w-full" onClick={() => setActiveTab("volunteer")} disabled={alreadyRegistered != null}>
+                        <Users className="mr-2 h-4 w-4" />
+                        {alreadyRegistered ? `Terdaftar (${alreadyRegistered.status})` : "Daftar Relawan"}
+                      </Button>
+                    )}
                     <Button variant="outline" className="w-full" onClick={() => setActiveTab("donate")}>
                       <Heart className="mr-2 h-4 w-4" /> Donasi Sekarang
                     </Button>
