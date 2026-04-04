@@ -20,9 +20,17 @@ export interface CreateDisbursementPayload {
   disbursedBy: string  // admin's user ID
 }
 
-/** [Admin] Buat record disbursement baru untuk suatu activity */
-export async function createDisbursement(payload: CreateDisbursementPayload) {
+export async function createDisbursement(payload: Omit<CreateDisbursementPayload, "disbursedBy">) {
   const supabase = await createClient()
+
+  // Verify caller is admin
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "Unauthorized" }
+  
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+  if (profile?.role !== "admin") return { success: false, error: "Forbidden: Admin access required" }
+
+  const adminId = user.id
 
   // Hitung total donasi completed untuk activity ini (validasi)
   const { data: donationSum } = await supabase
@@ -68,7 +76,7 @@ export async function createDisbursement(payload: CreateDisbursementPayload) {
       account_number: payload.accountNumber,
       account_name: payload.accountName,
       notes: payload.notes ?? null,
-      disbursed_by: payload.disbursedBy,
+      disbursed_by: adminId,
     })
     .select()
     .single()
@@ -88,6 +96,13 @@ export async function updateDisbursementStatus(
   referenceNumber?: string
 ) {
   const supabase = await createClient()
+
+  // Verify caller is admin
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "Unauthorized" }
+  
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+  if (profile?.role !== "admin") return { success: false, error: "Forbidden: Admin access required" }
 
   const updateData: Record<string, unknown> = { status }
   if (referenceNumber) updateData.reference_number = referenceNumber
