@@ -29,7 +29,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { createClient } from "@/lib/supabase/client"
-import { DUMMY_ACTIVITIES as initialDummyActivities } from "@/lib/data/dummy-activities"
 import { formatDate } from "@/lib/utils/helpers"
 
 const locations = ["All Locations", "Jakarta", "Raja Ampat", "Bali", "Surabaya", "Makassar", "Online"]
@@ -82,7 +81,7 @@ export default function ActivitiesPage() {
     fetchActivities()
   }, [])
 
-  const allActivities = [...supabaseActivities, ...initialDummyActivities]
+  const allActivities = supabaseActivities
 
   const filteredActivities = allActivities.filter((activity) => {
     const matchesSearch = activity.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
