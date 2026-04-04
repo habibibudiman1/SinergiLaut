@@ -77,24 +77,7 @@ function RegisterContent() {
       return
     }
 
-    if (data.user && role === "community" && formData.communityName) {
-      // Create community record
-      const slug = formData.communityName
-        .toLowerCase()
-        .replace(/[^\w\s-]/g, "")
-        .replace(/[\s_-]+/g, "-")
-        .replace(/^-+|-+$/g, "")
-
-      await supabase.from("communities").insert({
-        owner_id: data.user.id,
-        name: formData.communityName,
-        slug,
-        description: formData.communityDescription,
-        location: formData.location,
-        website: formData.website,
-        verification_status: "pending",
-      })
-    }
+    // Halaman ini sekarang khusus volunteer, insert profil / komunitas lanjutan ditangani trigger / backend.
 
     toast.success("Pendaftaran berhasil! Silakan cek email untuk verifikasi.")
     router.push("/login")
@@ -144,7 +127,7 @@ function RegisterContent() {
                 <p className="text-sm text-muted-foreground">Ikut kegiatan konservasi, donasi, dan pantau dampak Anda.</p>
               </button>
               <button
-                onClick={() => { setRole("community"); setStep(2) }}
+                onClick={() => router.push("/community/register")}
                 className="group p-6 rounded-xl border-2 border-border hover:border-primary bg-background transition-all text-left"
               >
                 <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-accent/20 transition-colors">
@@ -161,9 +144,9 @@ function RegisterContent() {
         {step === 2 && (
           <Card>
             <CardHeader className="text-center">
-              <CardTitle>Buat Akun</CardTitle>
+              <CardTitle>Buat Akun Volunteer</CardTitle>
               <CardDescription>
-                {role === "community" ? "Akun pengelola komunitas" : "Akun volunteer / donatur"}
+                Daftar sebagai volunteer / donatur untuk mulai berkontribusi
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -226,10 +209,8 @@ function RegisterContent() {
         {step === 3 && (
           <Card>
             <CardHeader className="text-center">
-              <CardTitle>{role === "community" ? "Info Komunitas" : "Konfirmasi Pendaftaran"}</CardTitle>
-              <CardDescription>
-                {role === "community" ? "Data komunitas Anda" : "Periksa data sebelum mendaftar"}
-              </CardDescription>
+              <CardTitle>Konfirmasi Pendaftaran</CardTitle>
+              <CardDescription>Periksa kembali data Anda sebelum mendaftar</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -240,35 +221,11 @@ function RegisterContent() {
                   </div>
                 )}
 
-                {role === "community" ? (
-                  <>
-                    <div className="space-y-2">
-                      <Label>Nama Komunitas / Organisasi</Label>
-                      <Input name="communityName" placeholder="Nama komunitas" value={formData.communityName} onChange={handleChange} required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Deskripsi Singkat</Label>
-                      <Input name="communityDescription" placeholder="Deskripsi komunitas" value={formData.communityDescription} onChange={handleChange} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Lokasi</Label>
-                      <Input name="location" placeholder="Kota, Provinsi" value={formData.location} onChange={handleChange} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Website (opsional)</Label>
-                      <Input name="website" type="url" placeholder="https://..." value={formData.website} onChange={handleChange} />
-                    </div>
-                    <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
-                      ⚠️ Komunitas akan diverifikasi admin sebelum bisa mempublikasikan kegiatan (1-3 hari kerja).
-                    </div>
-                  </>
-                ) : (
-                  <div className="p-4 bg-secondary rounded-lg space-y-2 text-sm">
-                    <p><span className="text-muted-foreground">Nama:</span> <span className="font-medium">{formData.fullName}</span></p>
-                    <p><span className="text-muted-foreground">Email:</span> <span className="font-medium">{formData.email}</span></p>
-                    <p><span className="text-muted-foreground">Role:</span> <span className="font-medium capitalize">{role}</span></p>
-                  </div>
-                )}
+                <div className="p-4 bg-secondary rounded-lg space-y-2 text-sm">
+                  <p><span className="text-muted-foreground">Nama:</span> <span className="font-medium">{formData.fullName}</span></p>
+                  <p><span className="text-muted-foreground">Email:</span> <span className="font-medium">{formData.email}</span></p>
+                  <p><span className="text-muted-foreground">Telepon:</span> <span className="font-medium">{formData.phone || "-"}</span></p>
+                </div>
 
                 <div className="flex gap-3 mt-2">
                   <Button type="button" variant="outline" onClick={() => setStep(2)} className="flex-1">

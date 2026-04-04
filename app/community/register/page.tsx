@@ -37,7 +37,12 @@ import {
   Instagram,
   Facebook,
   Twitter,
+  Lock,
+  Loader2,
 } from "lucide-react"
+import { toast } from "sonner"
+import { createClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
 
 const steps = [
   { id: 1, title: "Basic Info", icon: Building2 },
@@ -78,6 +83,8 @@ export default function CommunityRegisterPage() {
     adminName: "",
     email: "",
     phone: "",
+    password: "",
+    confirmPassword: "",
     website: "",
     instagram: "",
     facebook: "",
@@ -131,8 +138,105 @@ export default function CommunityRegisterPage() {
     if (currentStep > 1) setCurrentStep(currentStep - 1)
   }
 
-  const handleSubmit = () => {
+  const router = useRouter()
+  const supabase = createClient()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const handleSubmit = async () => {
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Password tidak cocok.")
+      return
+    }
+    if (formData.password.length < 8) {
+      toast.error("Password minimal 8 karakter.")
+      return
+    }
+
+    setIsSubmitting(true)
+    
+    // Upload Logo if exists
+    let logoUrl = null
+    if (formData.logo) {
+      const fileExt = formData.logo.name.split(".").pop()
+      const filePath = `communities/logo-${Date.now()}.${fileExt}`
+      const { error: uploadError } = await supabase.storage
+        .from("sinergilaut-assets")
+        .upload(filePath, formData.logo, { upsert: true })
+
+      if (!uploadError) {
+        const { data } = supabase.storage.from("sinergilaut-assets").getPublicUrl(filePath)
+        logoUrl = data.publicUrl
+      }
+    }
+
+    // Sign up the admin
+    const { data: authData, error: signUpError } = await supabase.auth.signUp({
+      email: formData.email,
+      password: formData.password,
+      options: {
+        data: {
+          full_name: formData.adminName,
+          role: "community",
+          phone: formData.phone,
+        },
+      },
+    })
+
+    if (signUpError) {
+      toast.error(signUpError.message)
+      setIsSubmitting(false)
+      return
+    }
+
+    if (authData.user) {
+      // Create community record
+      const slug = formData.communityName
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, "")
+        .replace(/[\s_-]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+
+      const { data: communityData, error: commError } = await supabase.from("communities").insert({
+        owner_id: authData.user.id,
+        name: formData.communityName,
+        slug,
+        description: formData.shortDescription,
+        logo_url: logoUrl,
+        website: formData.website,
+        location: formData.region + (formData.operationalArea ? ` - ${formData.operationalArea}` : ""),
+        focus_areas: formData.selectedActivities,
+        verification_status: "pending",
+      }).select("id").single()
+
+      if (!commError && communityData && formData.legalDocuments.length > 0) {
+        // Upload legal documents and create verifications
+        const docUrls: string[] = []
+        for (const doc of formData.legalDocuments) {
+          const docExt = doc.name.split(".").pop()
+          const docPath = `verifications/${communityData.id}/doc-${Date.now()}.${docExt}`
+          const { error: docUploadError } = await supabase.storage
+            .from("sinergilaut-assets")
+            .upload(docPath, doc, { upsert: true })
+            
+          if (!docUploadError) {
+            const { data: docObj } = supabase.storage.from("sinergilaut-assets").getPublicUrl(docPath)
+            docUrls.push(docObj.publicUrl)
+          }
+        }
+
+        await supabase.from("community_verifications").insert({
+          community_id: communityData.id,
+          documents: docUrls,
+          representative_name: formData.adminName,
+          representative_email: formData.email,
+          representative_phone: formData.phone,
+        })
+      }
+    }
+
     setIsSubmitted(true)
+    setVerificationStatus("pending")
+    setIsSubmitting(false)
   }
 
   const canProceed = () => {
@@ -140,7 +244,7 @@ export default function CommunityRegisterPage() {
       case 1:
         return formData.communityName && formData.shortDescription
       case 2:
-        return formData.adminName && formData.email && formData.phone
+        return formData.adminName && formData.email && formData.phone && formData.password && formData.confirmPassword
       case 3:
         return formData.region && formData.selectedActivities.length > 0
       case 4:
@@ -496,6 +600,42 @@ export default function CommunityRegisterPage() {
                       </div>
                     </div>
 
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">
+                          Password <span className="text-destructive">*</span>
+                        </label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                          <Input
+                            type="password"
+                            placeholder="Minimal 8 karakter"
+                            value={formData.password}
+                            onChange={(e) => handleInputChange("password", e.target.value)}
+                            className="h-12 pl-10"
+                            required
+                            minLength={8}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">
+                          Confirm Password <span className="text-destructive">*</span>
+                        </label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                          <Input
+                            type="password"
+                            placeholder="Ulangi password"
+                            value={formData.confirmPassword}
+                            onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                            className="h-12 pl-10"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="pt-4 border-t border-border">
                       <p className="text-sm font-medium text-foreground mb-4">
                         Social Media (Optional)
@@ -805,11 +945,15 @@ export default function CommunityRegisterPage() {
                 ) : (
                   <Button
                     onClick={handleSubmit}
-                    disabled={!formData.agreedToTerms}
+                    disabled={!formData.agreedToTerms || isSubmitting}
                     className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground"
                   >
-                    <CheckCircle2 className="w-4 h-4" />
-                    Submit Registration
+                    {isSubmitting ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="w-4 h-4" />
+                    )}
+                    {isSubmitting ? "Submitting..." : "Submit Registration"}
                   </Button>
                 )}
               </div>
