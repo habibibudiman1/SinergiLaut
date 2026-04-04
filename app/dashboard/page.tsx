@@ -31,36 +31,16 @@ import {
   approveVolunteerVerification,
   rejectVolunteerVerification,
 } from "@/lib/actions/volunteer-verification.actions"
+import {
+  getAdminDashboardStats,
+  getPendingCommunities,
+  getPendingActivities,
+  getPendingReports,
+  getAllCommunities
+} from "@/lib/actions/dashboard.actions"
 import type { Profile } from "@/lib/types"
 
-const stats = [
-  { label: "Total Komunitas", value: "48", icon: Building2, color: "text-primary", change: "+3 bulan ini" },
-  { label: "Pengguna Aktif", value: "2,847", icon: Users, color: "text-blue-600", change: "+127 bulan ini" },
-  { label: "Kegiatan Aktif", value: "24", icon: Activity, color: "text-green-600", change: "+5 minggu ini" },
-  { label: "Donasi Terkumpul", value: formatCurrency(157000000), icon: Banknote, color: "text-accent-foreground", change: "+18% bulan ini" },
-]
-
-const pendingCommunities = [
-  { id: "1", name: "Coral Care Indonesia", location: "Makassar, Sulawesi Selatan", email: "info@coralcare.id", submittedDate: "2026-03-20", description: "Komunitas konservasi terumbu karang di Sulawesi" },
-  { id: "2", name: "Mangrove Watch Network", location: "Surabaya, Jawa Timur", email: "contact@mangrovewatch.id", submittedDate: "2026-03-19", description: "Jaringan pemantau mangrove Jawa Timur" },
-  { id: "3", name: "Borneo Ocean Shield", location: "Balikpapan, Kalimantan Timur", email: "shield@borneo.id", submittedDate: "2026-03-18", description: "Pelindung ekosistem pesisir Kalimantan" },
-]
-
-const pendingActivities = [
-  { id: "1", title: "Workshop Biologi Laut Sekolah", community: "Ocean Guardians Bali", date: "2026-03-25", submittedDate: "2026-03-21", category: "education", fundingGoal: 5000000 },
-  { id: "2", title: "Ekspedisi Reef Check Nias", community: "Coral Triangle Foundation", date: "2026-04-10", submittedDate: "2026-03-20", category: "research", fundingGoal: 25000000 },
-]
-
-const pendingReports = [
-  { id: "1", activityTitle: "Bersih-bersih Pantai Jakarta Bay", community: "Ocean Guardians Bali", submittedDate: "2026-03-19", period: "Maret 2026", filesCount: 3 },
-  { id: "2", activityTitle: "Penanaman 5000 Mangrove Bali", community: "Green Coast Bali", submittedDate: "2026-03-18", period: "Februari 2026", filesCount: 5 },
-]
-
-const allCommunities = [
-  { id: "1", name: "Ocean Guardians Bali", location: "Bali", status: "approved", activities: 12, members: 285, isSuspended: false },
-  { id: "2", name: "Coral Triangle Foundation", location: "Jakarta", status: "approved", activities: 8, members: 134, isSuspended: false },
-  { id: "3", name: "Blue Marine Jakarta", location: "Jakarta", status: "approved", activities: 5, members: 67, isSuspended: true },
-]
+// Dummy records removed; will fetch from Supabase.
 
 type Tab = "overview" | "communities" | "activities" | "reports" | "users" | "volunteers"
 
@@ -76,6 +56,35 @@ export default function AdminDashboardPage() {
   const [search, setSearch] = useState("")
   const [sanctionModal, setSanctionModal] = useState<SanctionModal>({ open: false, communityId: null, communityName: "" })
   const [sanctionForm, setSanctionForm] = useState({ type: "warning", reason: "" })
+
+  const [stats, setStats] = useState({ totalCommunities: 0, totalUsers: 0, totalActivities: 0, totalDonations: 0 })
+  const [pendingCommunities, setPendingCommunities] = useState<any[]>([])
+  const [pendingActivities, setPendingActivities] = useState<any[]>([])
+  const [pendingReports, setPendingReports] = useState<any[]>([])
+  const [allCommunities, setAllCommunities] = useState<any[]>([])
+
+  useEffect(() => {
+    async function loadAdminData() {
+      const st = await getAdminDashboardStats()
+      setStats(st)
+      const pc = await getPendingCommunities()
+      setPendingCommunities(pc)
+      const pa = await getPendingActivities()
+      setPendingActivities(pa)
+      const pr = await getPendingReports()
+      setPendingReports(pr)
+      const ac = await getAllCommunities()
+      setAllCommunities(ac)
+    }
+    loadAdminData()
+  }, [])
+
+  const displayStats = [
+    { label: "Total Komunitas", value: stats.totalCommunities, icon: Building2, color: "text-primary", change: "Live" },
+    { label: "Pengguna Aktif", value: stats.totalUsers, icon: Users, color: "text-blue-600", change: "Live" },
+    { label: "Kegiatan Aktif", value: stats.totalActivities, icon: Activity, color: "text-green-600", change: "Live" },
+    { label: "Donasi Terkumpul", value: formatCurrency(stats.totalDonations), icon: Banknote, color: "text-accent-foreground", change: "Live" },
+  ]
 
   // Volunteer verification state
   const [volunteers, setVolunteers] = useState<Profile[]>([])
@@ -181,7 +190,7 @@ export default function AdminDashboardPage() {
 
           {/* Stats */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {stats.map((stat) => (
+            {displayStats.map((stat) => (
               <Card key={stat.label}>
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between">
@@ -297,7 +306,7 @@ export default function AdminDashboardPage() {
                       <div key={c.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-secondary rounded-lg border-l-4 border-l-yellow-400">
                         <div>
                           <p className="font-medium text-foreground">{c.name}</p>
-                          <p className="text-xs text-muted-foreground">{c.location} • Daftar: {c.submittedDate}</p>
+                          <p className="text-xs text-muted-foreground">{c.location || "Tanpa Lokasi"} • Daftar: {formatDate(c.created_at || new Date())}</p>
                         </div>
                         <div className="flex gap-2">
                           <Button size="sm" variant="outline" className="text-green-700 border-green-300 hover:bg-green-50" onClick={() => handleApprove("Komunitas", c.id)}>
@@ -325,7 +334,7 @@ export default function AdminDashboardPage() {
                       <div key={a.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-secondary rounded-lg border-l-4 border-l-blue-400">
                         <div>
                           <p className="font-medium text-foreground">{a.title}</p>
-                          <p className="text-xs text-muted-foreground">{a.community} • {a.date} • Target: {formatCurrency(a.fundingGoal)}</p>
+                          <p className="text-xs text-muted-foreground">{a.community?.name || "Komunitas"} • {formatDate(a.start_date || new Date())} • Target: {formatCurrency(a.funding_goal || 0)}</p>
                         </div>
                         <div className="flex gap-2">
                           <Button size="sm" variant="outline" onClick={() => handleApprove("Kegiatan", a.id)}>
@@ -352,8 +361,8 @@ export default function AdminDashboardPage() {
                     {pendingReports.map((r) => (
                       <div key={r.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-secondary rounded-lg border-l-4 border-l-green-400">
                         <div>
-                          <p className="font-medium text-foreground">{r.activityTitle}</p>
-                          <p className="text-xs text-muted-foreground">{r.community} • {r.period} • {r.filesCount} file</p>
+                          <p className="font-medium text-foreground">{r.activity?.title || "Kegiatan"}</p>
+                          <p className="text-xs text-muted-foreground">{r.community?.name || "Komunitas"} • Dibuat: {formatDate(r.created_at || new Date())}</p>
                         </div>
                         <div className="flex gap-2">
                           <Button size="sm" variant="outline"><Eye className="h-4 w-4 mr-1" /> Review</Button>
@@ -565,8 +574,8 @@ export default function AdminDashboardPage() {
                             <p className="font-medium text-foreground">{c.name}</p>
                             <Badge className="bg-yellow-100 text-yellow-700">Pending</Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground">{c.location} • {c.email}</p>
-                          <p className="text-sm text-muted-foreground mt-1">{c.description}</p>
+                          <p className="text-sm text-muted-foreground">{c.location || "Tanpa Lokasi"} • {c.owner?.email || "Tidak ada email"}</p>
+                          <p className="text-sm text-muted-foreground mt-1">{c.description || "Tidak ada deskripsi"}</p>
                         </div>
                         <div className="flex gap-2 flex-shrink-0">
                           <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleApprove("Komunitas", c.id)}>
@@ -595,11 +604,11 @@ export default function AdminDashboardPage() {
                       {allCommunities.map((c) => (
                         <tr key={c.id} className="border-b border-border last:border-0">
                           <td className="py-3 px-3 font-medium text-sm text-foreground">{c.name}</td>
-                          <td className="py-3 px-3 text-sm text-muted-foreground">{c.location}</td>
-                          <td className="py-3 px-3 text-sm text-muted-foreground">{c.activities}</td>
-                          <td className="py-3 px-3 text-sm text-muted-foreground">{c.members}</td>
+                          <td className="py-3 px-3 text-sm text-muted-foreground">{c.location || "—"}</td>
+                          <td className="py-3 px-3 text-sm text-muted-foreground">—</td>
+                          <td className="py-3 px-3 text-sm text-muted-foreground">{c.member_count || 0}</td>
                           <td className="py-3 px-3">
-                            {c.isSuspended
+                            {c.is_suspended
                               ? <Badge className="bg-red-100 text-red-700">Disuspend</Badge>
                               : <Badge className="bg-green-100 text-green-700">Aktif</Badge>
                             }
@@ -644,7 +653,7 @@ export default function AdminDashboardPage() {
                     <div key={a.id} className="p-4 border border-border rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div>
                         <p className="font-medium text-foreground">{a.title}</p>
-                        <p className="text-sm text-muted-foreground">{a.community} • {a.date}</p>
+                        <p className="text-sm text-muted-foreground">{a.community?.name || "Komunitas"} • {formatDate(a.start_date || new Date())}</p>
                         <Badge className="bg-primary/10 text-primary capitalize mt-1" >{a.category}</Badge>
                       </div>
                       <div className="flex gap-2 flex-shrink-0">
@@ -672,8 +681,8 @@ export default function AdminDashboardPage() {
                   {pendingReports.map((r) => (
                     <div key={r.id} className="p-4 border border-border rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div>
-                        <p className="font-medium text-foreground">{r.activityTitle}</p>
-                        <p className="text-sm text-muted-foreground">{r.community} • {r.period} • {r.filesCount} file lampiran</p>
+                        <p className="font-medium text-foreground">{r.activity?.title || "Kegiatan"}</p>
+                        <p className="text-sm text-muted-foreground">{r.community?.name || "Komunitas"} • Dibuat: {formatDate(r.created_at || new Date())}</p>
                       </div>
                       <div className="flex gap-2">
                         <Button size="sm" variant="outline"><Eye className="h-4 w-4 mr-1" /> Buka Laporan</Button>

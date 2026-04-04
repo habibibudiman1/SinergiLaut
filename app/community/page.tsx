@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -27,80 +27,9 @@ import {
   Activity
 } from "lucide-react"
 
-const communityStats = [
-  { icon: Users, value: "15,000+", label: "Active Members" },
-  { icon: MapPin, value: "50+", label: "Coastal Communities" },
-  { icon: Globe, value: "12", label: "Partner Countries" },
-]
+import { getRegisteredCommunities, getAdminDashboardStats } from "@/lib/actions/dashboard.actions"
 
-const registeredCommunities = [
-  {
-    id: 1,
-    name: "Ocean Guardians Bali",
-    logo: "/images/partner-1.jpg",
-    location: "Bali, Indonesia",
-    members: 450,
-    activities: 28,
-    focus: ["Beach Cleanup", "Coral Restoration"],
-    verified: true,
-    description: "Dedicated to protecting Bali's coastline through community-driven conservation efforts.",
-  },
-  {
-    id: 2,
-    name: "Blue Marine Jakarta",
-    logo: "/images/partner-2.jpg",
-    location: "Jakarta, Indonesia",
-    members: 320,
-    activities: 15,
-    focus: ["Marine Education", "Beach Cleanup"],
-    verified: true,
-    description: "Urban marine conservation focusing on education and coastal cleanup in Jakarta Bay.",
-  },
-  {
-    id: 3,
-    name: "Coral Triangle Foundation",
-    logo: "/images/partner-3.jpg",
-    location: "Raja Ampat, Indonesia",
-    members: 180,
-    activities: 42,
-    focus: ["Coral Restoration", "Research & Monitoring"],
-    verified: true,
-    description: "Research-driven coral restoration in the heart of the Coral Triangle.",
-  },
-  {
-    id: 4,
-    name: "Mangrove Warriors Sumatra",
-    logo: "/images/partner-4.jpg",
-    location: "Sumatra, Indonesia",
-    members: 275,
-    activities: 22,
-    focus: ["Mangrove Planting", "Community Outreach"],
-    verified: true,
-    description: "Restoring mangrove ecosystems along Sumatra's eastern coastline.",
-  },
-  {
-    id: 5,
-    name: "Sea Turtle Conservation Makassar",
-    logo: "/images/testimonial-1.jpg",
-    location: "Makassar, Indonesia",
-    members: 150,
-    activities: 18,
-    focus: ["Wildlife Conservation", "Marine Education"],
-    verified: true,
-    description: "Protecting sea turtle nesting sites and educating local communities.",
-  },
-  {
-    id: 6,
-    name: "Fishermen United Lombok",
-    logo: "/images/testimonial-2.jpg",
-    location: "Lombok, Indonesia",
-    members: 200,
-    activities: 12,
-    focus: ["Sustainable Fishing", "Community Outreach"],
-    verified: false,
-    description: "Promoting sustainable fishing practices among traditional fishing communities.",
-  },
-]
+// Extracted to fetch dynamically
 
 const requirements = [
   {
@@ -182,18 +111,32 @@ const testimonials = [
 export default function CommunityPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedFocus, setSelectedFocus] = useState<string | null>(null)
+  
+  const [registeredCommunities, setRegisteredCommunities] = useState<any[]>([])
+  const [globalStats, setGlobalStats] = useState<any>(null)
+
+  useEffect(() => {
+    getRegisteredCommunities().then(setRegisteredCommunities)
+    getAdminDashboardStats().then(setGlobalStats)
+  }, [])
 
   const focusAreas = Array.from(
-    new Set(registeredCommunities.flatMap((c) => c.focus))
+    new Set(registeredCommunities.flatMap((c) => c.focus_areas || []))
   ).sort()
 
   const filteredCommunities = registeredCommunities.filter((community) => {
     const matchesSearch =
-      community.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      community.location.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesFocus = !selectedFocus || community.focus.includes(selectedFocus)
+      community.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      community.location?.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesFocus = !selectedFocus || (community.focus_areas && community.focus_areas.includes(selectedFocus))
     return matchesSearch && matchesFocus
   })
+
+  const computeStatsDisplay = [
+    { icon: Users, value: globalStats ? `${globalStats.totalUsers}+` : "...", label: "Active Members" },
+    { icon: MapPin, value: globalStats ? `${globalStats.totalCommunities}+` : "...", label: "Coastal Communities" },
+    { icon: Globe, value: "1", label: "Partner Countries" },
+  ]
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -240,7 +183,7 @@ export default function CommunityPage() {
         <section className="py-12 bg-primary">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid md:grid-cols-3 gap-8">
-              {communityStats.map((stat) => (
+              {computeStatsDisplay.map((stat) => (
                 <div key={stat.label} className="flex items-center gap-4 justify-center">
                   <div className="w-12 h-12 bg-primary-foreground/10 rounded-lg flex items-center justify-center">
                     <stat.icon className="h-6 w-6 text-primary-foreground" />
@@ -406,7 +349,7 @@ export default function CommunityPage() {
                       <div className="flex items-start gap-4 mb-4">
                         <div className="relative w-16 h-16 rounded-full overflow-hidden bg-secondary shrink-0">
                           <Image
-                            src={community.logo}
+                            src={community.logo_url || "https://placehold.co/100"}
                             alt={community.name}
                             fill
                             className="object-cover"
@@ -415,7 +358,7 @@ export default function CommunityPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <h3 className="font-semibold text-foreground truncate">{community.name}</h3>
-                            {community.verified && (
+                            {community.is_verified && (
                               <Badge variant="secondary" className="shrink-0 bg-primary/10 text-primary">
                                 <CheckCircle2 className="h-3 w-3 mr-1" />
                                 Verified
@@ -424,17 +367,17 @@ export default function CommunityPage() {
                           </div>
                           <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
                             <MapPin className="h-3 w-3" />
-                            {community.location}
+                            {community.location || "Tanpa Lokasi"}
                           </div>
                         </div>
                       </div>
 
                       <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                        {community.description}
+                        {community.description || "Tidak ada deskripsi"}
                       </p>
 
                       <div className="flex flex-wrap gap-2 mb-4">
-                        {community.focus.map((f) => (
+                        {(community.focus_areas || []).map((f: string) => (
                           <Badge key={f} variant="outline" className="text-xs">
                             {f}
                           </Badge>
@@ -444,11 +387,11 @@ export default function CommunityPage() {
                       <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
                         <div className="flex items-center gap-1">
                           <Users className="h-4 w-4" />
-                          {community.members} members
+                          {community.member_count || 0} members
                         </div>
                         <div className="flex items-center gap-1">
                           <Activity className="h-4 w-4" />
-                          {community.activities} activities
+                          Live activities
                         </div>
                       </div>
 

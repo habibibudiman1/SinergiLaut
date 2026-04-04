@@ -3,8 +3,12 @@ import { Badge } from "@/components/ui/badge"
 import { Heart, ShieldCheck, TrendingUp, Users } from "lucide-react"
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
+import { getEndowmentStats, getEndowmentDisbursements } from "@/lib/actions/endowment.actions"
+import { formatCurrency } from "@/lib/utils/helpers"
 
-export default function EndowmentPage() {
+export default async function EndowmentPage() {
+  const stats = await getEndowmentStats()
+  const disbursements = await getEndowmentDisbursements()
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navigation />
@@ -73,7 +77,7 @@ export default function EndowmentPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4">Status & Alokasi Dana Saat Ini</h2>
-            <p className="text-muted-foreground">Catatan dana abadi yang dikelola dan akan didistribusikan di periode ini (Data Dummy/Simulasi)</p>
+            <p className="text-muted-foreground">Catatan transparan akumulasi dana abadi dan riwayat pendistribusiannya.</p>
           </div>
 
           <Card>
@@ -81,15 +85,15 @@ export default function EndowmentPage() {
               <div className="grid sm:grid-cols-2 gap-8 divide-y sm:divide-y-0 sm:divide-x divide-border">
                 <div className="text-center sm:pr-8">
                   <p className="text-sm text-muted-foreground mb-2">Total Dana Terkumpul</p>
-                  <p className="text-4xl font-bold text-primary">Rp 45.250.000</p>
+                  <p className="text-4xl font-bold text-primary">{formatCurrency(stats.totalRaised)}</p>
                   <p className="text-xs text-green-600 mt-2 flex items-center justify-center gap-1">
-                    <TrendingUp className="h-3 w-3" /> +12% bulan ini
+                    <TrendingUp className="h-3 w-3" /> Live auto-update
                   </p>
                 </div>
                 <div className="text-center sm:pl-8 pt-8 sm:pt-0">
                   <p className="text-sm text-muted-foreground mb-2">Dana Sudah Disalurkan</p>
-                  <p className="text-4xl font-bold text-foreground">Rp 12.500.000</p>
-                  <p className="text-xs text-muted-foreground mt-2">Membantu 4 komunitas bulan lalu</p>
+                  <p className="text-4xl font-bold text-foreground">{formatCurrency(stats.disbursed)}</p>
+                  <p className="text-xs text-muted-foreground mt-2">Kepada {disbursements.length} komunitas</p>
                 </div>
               </div>
 
@@ -98,19 +102,18 @@ export default function EndowmentPage() {
                   <Users className="h-5 w-5" /> Riwayat Penyaluran Terbaru
                 </h3>
                 <div className="space-y-4">
-                  {[
-                    { com: "Pandu Laut Selatan", amount: "Rp 3.500.000", desc: "Pembelian alat bersih-bersih dan karung" },
-                    { com: "Aksi Bersih Pesisir", amount: "Rp 4.000.000", desc: "Transportasi relawan dan konsumsi acara" },
-                    { com: "Bumi Lestari Youth", amount: "Rp 5.000.000", desc: "Penyewaan truk sampah dan logistik utama" },
-                  ].map((item, idx) => (
+                  {disbursements.length === 0 && (
+                     <p className="text-muted-foreground text-center py-4 text-sm">Belum ada riwayat penyaluran dana abadi secara spesifik.</p>
+                  )}
+                  {disbursements.map((item: any, idx: number) => (
                     <div key={idx} className="flex justify-between items-center p-4 bg-muted/50 rounded-lg">
                       <div>
-                        <p className="font-medium">{item.com}</p>
-                        <p className="text-sm text-muted-foreground">{item.desc}</p>
+                        <p className="font-medium">{item.community?.name || "Bantuan Komunitas"}</p>
+                        <p className="text-sm text-muted-foreground">{item.notes}</p>
                       </div>
                       <div className="text-right">
                         <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
-                          {item.amount}
+                          {formatCurrency(item.amount)}
                         </Badge>
                       </div>
                     </div>

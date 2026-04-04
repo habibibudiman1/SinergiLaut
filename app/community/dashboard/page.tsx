@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
@@ -16,21 +16,10 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
-import { formatCurrency } from "@/lib/utils/helpers"
+import { formatCurrency, formatDate } from "@/lib/utils/helpers"
+import { getCommunityDashboardStats, getCommunityActivities } from "@/lib/actions/dashboard.actions"
 
-const communityStats = [
-  { label: "Total Kegiatan", value: "8", icon: Calendar, change: "+2 bulan ini" },
-  { label: "Total Relawan", value: "234", icon: Users, change: "+45 bulan ini" },
-  { label: "Total Donasi", value: formatCurrency(12500000), icon: Banknote, change: "+18%" },
-  { label: "Laporan Terverifikasi", value: "6/8", icon: FileText, change: "75% selesai" },
-]
-
-const activities = [
-  { id: "1", title: "Bersih-bersih Pantai Jakarta Bay", date: "2026-03-22", status: "published", volunteers: 45, quota: 60, donations: 3500000, hasReport: true, reportStatus: "validated" },
-  { id: "2", title: "Coral Restoration Raja Ampat", date: "2026-04-15", status: "published", volunteers: 28, quota: 30, donations: 18750000, hasReport: false, reportStatus: null },
-  { id: "3", title: "Workshop Biologi Laut", date: "2026-03-25", status: "pending_review", volunteers: 120, quota: 200, donations: 2100000, hasReport: false, reportStatus: null },
-  { id: "4", title: "Penanaman Mangrove Surabaya", date: "2026-04-05", status: "draft", volunteers: 0, quota: 100, donations: 0, hasReport: false, reportStatus: null },
-]
+// Dummy data removed, fetched directly from Supabase.
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   published: { label: "Aktif", className: "bg-green-100 text-green-700" },
@@ -45,10 +34,26 @@ const statusConfig: Record<string, { label: string; className: string }> = {
 export default function CommunityDashboardPage() {
   const { profile } = useAuth()
   const [search, setSearch] = useState("")
+  const [stats, setStats] = useState({ totalActivities: 0, totalVolunteers: 0, totalDonations: 0, verifiedReports: "0/0" })
+  const [activities, setActivities] = useState<any[]>([])
+
+  useEffect(() => {
+    if (profile?.id) {
+       getCommunityDashboardStats(profile.id).then(setStats)
+       getCommunityActivities(profile.id).then(setActivities)
+    }
+  }, [profile?.id])
 
   const filtered = activities.filter(a =>
     a.title.toLowerCase().includes(search.toLowerCase())
   )
+
+  const communityStats = [
+    { label: "Total Kegiatan", value: stats.totalActivities, icon: Calendar, change: "Live" },
+    { label: "Total Relawan", value: stats.totalVolunteers, icon: Users, change: "Live" },
+    { label: "Total Donasi", value: formatCurrency(stats.totalDonations), icon: Banknote, change: "Live" },
+    { label: "Laporan Terverifikasi", value: stats.verifiedReports, icon: FileText, change: "Live" },
+  ]
 
   return (
     <div className="min-h-screen bg-secondary">
@@ -118,20 +123,20 @@ export default function CommunityDashboardPage() {
                     <div className="space-y-2 mb-4">
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <Calendar className="h-3.5 w-3.5" />
-                        <span>{a.date}</span>
+                        <span>{formatDate(a.start_date)}</span>
                       </div>
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {a.volunteers}/{a.quota} relawan</span>
-                        <span className="flex items-center gap-1"><Banknote className="h-3.5 w-3.5" /> {formatCurrency(a.donations)}</span>
+                        <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {a.volunteer_count || 0}/{a.volunteer_quota || 0} relawan</span>
+                        <span className="flex items-center gap-1"><Banknote className="h-3.5 w-3.5" /> {formatCurrency(a.funding_raised || 0)}</span>
                       </div>
-                      {a.hasReport && (
+                      {a.reports && a.reports.length > 0 && (
                         <div className="flex items-center gap-2 text-xs">
                           <FileText className="h-3.5 w-3.5 text-muted-foreground" />
                           <span className="text-muted-foreground">Laporan:</span>
-                          <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${statusConfig[a.reportStatus!]?.className}`}>{statusConfig[a.reportStatus!]?.label}</Badge>
+                          <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${statusConfig[a.reports[0].status]?.className}`}>{statusConfig[a.reports[0].status]?.label}</Badge>
                         </div>
                       )}
-                      {!a.hasReport && a.status === "published" && (
+                      {(!a.reports || a.reports.length === 0) && a.status === "completed" && (
                         <div className="flex items-center gap-2 text-xs">
                           <AlertCircle className="h-3.5 w-3.5 text-orange-500" />
                           <span className="text-orange-600">Laporan belum diupload</span>
