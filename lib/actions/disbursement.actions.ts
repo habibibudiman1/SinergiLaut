@@ -6,7 +6,7 @@
  * Hanya admin yang dapat memproses disbursement.
  */
 
-import { createClient } from "@/lib/supabase/client"
+import { createClient } from "@/lib/supabase/server"
 
 export interface CreateDisbursementPayload {
   activityId: string
@@ -22,7 +22,7 @@ export interface CreateDisbursementPayload {
 
 /** [Admin] Buat record disbursement baru untuk suatu activity */
 export async function createDisbursement(payload: CreateDisbursementPayload) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   // Hitung total donasi completed untuk activity ini (validasi)
   const { data: donationSum } = await supabase
@@ -33,7 +33,7 @@ export async function createDisbursement(payload: CreateDisbursementPayload) {
     .eq("type", "money")
 
   const totalCollected = (donationSum ?? []).reduce(
-    (sum, d) => sum + (d.amount ?? 0), 0
+    (sum: number, d) => sum + (d.amount ?? 0), 0
   )
 
   // Ambil total disbursement sebelumnya untuk activity ini
@@ -44,7 +44,7 @@ export async function createDisbursement(payload: CreateDisbursementPayload) {
     .in("status", ["processing", "completed"])
 
   const totalDisbursed = (prevDisbursements ?? []).reduce(
-    (sum, d) => sum + (d.amount ?? 0), 0
+    (sum: number, d) => sum + (d.amount ?? 0), 0
   )
 
   const availableBalance = totalCollected - totalDisbursed
@@ -87,7 +87,7 @@ export async function updateDisbursementStatus(
   status: "processing" | "completed" | "failed",
   referenceNumber?: string
 ) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const updateData: Record<string, unknown> = { status }
   if (referenceNumber) updateData.reference_number = referenceNumber
@@ -110,7 +110,7 @@ export async function updateDisbursementStatus(
 
 /** [Admin] Ambil semua disbursement */
 export async function getAllDisbursements() {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data, error } = await supabase
     .from("disbursements")
@@ -132,7 +132,7 @@ export async function getAllDisbursements() {
 
 /** [Community] Ambil disbursement untuk komunitas tertentu */
 export async function getCommunityDisbursements(communityId: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data, error } = await supabase
     .from("disbursements")
@@ -153,7 +153,7 @@ export async function getCommunityDisbursements(communityId: string) {
 
 /** Hitung ringkasan keuangan untuk satu activity */
 export async function getActivityFinanceSummary(activityId: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const [donationsRes, disbursementsRes] = await Promise.all([
     supabase
@@ -172,19 +172,19 @@ export async function getActivityFinanceSummary(activityId: string) {
 
   const totalCollected = donations
     .filter((d) => d.status === "completed")
-    .reduce((sum, d) => sum + (d.amount ?? 0), 0)
+    .reduce((sum: number, d) => sum + (d.amount ?? 0), 0)
 
   const pendingPayments = donations
     .filter((d) => d.status === "pending")
-    .reduce((sum, d) => sum + (d.amount ?? 0), 0)
+    .reduce((sum: number, d) => sum + (d.amount ?? 0), 0)
 
   const totalDisbursed = disbursements
     .filter((d) => d.status === "completed")
-    .reduce((sum, d) => sum + (d.amount ?? 0), 0)
+    .reduce((sum: number, d) => sum + (d.amount ?? 0), 0)
 
   const totalPlatformFee = disbursements
     .filter((d) => d.status === "completed")
-    .reduce((sum, d) => sum + (d.platform_fee ?? 0), 0)
+    .reduce((sum: number, d) => sum + (d.platform_fee ?? 0), 0)
 
   const availableBalance = totalCollected - totalDisbursed - totalPlatformFee
 

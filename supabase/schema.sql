@@ -36,6 +36,16 @@ CREATE TABLE IF NOT EXISTS profiles (
   bio TEXT,
   role user_role NOT NULL DEFAULT 'user',
   is_active BOOLEAN NOT NULL DEFAULT true,
+  -- Volunteer verification fields
+  volunteer_status verification_status NOT NULL DEFAULT 'pending',
+  date_of_birth DATE,
+  nik TEXT,                           -- No. KTP (16 digit)
+  gender TEXT,                        -- male | female
+  address TEXT,                       -- Alamat lengkap
+  ktp_url TEXT,                       -- URL foto KTP yang diupload
+  volunteer_verified_by UUID REFERENCES auth.users(id),
+  volunteer_verified_at TIMESTAMPTZ,
+  volunteer_reject_note TEXT,         -- Alasan penolakan
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

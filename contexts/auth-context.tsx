@@ -13,6 +13,7 @@ interface AuthContextType {
   isAdmin: boolean
   isCommunity: boolean
   isUser: boolean
+  isVolunteerVerified: boolean
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
 }
@@ -84,6 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAdmin: role === "admin",
         isCommunity: role === "community",
         isUser: role === "user",
+        isVolunteerVerified: profile?.volunteer_status === "approved",
         signOut,
         refreshProfile,
       }}

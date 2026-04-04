@@ -6,7 +6,7 @@
  * Donasi barang: Langsung tercatat + tracking pengiriman
  */
 
-import { createClient } from "@/lib/supabase/client"
+import { createClient } from "@/lib/supabase/server"
 
 // ─── Type Definitions ───────────────────────────────────────────
 
@@ -81,7 +81,7 @@ async function createMidtransTransaction(payload: {
  * untuk membuka Midtrans Snap payment UI.
  */
 export async function createMoneyDonation(payload: CreateMoneyDonationPayload) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   // 1. Ambil judul activity untuk Midtrans item details
   const { data: activity } = await supabase
@@ -160,7 +160,7 @@ export async function createMoneyDonation(payload: CreateMoneyDonationPayload) {
  * Tidak memerlukan Midtrans — barang dikirim langsung ke komunitas.
  */
 export async function createItemDonation(payload: CreateItemDonationPayload) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   if (!payload.items || payload.items.length === 0) {
     return { success: false, error: "Harus ada minimal 1 item untuk donasi barang." }
@@ -221,7 +221,7 @@ export async function createItemDonation(payload: CreateItemDonationPayload) {
  * Ambil semua donasi untuk suatu activity (untuk komunitas/admin)
  */
 export async function getActivityDonations(activityId: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data, error } = await supabase
     .from("donations")
@@ -245,7 +245,7 @@ export async function getActivityDonations(activityId: string) {
  * Konfirmasi penerimaan donasi barang oleh komunitas → ubah status menjadi completed
  */
 export async function confirmItemDonationReceived(donationId: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data, error } = await supabase
     .from("donations")
