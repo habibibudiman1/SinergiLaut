@@ -120,7 +120,7 @@ async function main() {
   console.log("👤 Creating auth users & profiles...");
   for (const user of ALL_USERS) {
     const { error } = await supabase.auth.admin.createUser({
-      user_id: user.id,
+      id: user.id,
       email: user.email,
       password: "Password123!",
       email_confirm: true,
@@ -264,7 +264,7 @@ async function main() {
       category: "cleanup", status: "published", start_date: d(7), end_date: d(7.33),
       location: "Pantai Bunaken, Manado", latitude: 1.6232, longitude: 124.7639,
       volunteer_quota: 50, volunteer_count: 3, funding_goal: 5000000, funding_raised: 2500000,
-      allow_item_donation: true, published_at: d(-5),
+      allow_item_donation: true, published_at: d(-5), cover_image_url: "/images/beach-cleanup.jpg"
     },
     {
       id: ACT_2, community_id: COMM_1, title: "Transplantasi Karang Lembeh", slug: "transplantasi-karang-lembeh",
@@ -272,7 +272,7 @@ async function main() {
       category: "restoration", status: "published", start_date: d(14),
       location: "Selat Lembeh, Bitung", latitude: 1.4708, longitude: 125.268,
       volunteer_quota: 25, volunteer_count: 2, funding_goal: 15000000, funding_raised: 8000000,
-      published_at: d(-3),
+      published_at: d(-3), cover_image_url: "/images/coral-restoration.jpg"
     },
     {
       id: ACT_3, community_id: COMM_2, title: "Edukasi Konservasi Laut untuk Anak", slug: "edukasi-konservasi-anak",
@@ -280,7 +280,7 @@ async function main() {
       category: "education", status: "published", start_date: d(10),
       location: "Sanur, Bali", latitude: -8.6783, longitude: 115.2628,
       volunteer_quota: 20, funding_goal: 3000000, funding_raised: 1500000,
-      published_at: d(-2),
+      published_at: d(-2), cover_image_url: "/images/education-workshop.jpg"
     },
     {
       id: ACT_4, community_id: COMM_2, title: "Survey Terumbu Karang Nusa Penida", slug: "survey-karang-nusa-penida",
@@ -288,20 +288,20 @@ async function main() {
       category: "research", status: "completed", start_date: d(-30), end_date: d(-28),
       location: "Nusa Penida, Bali", latitude: -8.7275, longitude: 115.5444,
       volunteer_quota: 15, volunteer_count: 12, funding_goal: 10000000, funding_raised: 10000000,
-      published_at: d(-45),
+      published_at: d(-45), cover_image_url: "/images/ocean-photography.jpg"
     },
     {
       id: ACT_5, community_id: COMM_3, title: "Festival Laut Jakarta", slug: "festival-laut-jakarta",
       description: "Festival seni dan budaya bertema kelautan untuk meningkatkan kepedulian masyarakat urban terhadap laut.",
-      category: "event", status: "pending_review", start_date: d(30),
+      category: "event", status: "published", start_date: d(30),
       location: "Ancol, Jakarta Utara", latitude: -6.1231, longitude: 106.8456,
-      volunteer_quota: 100, funding_goal: 25000000,
+      volunteer_quota: 100, funding_goal: 25000000, cover_image_url: "/images/mangrove-planting.jpg", published_at: d(-2)
     },
     {
       id: ACT_6, community_id: COMM_3, title: "Bersih Pantai Ancol", slug: "bersih-pantai-ancol",
       description: "Aksi massal bersih-bersih Pantai Ancol bersama warga Jakarta dan komunitas peduli laut.",
-      category: "cleanup", status: "draft", start_date: d(60),
-      location: "Pantai Ancol, Jakarta", volunteer_quota: 200, funding_goal: 8000000,
+      category: "cleanup", status: "completed", start_date: d(-60),
+      location: "Pantai Ancol, Jakarta", volunteer_quota: 200, funding_goal: 8000000, volunteer_count: 198, funding_raised: 8000000, published_at: d(-90), cover_image_url: "/images/fishing-workshop.jpg"
     },
   ]);
 

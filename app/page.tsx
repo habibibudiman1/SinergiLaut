@@ -6,8 +6,7 @@ import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
 import { ArrowRight, Users, Heart, Leaf, Calendar, MapPin, CheckCircle, Search, Gift, LineChart, FileText } from "lucide-react"
 
-import { DUMMY_ACTIVITIES, SUCCESSFUL_ACTIVITIES } from "@/lib/data/dummy-activities"
-
+// No more dummy data, we fetch fully from Supabase
 import { createClient } from "@/lib/supabase/server"
 import { formatDate } from "@/lib/utils/helpers"
 
@@ -27,9 +26,9 @@ export default async function HomePage() {
     .order("created_at", { ascending: false })
     .limit(3)
 
-  let mappedSupabaseActivities: any[] = []
+  let featuredActivities: any[] = []
   if (realActivities) {
-    mappedSupabaseActivities = realActivities.map(d => ({
+    featuredActivities = realActivities.map(d => ({
       ...d,
       id: d.id,
       title: d.title,
@@ -42,8 +41,27 @@ export default async function HomePage() {
     }))
   }
 
-  const allActivities = [...mappedSupabaseActivities, ...DUMMY_ACTIVITIES]
-  const featuredActivities = allActivities.slice(0, 3)
+  const { data: realCompletedActivities } = await supabase
+    .from("activities")
+    .select("*")
+    .eq("status", "completed")
+    .order("start_date", { ascending: false })
+    .limit(2)
+
+  let mappedCompletedActivities: any[] = []
+  if (realCompletedActivities) {
+    mappedCompletedActivities = realCompletedActivities.map(d => ({
+      ...d,
+      id: d.id,
+      title: d.title,
+      description: d.description,
+      image: d.cover_image_url || "/images/placeholder.jpg",
+      date: formatDate(d.start_date || new Date().toISOString()),
+      location: d.location || "Online",
+      volunteers: d.volunteer_count || 0,
+      icon: CheckCircle,
+    }))
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -125,7 +143,7 @@ export default async function HomePage() {
             </div>
 
             <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
-              {SUCCESSFUL_ACTIVITIES.map((activity) => (
+              {mappedCompletedActivities.map((activity) => (
                 <Card key={activity.id} className="overflow-hidden border-green-200 dark:border-green-800/50 hover:shadow-xl transition-all shadow-md group">
                   <div className="flex flex-col sm:flex-row h-full">
                     <div className="relative w-full sm:w-2/5 h-56 sm:h-auto overflow-hidden">
