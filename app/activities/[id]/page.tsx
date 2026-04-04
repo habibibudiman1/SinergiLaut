@@ -34,8 +34,6 @@ import { createClient } from "@/lib/supabase/client"
 import { registerVolunteer } from "@/lib/actions/volunteer.actions"
 import { createMoneyDonation } from "@/lib/actions/donation.actions"
 import type { Activity, VolunteerRegistration, Donation } from "@/lib/types"
-import { DUMMY_ACTIVITIES, SUCCESSFUL_ACTIVITIES, mapDummyToSupabaseActivity } from "@/lib/data/dummy-activities"
-
 type TabType = "detail" | "volunteer" | "donate" | "items" | "reports" | "feedback"
 
 const MARKUP_PERCENT = 10 // 10% markup on item prices
@@ -256,22 +254,6 @@ export default function ActivityDetailPage() {
 
     async function fetchActivity() {
       setIsLoadingActivity(true)
-
-      // Dummy data interception for testing
-      const allDummies = [...DUMMY_ACTIVITIES, ...SUCCESSFUL_ACTIVITIES]
-      const dummyActivity = allDummies.find(a => String(a.id) === String(params.id))
-      if (dummyActivity) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        setActivity(mapDummyToSupabaseActivity(dummyActivity) as any)
-        
-        // If it's a completed activity, default the active tab to 'reports' to highlight its success
-        if ((dummyActivity as any).status === "completed") {
-          setActiveTab("reports")
-        }
-
-        setIsLoadingActivity(false)
-        return
-      }
 
       const { data, error } = await supabase
         .from("activities")

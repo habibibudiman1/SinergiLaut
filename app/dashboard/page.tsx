@@ -36,7 +36,10 @@ import {
   getPendingCommunities,
   getPendingActivities,
   getPendingReports,
-  getAllCommunities
+  getAllCommunities,
+  approveCommunityAction, rejectCommunityAction,
+  approveActivityAction, rejectActivityAction,
+  approveReportAction, rejectReportAction
 } from "@/lib/actions/dashboard.actions"
 import type { Profile } from "@/lib/types"
 
@@ -113,12 +116,36 @@ export default function AdminDashboardPage() {
     setVolunteersLoading(false)
   }
 
-  const handleApprove = (entity: string, id: string) => {
-    toast.success(`${entity} #${id} berhasil disetujui`)
+  const handleApprove = async (entity: "Komunitas" | "Kegiatan" | "Laporan" | string, id: string) => {
+    let result: { success: boolean; error?: string } = { success: false, error: "" }
+    if (entity === "Komunitas") result = await approveCommunityAction(id)
+    else if (entity === "Kegiatan") result = await approveActivityAction(id)
+    else if (entity === "Laporan") result = await approveReportAction(id)
+
+    if (result.success) {
+      toast.success(`${entity} #${id.slice(0,6)} berhasil disetujui`)
+      if (entity === "Komunitas") setPendingCommunities(p => p.filter(c => c.id !== id))
+      else if (entity === "Kegiatan") setPendingActivities(p => p.filter(a => a.id !== id))
+      else if (entity === "Laporan") setPendingReports(p => p.filter(r => r.id !== id))
+    } else {
+      toast.error(`Gagal menyetujui ${entity}: ${result.error}`)
+    }
   }
 
-  const handleReject = (entity: string, id: string) => {
-    toast.error(`${entity} #${id} telah ditolak`)
+  const handleReject = async (entity: "Komunitas" | "Kegiatan" | "Laporan" | string, id: string) => {
+    let result: { success: boolean; error?: string } = { success: false, error: "" }
+    if (entity === "Komunitas") result = await rejectCommunityAction(id)
+    else if (entity === "Kegiatan") result = await rejectActivityAction(id)
+    else if (entity === "Laporan") result = await rejectReportAction(id)
+
+    if (result.success) {
+      toast.info(`${entity} #${id.slice(0,6)} telah ditolak`)
+      if (entity === "Komunitas") setPendingCommunities(p => p.filter(c => c.id !== id))
+      else if (entity === "Kegiatan") setPendingActivities(p => p.filter(a => a.id !== id))
+      else if (entity === "Laporan") setPendingReports(p => p.filter(r => r.id !== id))
+    } else {
+      toast.error(`Gagal menolak ${entity}: ${result.error}`)
+    }
   }
 
   const handleSanction = () => {
@@ -619,7 +646,11 @@ export default function AdminDashboardPage() {
                                 <Button variant="ghost" size="sm"><MoreHorizontal className="h-4 w-4" /></Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem><Eye className="h-4 w-4 mr-2" /> Lihat Detail</DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                  <Link href={`/community/${c.id}`} className="cursor-pointer">
+                                    <Eye className="h-4 w-4 mr-2" /> Lihat Detail
+                                  </Link>
+                                </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   className="text-destructive"
@@ -657,7 +688,11 @@ export default function AdminDashboardPage() {
                         <Badge className="bg-primary/10 text-primary capitalize mt-1" >{a.category}</Badge>
                       </div>
                       <div className="flex gap-2 flex-shrink-0">
-                        <Button size="sm" variant="outline"><Eye className="h-4 w-4 mr-1" /> Review</Button>
+                        <Button size="sm" variant="outline" asChild>
+                          <Link href={`/activities/${a.id}`}>
+                            <Eye className="h-4 w-4 mr-1" /> Review
+                          </Link>
+                        </Button>
                         <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleApprove("Kegiatan", a.id)}>
                           <CheckCircle2 className="h-4 w-4 mr-1" /> Publis
                         </Button>
@@ -685,7 +720,11 @@ export default function AdminDashboardPage() {
                         <p className="text-sm text-muted-foreground">{r.community?.name || "Komunitas"} • Dibuat: {formatDate(r.created_at || new Date())}</p>
                       </div>
                       <div className="flex gap-2">
-                        <Button size="sm" variant="outline"><Eye className="h-4 w-4 mr-1" /> Buka Laporan</Button>
+                        <Button size="sm" variant="outline" asChild>
+                          <Link href={`/activities/${r.activity_id}`}>
+                            <Eye className="h-4 w-4 mr-1" /> Buka Laporan
+                          </Link>
+                        </Button>
                         <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleApprove("Laporan", r.id)}>
                           <CheckCircle2 className="h-4 w-4 mr-1" /> Validasi
                         </Button>

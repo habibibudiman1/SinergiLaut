@@ -40,20 +40,16 @@ function LoginContent() {
     }
 
     if (data.user) {
-      // Fetch role and redirect accordingly
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", data.user.id)
-        .single()
+      // Get role from JWT metadata instead of making another DB query
+      const role = data.user.user_metadata?.role || "user"
 
       toast.success("Login berhasil! Selamat datang kembali.")
 
       if (redirectedFrom) {
         router.push(redirectedFrom)
-      } else if (profile?.role === "admin") {
+      } else if (role === "admin") {
         router.push("/admin/dashboard")
-      } else if (profile?.role === "community") {
+      } else if (role === "community") {
         router.push("/community/dashboard")
       } else {
         router.push("/user/dashboard")

@@ -1,9 +1,11 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
-export async function proxy(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
+export default async function proxy(request: NextRequest) {
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
   })
 
   const supabase = createServerClient(
@@ -15,79 +17,33 @@ export async function proxy(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          response = NextResponse.next({
+            request,
+          })
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
+            response.cookies.set(name, value, options)
           )
         },
       },
     }
   )
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // Refresh auth token
+  await supabase.auth.getUser()
 
-  const { pathname } = request.nextUrl
-
-  // Public routes — no auth required
-  const publicRoutes = ["/", "/activities", "/community", "/about", "/faq", "/contact", "/donate"]
-  const isPublicRoute =
-    publicRoutes.some((route) => pathname === route || pathname.startsWith(`${route}/`)) ||
-    pathname.startsWith("/auth/") ||
-    pathname === "/login" ||
-    pathname === "/register" ||
-    pathname === "/forgot-password"
-
-  // If user is not logged in and accessing protected route
-  if (!user && !isPublicRoute) {
-    const url = request.nextUrl.clone()
-    url.pathname = "/login"
-    url.searchParams.set("redirectedFrom", pathname)
-    return NextResponse.redirect(url)
-  }
-
-  // If user is logged in, get their role from profile
-  if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single()
-
-    const role = profile?.role
-
-    // Redirect logged-in users away from login/register pages
-    if (pathname === "/login" || pathname === "/register") {
-      const url = request.nextUrl.clone()
-      if (role === "admin") url.pathname = "/admin/dashboard"
-      else if (role === "community") url.pathname = "/community/dashboard"
-      else url.pathname = "/user/dashboard"
-      return NextResponse.redirect(url)
-    }
-
-    // Protect admin routes
-    if (pathname.startsWith("/admin") && role !== "admin") {
-      return NextResponse.redirect(new URL("/", request.url))
-    }
-
-    // Protect community routes
-    if (pathname.startsWith("/community/dashboard") && role !== "community" && role !== "admin") {
-      return NextResponse.redirect(new URL("/", request.url))
-    }
-
-    // Protect user dashboard
-    if (pathname.startsWith("/user") && !user) {
-      return NextResponse.redirect(new URL("/login", request.url))
-    }
-  }
-
-  return supabaseResponse
+  return response
 }
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|images/|icons/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * Feel free to modify this pattern to include more paths.
+     */
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 }

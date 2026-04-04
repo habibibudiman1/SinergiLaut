@@ -1,14 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
 import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { ArrowLeft, Loader2, Calendar, MapPin, Users, Banknote, Image as ImageIcon, Package } from "lucide-react"
+import { ArrowLeft, Loader2, Calendar, MapPin, Users, Banknote, Image as ImageIcon, Package, X } from "lucide-react"
 import Link from "next/link"
 import { ACTIVITY_CATEGORIES, INDONESIA_PROVINCES } from "@/lib/constants"
 import { toast } from "sonner"
@@ -16,6 +17,10 @@ import { toast } from "sonner"
 export default function CreateActivityPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [coverImage, setCoverImage] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -28,6 +33,46 @@ export default function CreateActivityPage() {
     allowItemDonation: false,
   })
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileSelected(e.dataTransfer.files[0])
+    }
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      handleFileSelected(e.target.files[0])
+    }
+  }
+
+  const handleFileSelected = (file: File) => {
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Ukuran file maksimal 5MB")
+      return
+    }
+    setCoverImage(file)
+    setImagePreview(URL.createObjectURL(file))
+  }
+
+  const clearImage = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setCoverImage(null)
+    setImagePreview(null)
+    if (fileInputRef.current) fileInputRef.current.value = ""
+  }
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target
     setForm({ ...form, [name]: type === "checkbox" ? (e.target as HTMLInputElement).checked : value })
@@ -36,15 +81,82 @@ export default function CreateActivityPage() {
   const handleSubmit = async (e: React.FormEvent, isDraft = false) => {
     e.preventDefault()
     setIsLoading(true)
-    // In production: call Supabase API route to INSERT into activities table
-    await new Promise(r => setTimeout(r, 1500))
-    if (isDraft) {
-      toast.success("Kegiatan disimpan sebagai draft.")
-    } else {
-      toast.success("Kegiatan diajukan untuk review admin. Tunggu persetujuan dalam 1-2 hari kerja.")
+    
+    try {
+      const supabase = createClient()
+      const { data: userData, error: authError } = await supabase.auth.getUser()
+      if (authError || !userData.user) throw new Error("Gagal mengambil sesi pengguna. Pastikan Anda sudah login.")
+      
+      const user = userData.user
+
+      // Check community
+      const { data: community, error: commError } = await supabase
+        .from("communities")
+        .select("id")
+        .eq("owner_id", user.id)
+        .single()
+        
+      if (commError || !community) {
+        throw new Error("Akun ini tidak memiliki profil komunitas. Pastikan Anda login dengan akun komunitas yang valid.")
+      }
+
+      // Upload image
+      let cover_image_url = null
+      if (coverImage) {
+        const fileExt = coverImage.name.split('.').pop()
+        const fileName = `activity_${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`
+        const bucketName = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET?.replace(" ", "") || "sinergilaut-assets"
+        
+        const { error: uploadError } = await supabase.storage
+          .from(bucketName)
+          .upload(`activities/${fileName}`, coverImage)
+          
+        if (uploadError) {
+          console.error("Upload error details:", uploadError)
+          throw new Error("Gagal mengupload gambar sampul. (Pastikan bucket storage tersedia)")
+        }
+        
+        const { data: publicUrlData } = supabase.storage
+          .from(bucketName)
+          .getPublicUrl(`activities/${fileName}`)
+          
+        cover_image_url = publicUrlData.publicUrl
+      }
+
+      const slug = form.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Date.now()
+
+      const { error: insertError } = await supabase
+        .from("activities")
+        .insert({
+          community_id: community.id,
+          title: form.title,
+          slug,
+          description: form.description,
+          category: form.category,
+          status: isDraft ? 'draft' : 'pending_review',
+          start_date: new Date(form.startDate).toISOString(),
+          end_date: form.endDate ? new Date(form.endDate).toISOString() : null,
+          location: form.location,
+          volunteer_quota: parseInt(form.volunteerQuota) || 0,
+          funding_goal: parseInt(form.fundingGoal) || 0,
+          allow_item_donation: form.allowItemDonation,
+          cover_image_url
+        })
+
+      if (insertError) throw insertError
+
+      if (isDraft) {
+        toast.success("Kegiatan disimpan sebagai draft.")
+      } else {
+        toast.success("Kegiatan diajukan untuk review admin. Tunggu persetujuan dalam 1-2 hari kerja.")
+      }
+      router.push("/community/dashboard")
+    } catch (err: any) {
+      toast.error(err.message || "Terjadi kesalahan saat menyimpan kegiatan.")
+      console.error(err)
+    } finally {
+      setIsLoading(false)
     }
-    router.push("/community/dashboard")
-    setIsLoading(false)
   }
 
   return (
@@ -150,11 +262,40 @@ export default function CreateActivityPage() {
             <Card>
               <CardHeader><CardTitle className="text-lg flex items-center gap-2"><ImageIcon className="h-5 w-5" /> Foto Kegiatan</CardTitle></CardHeader>
               <CardContent>
-                <div className="border-2 border-dashed border-border rounded-xl p-10 text-center hover:border-primary transition-colors cursor-pointer">
-                  <ImageIcon className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-sm text-muted-foreground">Klik atau drag & drop untuk upload foto utama</p>
-                  <p className="text-xs text-muted-foreground mt-1">PNG, JPG, WEBP • Maks. 5MB</p>
-                  <Button type="button" variant="outline" size="sm" className="mt-3">Pilih File</Button>
+                <div
+                  className={`border-2 border-dashed rounded-xl p-10 text-center transition-colors cursor-pointer relative overflow-hidden ${
+                    isDragging ? "border-primary bg-primary/5" : "border-border hover:border-primary"
+                  }`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept="image/png, image/jpeg, image/webp"
+                    onChange={handleFileChange}
+                  />
+                  
+                  {imagePreview ? (
+                    <div className="absolute inset-0 w-full h-full">
+                      <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                        <Button type="button" variant="destructive" size="sm" onClick={clearImage}>
+                          <X className="h-4 w-4 mr-2" /> Ganti Foto
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <ImageIcon className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+                      <p className="text-sm text-muted-foreground">Klik atau drag & drop untuk upload foto utama</p>
+                      <p className="text-xs text-muted-foreground mt-1">PNG, JPG, WEBP • Maks. 5MB</p>
+                      <Button type="button" variant="outline" size="sm" className="mt-3">Pilih File</Button>
+                    </>
+                  )}
                 </div>
               </CardContent>
             </Card>

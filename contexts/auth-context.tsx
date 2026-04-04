@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfile(null)
   }
 
-  const role = profile?.role ?? null
+  const role = user?.user_metadata?.role || profile?.role || "user"
 
   return (
     <AuthContext.Provider

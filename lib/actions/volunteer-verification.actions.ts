@@ -5,7 +5,7 @@
  * Operasi verifikasi data diri volunteer oleh admin
  */
 
-import { createClient } from "@/lib/supabase/server"
+import { createClient, createAdminClient } from "@/lib/supabase/server"
 import type { VerificationStatus } from "@/lib/types"
 
 /** Submit/update data diri volunteer untuk diverifikasi admin */
@@ -19,7 +19,8 @@ export async function submitVolunteerVerification(payload: {
   phone: string
   ktpUrl?: string
 }) {
-  const supabase = await createClient()
+  // Use admin client to bypass RLS – user cannot update volunteer_status themselves
+  const supabase = await createAdminClient()
 
   const { data, error } = await supabase
     .from("profiles")
@@ -40,7 +41,7 @@ export async function submitVolunteerVerification(payload: {
 
   if (error) {
     console.error("[submitVolunteerVerification] error:", error)
-    return { success: false, error: "Gagal mengirim data verifikasi." }
+    return { success: false, error: "Gagal mengirim data verifikasi: " + error.message }
   }
 
   return { success: true, data }

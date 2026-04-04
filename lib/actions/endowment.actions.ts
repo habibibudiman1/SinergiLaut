@@ -1,9 +1,9 @@
 "use server"
 
-import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/server"
 
 export async function getEndowmentStats() {
-  const supabase = await createClient()
+  const supabase = await createAdminClient()
 
   // Fetch all activities that are completed
   const { data: activities, error } = await supabase
@@ -52,7 +52,7 @@ export async function getEndowmentStats() {
 }
 
 export async function getEndowmentDisbursements() {
-  const supabase = await createClient()
+  const supabase = await createAdminClient()
 
   const { data, error } = await supabase
     .from("disbursements")

@@ -110,7 +110,7 @@ export function Navigation() {
           <div className="hidden md:flex items-center justify-end gap-3 flex-1">
             {isLoading ? (
               <div className="w-8 h-8 rounded-full bg-secondary animate-pulse" />
-            ) : user && profile ? (
+            ) : user ? (
               <>
                 {/* Notification bell */}
                 <Button variant="ghost" size="sm" className="relative" asChild>
@@ -136,10 +136,10 @@ export function Navigation() {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="flex items-center gap-2">
                       <div className="w-7 h-7 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-xs font-bold">
-                        {getInitials(profile.full_name || profile.email)}
+                        {getInitials(profile?.full_name || user.email || "U")}
                       </div>
                       <span className="text-sm font-medium max-w-[100px] truncate">
-                        {profile.full_name || profile.email.split("@")[0]}
+                        {profile?.full_name || user.email?.split("@")[0] || "User"}
                       </span>
                       <ChevronDown className="h-3 w-3 text-muted-foreground" />
                     </Button>
@@ -151,7 +151,7 @@ export function Navigation() {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href={role === "community" ? "/community/dashboard" : "/user/profile"}>
+                      <Link href="/user/profile">
                         <User className="h-4 w-4 mr-2" /> Profil
                       </Link>
                     </DropdownMenuItem>
@@ -207,14 +207,14 @@ export function Navigation() {
               })}
 
               <div className="flex flex-col gap-2 pt-4 border-t border-border">
-                {user && profile ? (
+                {user ? (
                   <>
                     <div className="flex items-center gap-3 px-2 py-2">
                       <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-xs font-bold">
-                        {getInitials(profile.full_name || profile.email)}
+                        {getInitials(profile?.full_name || user.email || "U")}
                       </div>
                       <div>
-                        <p className="text-sm font-medium">{profile.full_name}</p>
+                        <p className="text-sm font-medium">{profile?.full_name || user.email}</p>
                         <p className="text-xs text-muted-foreground capitalize">{role}</p>
                       </div>
                     </div>

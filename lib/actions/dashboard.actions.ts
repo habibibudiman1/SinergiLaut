@@ -89,6 +89,44 @@ export async function getAllCommunities() {
   return data || []
 }
 
+// --- ADMIN MODERATION ACTIONS ---
+
+export async function approveCommunityAction(id: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.from("communities").update({ is_verified: true, verification_status: "approved" }).eq("id", id)
+  return error ? { success: false, error: error.message } : { success: true }
+}
+
+export async function rejectCommunityAction(id: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.from("communities").update({ is_verified: false, verification_status: "rejected" }).eq("id", id)
+  return error ? { success: false, error: error.message } : { success: true }
+}
+
+export async function approveActivityAction(id: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.from("activities").update({ status: "published", published_at: new Date().toISOString() }).eq("id", id)
+  return error ? { success: false, error: error.message } : { success: true }
+}
+
+export async function rejectActivityAction(id: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.from("activities").update({ status: "draft", admin_note: "Ditolak oleh admin" }).eq("id", id)
+  return error ? { success: false, error: error.message } : { success: true }
+}
+
+export async function approveReportAction(id: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.from("reports").update({ status: "validated" }).eq("id", id)
+  return error ? { success: false, error: error.message } : { success: true }
+}
+
+export async function rejectReportAction(id: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.from("reports").update({ status: "rejected" }).eq("id", id)
+  return error ? { success: false, error: error.message } : { success: true }
+}
+
 // --- COMMUNITY DASHBOARD ---
 
 export async function getCommunityDashboardStats(userId: string) {

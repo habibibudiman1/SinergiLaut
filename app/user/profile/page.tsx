@@ -113,26 +113,18 @@ export default function UserProfilePage() {
     const filePath = `ktp/${user.id}/ktp-${Date.now()}.${fileExt}`
 
     const { error: uploadError } = await supabase.storage
-      .from("sinergil aut-assets")
+      .from("sinergilaut-assets")
       .upload(filePath, file, { upsert: true })
 
     if (uploadError) {
-      // Try alternative bucket name
-      const { error: uploadError2 } = await supabase.storage
-        .from("sinergilaut-assets")
-        .upload(filePath, file, { upsert: true })
-      
-      if (uploadError2) {
-        toast.error("Gagal mengupload foto KTP. Pastikan storage bucket sudah dikonfigurasi.")
-        setIsUploadingKtp(false)
-        return
-      }
-      const { data: urlData } = supabase.storage.from("sinergilaut-assets").getPublicUrl(filePath)
-      setVerifyForm({ ...verifyForm, ktp_url: urlData.publicUrl })
-    } else {
-      const { data: urlData } = supabase.storage.from("sinergil aut-assets").getPublicUrl(filePath)
-      setVerifyForm({ ...verifyForm, ktp_url: urlData.publicUrl })
+      console.error("KTP upload error:", uploadError)
+      toast.error("Gagal mengupload foto KTP: " + uploadError.message)
+      setIsUploadingKtp(false)
+      return
     }
+
+    const { data: urlData } = supabase.storage.from("sinergilaut-assets").getPublicUrl(filePath)
+    setVerifyForm(prev => ({ ...prev, ktp_url: urlData.publicUrl }))
     
     toast.success("Foto KTP berhasil diupload!")
     setIsUploadingKtp(false)
