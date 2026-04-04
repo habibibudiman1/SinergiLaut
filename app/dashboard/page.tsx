@@ -121,7 +121,7 @@ export default function AdminDashboardPage() {
   async function handleApproveVolunteer(userId: string) {
     if (!user) return
     setUpdatingVolunteerId(userId)
-    const result = await approveVolunteerVerification(userId, user.id)
+    const result = await approveVolunteerVerification(userId)
     if (result.success) {
       toast.success("Volunteer berhasil diverifikasi! ✅")
       setVolunteers(prev => prev.map(v => v.id === userId ? { ...v, volunteer_status: "approved" as const } : v))
@@ -138,7 +138,7 @@ export default function AdminDashboardPage() {
       return
     }
     setUpdatingVolunteerId(rejectDialog.userId)
-    const result = await rejectVolunteerVerification(rejectDialog.userId, user.id, rejectReason)
+    const result = await rejectVolunteerVerification(rejectDialog.userId, rejectReason)
     if (result.success) {
       toast.info("Verifikasi volunteer ditolak.")
       setVolunteers(prev => prev.map(v => v.id === rejectDialog.userId ? {
