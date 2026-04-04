@@ -333,7 +333,7 @@ export default function CommunityProfilePage({
                 </div>
 
                 <div className="space-y-4">
-                  {allActs.map((activity: any) => (
+                  {activeActs.map((activity: any) => (
                     <Card key={activity.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                       <CardContent className="p-0">
                         <div className="flex flex-col md:flex-row">
@@ -411,7 +411,7 @@ export default function CommunityProfilePage({
                   ))}
                 </div>
 
-                {allActs.length === 0 && (
+                {activeActs.length === 0 && (
                   <Card>
                     <CardContent className="p-12 text-center">
                       <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />

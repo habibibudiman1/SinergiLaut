@@ -232,33 +232,35 @@ export default function ActivitiesPage() {
                         <div className="h-2 bg-background rounded-full overflow-hidden mb-1">
                           <div 
                             className="h-full bg-primary rounded-full transition-all"
-                            style={{ width: `${(activity.fundingRaised / activity.fundingGoal) * 100}%` }}
+                            style={{ width: `${activity.fundingGoal > 0 ? Math.min((activity.fundingRaised / activity.fundingGoal) * 100, 100) : 0}%` }}
                           />
                         </div>
                         <div className="flex justify-between text-xs">
                           <span className="text-muted-foreground">{formatCurrency(activity.fundingRaised)}</span>
-                          <span className="font-medium text-foreground">{Math.round((activity.fundingRaised / activity.fundingGoal) * 100)}%</span>
+                          <span className="font-medium text-foreground">{activity.fundingGoal > 0 ? Math.round((activity.fundingRaised / activity.fundingGoal) * 100) : 0}%</span>
                         </div>
                       </div>
 
-                      {/* Items Needed Preview */}
-                      <div className="mb-4 p-3 bg-secondary/50 rounded-lg">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Package className="h-4 w-4 text-accent" />
-                          <span className="text-xs font-medium text-foreground">Items Needed</span>
+                      {/* Items Needed Preview — only if there are items */}
+                      {activity.itemsNeeded.length > 0 && (
+                        <div className="mb-4 p-3 bg-secondary/50 rounded-lg">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Package className="h-4 w-4 text-accent" />
+                            <span className="text-xs font-medium text-foreground">Items Needed</span>
+                          </div>
+                          <ul className="space-y-1">
+                            {activity.itemsNeeded.slice(0, 2).map((item: any) => (
+                              <li key={item.name} className="text-xs text-muted-foreground flex justify-between">
+                                <span className="truncate">{item.name}</span>
+                                <span className="font-medium">{item.donated}/{item.quantity}</span>
+                              </li>
+                            ))}
+                            {activity.itemsNeeded.length > 2 && (
+                              <li className="text-xs text-primary">+{activity.itemsNeeded.length - 2} more items</li>
+                            )}
+                          </ul>
                         </div>
-                        <ul className="space-y-1">
-                          {activity.itemsNeeded.slice(0, 2).map((item: any) => (
-                            <li key={item.name} className="text-xs text-muted-foreground flex justify-between">
-                              <span className="truncate">{item.name}</span>
-                              <span className="font-medium">{item.donated}/{item.quantity}</span>
-                            </li>
-                          ))}
-                          {activity.itemsNeeded.length > 2 && (
-                            <li className="text-xs text-primary">+{activity.itemsNeeded.length - 2} more items</li>
-                          )}
-                        </ul>
-                      </div>
+                      )}
 
                       <div className="flex gap-2">
                         <Button className="flex-1" asChild>
