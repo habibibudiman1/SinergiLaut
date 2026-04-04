@@ -1,0 +1,8 @@
+app/api/midtrans/webhook/route.ts(95,8): error TS2339: Property 'from' does not exist on type 'Promise<SupabaseClient<any, "public", "public", any, any>>'.
+app/api/midtrans/webhook/route.ts(111,10): error TS2339: Property 'from' does not exist on type 'Promise<SupabaseClient<any, "public", "public", any, any>>'.
+app/api/midtrans/webhook/route.ts(122,24): error TS2339: Property 'from' does not exist on type 'Promise<SupabaseClient<any, "public", "public", any, any>>'.
+contexts/auth-context.tsx(46,48): error TS7031: Binding element 'session' implicitly has an 'any' type.
+contexts/auth-context.tsx(57,14): error TS7006: Parameter '_event' implicitly has an 'any' type.
+contexts/auth-context.tsx(57,22): error TS7006: Parameter 'session' implicitly has an 'any' type.
+prisma.config.ts(5,3): error TS2353: Object literal may only specify known properties, and 'earlyAccess' does not exist in type 'PrismaConfig'.
+prisma/seed.ts(123,7): error TS2353: Object literal may only specify known properties, and 'user_id' does not exist in type 'AdminUserAttributes'.
