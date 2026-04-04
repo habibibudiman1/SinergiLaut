@@ -29,6 +29,7 @@ const userNavLinks = [
   { href: "/community", label: "Komunitas" },
   { href: "/endowment", label: "Dana Abadi" },
   { href: "/user/dashboard", label: "Dashboard" },
+  { href: "/user/profile", label: "Profil" },
 ]
 
 const communityNavLinks = [
@@ -39,9 +40,9 @@ const communityNavLinks = [
 
 const adminNavLinks = [
   { href: "/admin/dashboard", label: "Dashboard Admin" },
-  { href: "/admin/communities", label: "Komunitas" },
-  { href: "/admin/activities", label: "Kegiatan" },
-  { href: "/admin/reports", label: "Laporan" },
+  { href: "/admin/communities", label: "Kelola Komunitas" },
+  { href: "/admin/activities", label: "Kelola Kegiatan" },
+  { href: "/admin/users", label: "Kelola Pengguna" },
   { href: "/endowment", label: "Dana Abadi" },
 ]
 
@@ -156,7 +157,7 @@ export function Navigation() {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
+                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleSignOut(); }} className="text-destructive cursor-pointer">
                       <LogOut className="h-4 w-4 mr-2" /> Keluar
                     </DropdownMenuItem>
                   </DropdownMenuContent>

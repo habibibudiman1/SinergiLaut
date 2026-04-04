@@ -60,20 +60,13 @@ export default function CommunityDashboardPage() {
       <Navigation />
       <main className="pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <CheckCircle2 className="h-5 w-5 text-primary" />
-                <span className="text-sm text-primary font-medium">Komunitas Terverifikasi</span>
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Dashboard Komunitas</h1>
-              <p className="text-muted-foreground mt-1">Kelola kegiatan, relawan, dan laporan komunitas Anda</p>
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-1">
+              <CheckCircle2 className="h-5 w-5 text-primary" />
+              <span className="text-sm text-primary font-medium">Komunitas Terverifikasi</span>
             </div>
-            <Button asChild>
-              <Link href="/community/dashboard/activities/create">
-                <Plus className="mr-2 h-4 w-4" /> Buat Kegiatan
-              </Link>
-            </Button>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Dashboard Komunitas</h1>
+            <p className="text-muted-foreground mt-1">Kelola kegiatan, relawan, dan laporan komunitas Anda</p>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -107,7 +100,7 @@ export default function CommunityDashboardPage() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input placeholder="Cari kegiatan..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 w-56" />
                   </div>
-                  <Button asChild><Link href="/community/dashboard/activities/create"><Plus className="mr-2 h-4 w-4" /> Buat</Link></Button>
+                  <Button asChild><Link href="/community/dashboard/activities/create"><Plus className="mr-2 h-4 w-4" /> Buat Kegiatan</Link></Button>
                 </div>
               </div>
             </CardHeader>

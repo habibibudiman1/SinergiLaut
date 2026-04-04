@@ -194,6 +194,8 @@ model activities {
   funding_goal       BigInt            @default(0)
   funding_raised     BigInt            @default(0)
   allow_item_donation Boolean          @default(false)
+  items_needed       Json?             // Array: [{item_name, target, unit_price, donated}]
+  receipt_urls       String[]          @default([])
   cover_image_url    String?
   images             String[]          @default([])
   admin_note         String?

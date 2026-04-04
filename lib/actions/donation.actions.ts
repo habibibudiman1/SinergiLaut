@@ -242,6 +242,36 @@ export async function getActivityDonations(activityId: string) {
 }
 
 /**
+ * Ambil riwayat donasi milik user yang sedang login
+ */
+export async function getMyDonations(userId: string) {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from("donations")
+    .select(`
+      id,
+      type,
+      amount,
+      status,
+      created_at,
+      is_anonymous,
+      note,
+      activity:activities(id, title, slug),
+      items:donation_items(item_name, quantity)
+    `)
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    console.error("[getMyDonations] error:", error)
+    return { success: false, data: [], error: "Gagal mengambil data donasi." }
+  }
+
+  return { success: true, data }
+}
+
+/**
  * Konfirmasi penerimaan donasi barang oleh komunitas → ubah status menjadi completed
  */
 export async function confirmItemDonationReceived(donationId: string) {

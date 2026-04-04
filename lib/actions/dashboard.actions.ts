@@ -216,3 +216,39 @@ export async function getRegisteredCommunities() {
   if (error) console.error("Error fetching registered communities:", error)
   return data || []
 }
+
+// --- USER DASHBOARD ---
+
+export async function getUserDashboardStats(userId: string) {
+  const supabase = await createClient()
+
+  // Jumlah kegiatan yang didaftarkan sebagai relawan
+  const { count: totalActivities } = await supabase
+    .from("volunteer_registrations")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", userId)
+
+  // Jumlah kegiatan aktif (approved / attended)
+  const { count: activeActivities } = await supabase
+    .from("volunteer_registrations")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .in("status", ["approved", "attended"])
+
+  // Total donasi uang yang berhasil
+  const { data: donations } = await supabase
+    .from("donations")
+    .select("amount")
+    .eq("user_id", userId)
+    .eq("type", "money")
+    .eq("status", "completed")
+
+  const totalDonations = donations?.reduce((sum, d) => sum + Number(d.amount || 0), 0) || 0
+
+  return {
+    totalActivities: totalActivities || 0,
+    activeActivities: activeActivities || 0,
+    totalDonations,
+    avgRating: null as number | null, // placeholder — bisa dikembangkan jika ada tabel ratings
+  }
+}

@@ -125,6 +125,8 @@ CREATE TABLE IF NOT EXISTS activities (
   funding_goal BIGINT NOT NULL DEFAULT 0,
   funding_raised BIGINT NOT NULL DEFAULT 0,
   allow_item_donation BOOLEAN NOT NULL DEFAULT false,
+  items_needed JSONB DEFAULT NULL,   -- Array: [{item_name, target, unit_price, donated}]
+  receipt_urls TEXT[] DEFAULT '{}',  -- URL foto nota/kwitansi untuk verifikasi admin
   cover_image_url TEXT,
   images TEXT[] DEFAULT '{}',
   admin_note TEXT,
@@ -134,6 +136,10 @@ CREATE TABLE IF NOT EXISTS activities (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(community_id, slug)
 );
+
+-- Safe add columns if upgrading from old schema
+DO $$ BEGIN ALTER TABLE activities ADD COLUMN items_needed JSONB DEFAULT NULL; EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE activities ADD COLUMN receipt_urls TEXT[] DEFAULT '{}'; EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 
 -- ============================================
 -- VOLUNTEER REGISTRATIONS
