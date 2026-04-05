@@ -33,6 +33,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { createClient } from "@/lib/supabase/client"
 import { registerVolunteer } from "@/lib/actions/volunteer.actions"
 import { createMoneyDonation } from "@/lib/actions/donation.actions"
+import { submitFeedback, getMyFeedback } from "@/lib/actions/feedback.actions"
 import type { Activity, VolunteerRegistration, Donation } from "@/lib/types"
 type TabType = "detail" | "volunteer" | "donate" | "items" | "reports" | "feedback"
 
@@ -72,7 +73,7 @@ function VolunteerManagement({ activity, volunteerPercent, setActivity }: {
   const approvedCount = volunteers.filter(v => v.status === "approved").length;
   const pendingCount = volunteers.filter(v => v.status === "pending").length;
 
-  const handleAction = async (id: string, action: "approved" | "rejected") => {
+  const handleAction = async (id: string, action: "approved" | "rejected" | "attended") => {
     // NOTE: This updates the local list for immediate visual feedback
     setVolunteers(prev => prev.map(v => v.id === id ? { ...v, status: action } : v));
     
@@ -97,12 +98,15 @@ function VolunteerManagement({ activity, volunteerPercent, setActivity }: {
       } else {
         toast.error("Gagal mengupdate total count database.")
       }
+    } else if (action === "attended") {
+      toast.success("Relawan berhasil ditandai hadir! ✅ Mereka kini dapat memberikan ulasan.")
     } else {
       toast.info("Pendaftaran relawan ditolak.");
     }
   };
 
   const statusBadge = (status: string) => {
+    if (status === "attended") return <Badge className="bg-blue-100 text-blue-700">Hadir ✓</Badge>;
     if (status === "approved") return <Badge className="bg-green-100 text-green-700">Disetujui</Badge>;
     if (status === "rejected") return <Badge className="bg-red-100 text-red-700">Ditolak</Badge>;
     return <Badge className="bg-yellow-100 text-yellow-700">Menunggu</Badge>;
@@ -186,6 +190,13 @@ function VolunteerManagement({ activity, volunteerPercent, setActivity }: {
                       </Button>
                     </div>
                   )}
+                  {v.status === "approved" && (
+                    <div className="flex gap-2 pt-2">
+                      <Button size="sm" className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={() => handleAction(v.id, "attended")}>
+                        <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" /> Tandai Hadir
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -213,6 +224,13 @@ export default function ActivityDetailPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [alreadyRegistered, setAlreadyRegistered] = useState<VolunteerRegistration | null>(null)
   const [myDonations, setMyDonations] = useState<Donation[]>([])
+
+  // Feedback state
+  const [feedbackRating, setFeedbackRating] = useState(0)
+  const [feedbackHover, setFeedbackHover] = useState(0)
+  const [feedbackComment, setFeedbackComment] = useState("")
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false)
+  const [existingFeedback, setExistingFeedback] = useState<{ id: string; rating: number; comment: string | null } | null>(null)
 
   // Volunteer form state (simplified: only name, age, phone)
   const [volunteerForm, setVolunteerForm] = useState({
@@ -366,6 +384,23 @@ export default function ActivityDetailPage() {
     checkRegistration()
   }, [user, params.id, supabase])
 
+  // ── Load existing feedback jika volunteer sudah attended ─────
+  useEffect(() => {
+    if (!user || !params.id) return
+    if (alreadyRegistered?.status !== "attended") return
+
+    async function loadFeedback() {
+      const feedback = await getMyFeedback(params.id as string, user!.id)
+      if (feedback) {
+        setExistingFeedback(feedback)
+        setFeedbackRating(feedback.rating)
+        setFeedbackComment(feedback.comment ?? "")
+      }
+    }
+
+    loadFeedback()
+  }, [user, params.id, alreadyRegistered?.status])
+
   if (isLoadingActivity) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -401,6 +436,41 @@ export default function ActivityDetailPage() {
   const daysLeft = Math.max(0, Math.ceil(timeDiff / (1000 * 3600 * 24)));
 
 
+
+  // ── Handle feedback submit ───────────────────────────────────
+  async function handleFeedbackSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!activity || !user) return
+    if (feedbackRating === 0) { toast.error("Pilih rating bintang terlebih dahulu."); return }
+
+    setIsSubmittingFeedback(true)
+    const result = await submitFeedback({
+      activityId: activity.id,
+      userId: user.id,
+      rating: feedbackRating,
+      comment: feedbackComment.trim() || undefined,
+    })
+
+    if (result.success) {
+      toast.success(existingFeedback ? "Ulasan berhasil diperbarui! ✅" : "Ulasan berhasil dikirim! ✅ Terima kasih atas ulasan Anda.")
+      setExistingFeedback({ id: result.data.id, rating: feedbackRating, comment: feedbackComment || null })
+      // Refresh feedbacks in activity state
+      setActivity(prev => {
+        if (!prev) return prev
+        const filtered = (prev.feedbacks || []).filter((f: any) => f.user_id !== user.id)
+        return {
+          ...prev,
+          feedbacks: [
+            { id: result.data.id, rating: feedbackRating, comment: feedbackComment || null, created_at: new Date().toISOString(), user: { full_name: profile?.full_name ?? "Saya" } },
+            ...filtered,
+          ]
+        }
+      })
+    } else {
+      toast.error(result.error ?? "Gagal mengirim ulasan.")
+    }
+    setIsSubmittingFeedback(false)
+  }
 
   // ── Handle volunteer submit ───────────────────────────────
   async function handleVolunteerSubmit(e: React.FormEvent) {
@@ -969,27 +1039,157 @@ export default function ActivityDetailPage() {
               {/* ── Tab: Feedback ────────────────────────────── */}
               {activeTab === "feedback" && (
                 <div className="space-y-4">
-                  {activity.feedbacks?.length === 0 ? (
-                    <Card><CardContent className="p-12 text-center text-muted-foreground">
-                      <Star className="h-8 w-8 mx-auto mb-3 opacity-40" />Belum ada ulasan untuk kegiatan ini.
-                    </CardContent></Card>
-                  ) : activity.feedbacks?.map(f => (
-                    <Card key={f.id}>
-                      <CardContent className="p-6">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-xs font-bold text-primary">
-                            {(f.user?.full_name ?? "U")[0]}
+
+                  {/* ── Form Ulasan (hanya untuk volunteer attended) ── */}
+                  {user && alreadyRegistered?.status === "attended" && (
+                    <Card className="border-2 border-primary/20 bg-primary/5">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-base">
+                          <Star className="h-5 w-5 text-yellow-500" />
+                          {existingFeedback ? "Edit Ulasan Anda" : "Berikan Ulasan Anda"}
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                          Anda telah menghadiri kegiatan ini. Bagikan pengalaman Anda untuk membantu komunitas berkembang!
+                        </p>
+                      </CardHeader>
+                      <CardContent>
+                        <form onSubmit={handleFeedbackSubmit} className="space-y-5">
+                          {/* Rating Bintang Interaktif */}
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-foreground">Rating Kegiatan *</label>
+                            <div className="flex gap-1">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <button
+                                  key={star}
+                                  type="button"
+                                  onClick={() => setFeedbackRating(star)}
+                                  onMouseEnter={() => setFeedbackHover(star)}
+                                  onMouseLeave={() => setFeedbackHover(0)}
+                                  className="p-0.5 transition-transform hover:scale-110"
+                                >
+                                  <Star
+                                    className={`h-8 w-8 transition-colors ${
+                                      star <= (feedbackHover || feedbackRating)
+                                        ? "fill-yellow-400 text-yellow-400"
+                                        : "text-muted-foreground/30"
+                                    }`}
+                                  />
+                                </button>
+                              ))}
+                              {feedbackRating > 0 && (
+                                <span className="ml-2 self-center text-sm font-medium text-muted-foreground">
+                                  {feedbackRating === 1 ? "Sangat Kurang" :
+                                   feedbackRating === 2 ? "Kurang" :
+                                   feedbackRating === 3 ? "Cukup" :
+                                   feedbackRating === 4 ? "Bagus" : "Sangat Bagus! 🌟"}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          <span className="font-medium text-sm">{f.user?.full_name ?? "Pengguna"}</span>
-                          <div className="flex ml-auto">
-                            {Array(f.rating).fill(0).map((_, i) => <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />)}
+
+                          {/* Komentar */}
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-foreground">Komentar <span className="text-muted-foreground font-normal">(opsional)</span></label>
+                            <Textarea
+                              value={feedbackComment}
+                              onChange={e => setFeedbackComment(e.target.value)}
+                              rows={4}
+                              placeholder="Ceritakan pengalaman Anda mengikuti kegiatan ini..."
+                              className="resize-none"
+                            />
                           </div>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{f.comment}</p>
-                        <p className="text-xs text-muted-foreground mt-2">{formatDate(f.created_at)}</p>
+
+                          <Button
+                            type="submit"
+                            className="w-full"
+                            disabled={isSubmittingFeedback || feedbackRating === 0}
+                          >
+                            {isSubmittingFeedback
+                              ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Mengirim...</>
+                              : existingFeedback
+                              ? <><Star className="mr-2 h-4 w-4" />Perbarui Ulasan</>
+                              : <><Star className="mr-2 h-4 w-4" />Kirim Ulasan</>}
+                          </Button>
+                        </form>
                       </CardContent>
                     </Card>
-                  ))}
+                  )}
+
+                  {/* Info: user login tapi status bukan attended */}
+                  {user && alreadyRegistered && alreadyRegistered.status !== "attended" && (
+                    <Card className="border border-dashed">
+                      <CardContent className="p-6 text-center">
+                        <Star className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-40" />
+                        <p className="font-medium text-foreground text-sm mb-1">Belum Bisa Memberikan Ulasan</p>
+                        <p className="text-xs text-muted-foreground">
+                          Ulasan hanya dapat diberikan setelah pengelola kegiatan menandai kehadiran Anda.
+                          Status pendaftaran Anda saat ini: <strong>{alreadyRegistered.status}</strong>.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Info: user belum daftar sama sekali */}
+                  {user && !alreadyRegistered && (
+                    <Card className="border border-dashed">
+                      <CardContent className="p-6 text-center">
+                        <Star className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-40" />
+                        <p className="text-sm text-muted-foreground">
+                          Hanya relawan yang telah menghadiri kegiatan ini yang dapat memberikan ulasan.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Info: belum login */}
+                  {!user && (
+                    <Card className="border border-dashed">
+                      <CardContent className="p-6 text-center">
+                        <Star className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-40" />
+                        <p className="text-sm text-muted-foreground mb-3">
+                          Login untuk melihat apakah Anda bisa memberikan ulasan.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* ── Daftar Ulasan ── */}
+                  {activity.feedbacks?.length === 0 ? (
+                    <Card><CardContent className="p-8 text-center text-muted-foreground">
+                      <Star className="h-8 w-8 mx-auto mb-3 opacity-40" />
+                      <p className="text-sm">Belum ada ulasan untuk kegiatan ini.</p>
+                    </CardContent></Card>
+                  ) : (
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                        <Star className="h-4 w-4 text-yellow-500" />
+                        {activity.feedbacks?.length} Ulasan
+                      </h3>
+                      {activity.feedbacks?.map(f => (
+                        <Card key={f.id}>
+                          <CardContent className="p-5">
+                            <div className="flex items-start gap-3">
+                              <div className="w-9 h-9 bg-primary/10 rounded-full flex items-center justify-center text-sm font-bold text-primary flex-shrink-0">
+                                {(f.user?.full_name ?? "U")[0].toUpperCase()}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-2 mb-1">
+                                  <span className="font-medium text-sm text-foreground truncate">{f.user?.full_name ?? "Pengguna"}</span>
+                                  <div className="flex gap-0.5 flex-shrink-0">
+                                    {[1,2,3,4,5].map(s => (
+                                      <Star key={s} className={`h-3.5 w-3.5 ${s <= f.rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/20"}`} />
+                                    ))}
+                                  </div>
+                                </div>
+                                {f.comment && <p className="text-sm text-muted-foreground leading-relaxed">{f.comment}</p>}
+                                <p className="text-xs text-muted-foreground mt-1.5">{formatDate(f.created_at)}</p>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

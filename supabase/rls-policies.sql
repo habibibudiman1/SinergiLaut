@@ -339,15 +339,33 @@ DROP POLICY IF EXISTS "Users can view own feedbacks" ON feedbacks;
 CREATE POLICY "Users can view own feedbacks"
   ON feedbacks FOR SELECT USING (user_id = auth.uid());
 
--- Authenticated users can create feedback
+-- Authenticated users (only attended volunteers) can create feedback
 DROP POLICY IF EXISTS "Users can create feedback" ON feedbacks;
-CREATE POLICY "Users can create feedback"
-  ON feedbacks FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Attended volunteers can create feedback"
+  ON feedbacks FOR INSERT
+  WITH CHECK (
+    auth.uid() = user_id
+    AND EXISTS (
+      SELECT 1 FROM volunteer_registrations vr
+      WHERE vr.activity_id = feedbacks.activity_id
+        AND vr.user_id = auth.uid()
+        AND vr.status = 'attended'
+    )
+  );
 
--- Users can update own feedback
+-- Only attended volunteers can update own feedback
 DROP POLICY IF EXISTS "Users can update own feedback" ON feedbacks;
-CREATE POLICY "Users can update own feedback"
-  ON feedbacks FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Attended volunteers can update own feedback"
+  ON feedbacks FOR UPDATE
+  USING (
+    auth.uid() = user_id
+    AND EXISTS (
+      SELECT 1 FROM volunteer_registrations vr
+      WHERE vr.activity_id = feedbacks.activity_id
+        AND vr.user_id = auth.uid()
+        AND vr.status = 'attended'
+    )
+  );
 
 -- ============================================
 -- NOTIFICATIONS policies
