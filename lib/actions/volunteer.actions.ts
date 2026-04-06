@@ -6,6 +6,7 @@
  */
 
 import { createClient } from "@/lib/supabase/server"
+import { createNotification } from "@/lib/actions/notification.actions"
 import type { VolunteerRegistration, VolunteerStatus } from "@/lib/types"
 
 export interface RegisterVolunteerPayload {
@@ -65,6 +66,46 @@ export async function registerVolunteer(payload: RegisterVolunteerPayload) {
     return { success: false, error: "Gagal mendaftar relawan. Silakan coba lagi." }
   }
 
+  // Kirim notifikasi ke admin (pesan bahwa ada pendaftar baru)
+  // Pertama, ambil detail activity + komunitas
+  const { data: activityInfo } = await supabase
+    .from("activities")
+    .select("title, community:communities(owner_id)")
+    .eq("id", payload.activityId)
+    .single()
+
+  // Notifikasi ke semua admin
+  const { data: admins } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("role", "admin")
+
+  const activityTitle = activityInfo?.title ?? "kegiatan"
+  const communityOwnerId = (activityInfo?.community as any)?.owner_id
+
+  if (admins && admins.length > 0) {
+    for (const admin of admins) {
+      await createNotification(
+        admin.id,
+        "Pendaftar Volunteer Baru 👤",
+        `${payload.fullName} mendaftar sebagai relawan untuk kegiatan "${activityTitle}".`,
+        "info",
+        "/admin/users"
+      )
+    }
+  }
+
+  // Notifikasi ke pemilik komunitas
+  if (communityOwnerId) {
+    await createNotification(
+      communityOwnerId,
+      "Pendaftar Volunteer Baru 👤",
+      `${payload.fullName} mendaftar sebagai relawan untuk kegiatan "${activityTitle}". Segera tinjau pendaftaran.`,
+      "info",
+      "/community/dashboard"
+    )
+  }
+
   return { success: true, data }
 }
 
@@ -100,12 +141,43 @@ export async function updateVolunteerStatus(
     .from("volunteer_registrations")
     .update({ status })
     .eq("id", registrationId)
-    .select()
+    .select("user_id, full_name, activity:activities(title)")
     .single()
 
   if (error) {
     console.error("[updateVolunteerStatus] error:", error)
     return { success: false, error: "Gagal mengubah status relawan." }
+  }
+
+  // Kirim notifikasi ke user berdasarkan status baru
+  const userId = data?.user_id
+  const activityTitle = (data?.activity as any)?.title ?? "kegiatan"
+  if (userId) {
+    if (status === "approved") {
+      await createNotification(
+        userId,
+        "Pendaftaran Volunteer Disetujui ✅",
+        `Selamat! Pendaftaran Anda sebagai relawan untuk kegiatan "${activityTitle}" telah disetujui.`,
+        "success",
+        "/user/dashboard"
+      )
+    } else if (status === "rejected") {
+      await createNotification(
+        userId,
+        "Pendaftaran Volunteer Ditolak ❌",
+        `Maaf, pendaftaran Anda sebagai relawan untuk kegiatan "${activityTitle}" tidak dapat diterima saat ini.`,
+        "error",
+        "/user/dashboard"
+      )
+    } else if (status === "attended") {
+      await createNotification(
+        userId,
+        "Kehadiran Volunteer Dikonfirmasi 🌟",
+        `Kehadiran Anda di kegiatan "${activityTitle}" telah dikonfirmasi. Terima kasih telah berkontribusi!`,
+        "success",
+        "/user/dashboard"
+      )
+    }
   }
 
   return { success: true, data }

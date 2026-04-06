@@ -32,7 +32,7 @@ import { toast } from "sonner"
 import { useAuth } from "@/contexts/auth-context"
 import { createClient } from "@/lib/supabase/client"
 import { registerVolunteer } from "@/lib/actions/volunteer.actions"
-import { createMoneyDonation } from "@/lib/actions/donation.actions"
+import { createMoneyDonation, createItemDonation } from "@/lib/actions/donation.actions"
 import { submitFeedback, getMyFeedback } from "@/lib/actions/feedback.actions"
 import type { Activity, VolunteerRegistration, Donation } from "@/lib/types"
 type TabType = "detail" | "volunteer" | "donate" | "items" | "reports" | "feedback"
@@ -253,7 +253,10 @@ export default function ActivityDetailPage() {
     amount: number;
     method: string;
     timeLeft: number;
-  }>({ isOpen: false, step: "method", amount: 0, method: "", timeLeft: 30 })
+    // ID donation yang sedang dalam proses pembayaran
+    donationId: string | null;
+    donationType: "money" | "fulfillment";
+  }>({ isOpen: false, step: "method", amount: 0, method: "", timeLeft: 30, donationId: null, donationType: "money" })
 
   useEffect(() => {
     if (!paymentSim.isOpen || paymentSim.step !== "qr") return;
@@ -274,37 +277,55 @@ export default function ActivityDetailPage() {
   }, [paymentSim.isOpen, paymentSim.step, paymentSim.timeLeft, router]);
 
   const handlePaymentSuccess = async () => {
-    toast.success("Pembayaran berhasil! 🎉 Simulasi selesai.");
+    toast.success("Pembayaran berhasil! 🎉 Donasi Anda telah dicatat.");
     setPaymentSim(prev => ({ ...prev, isOpen: false }));
     setActiveTab("detail");
-    if (activity) {
-      const newFundingRaised = (activity.funding_raised || 0) + paymentSim.amount;
-      // Update funding + item donated counts if fulfillment
-      const updatedItems = activity.items_needed?.map((item, index) => ({
-        ...item,
-        donated: item.donated + (fulfillmentCart[index] || 0)
-      })) || [];
 
-      // Save to database
-      const { error } = await supabase
-        .from('activities')
-        .update({
-          funding_raised: newFundingRaised,
-          items_needed: updatedItems
-        })
-        .eq('id', activity.id);
+    if (!activity || !paymentSim.donationId) return;
 
-      if (error) {
-        toast.error("Gagal menyimpan progres ke database");
-        console.error(error);
+    try {
+      if (paymentSim.donationType === "money") {
+        // Tandai donasi uang sebagai 'completed' → trigger DB otomatis tambah funding_raised
+        await supabase
+          .from('donations')
+          .update({ status: 'completed' })
+          .eq('id', paymentSim.donationId);
+
+        // Refresh funding_raised dari DB
+        const { data: updated } = await supabase
+          .from('activities')
+          .select('funding_raised')
+          .eq('id', activity.id)
+          .single();
+        if (updated) {
+          setActivity(prev => prev ? { ...prev, funding_raised: updated.funding_raised } : prev);
+        }
       } else {
-        setActivity({
-          ...activity,
-          funding_raised: newFundingRaised,
-          items_needed: updatedItems
-        });
+        // Donasi barang: tandai sebagai completed + update items_needed di activities
+        await supabase
+          .from('donations')
+          .update({ status: 'completed' })
+          .eq('id', paymentSim.donationId);
+
+        // Update items_needed dengan qty yang dipenuhi dari fulfillmentCart
+        const updatedItems = activity.items_needed?.map((item, index) => ({
+          ...item,
+          donated: (item.donated || 0) + (fulfillmentCart[index] || 0)
+        })) || [];
+
+        const { error } = await supabase
+          .from('activities')
+          .update({ items_needed: updatedItems })
+          .eq('id', activity.id);
+
+        if (!error) {
+          setActivity(prev => prev ? { ...prev, items_needed: updatedItems } : prev);
+        }
       }
+    } catch (err) {
+      console.error('[handlePaymentSuccess] error:', err);
     }
+
     // Reset fulfillment cart
     setFulfillmentCart(prev => prev.map(() => 0));
   };
@@ -518,25 +539,68 @@ export default function ActivityDetailPage() {
         return
       }
 
-      // Simulasi Payment Gateway Bypass DB
+      if (!donateForm.donorName && !donateForm.isAnonymous) {
+        toast.error("Nama donatur wajib diisi.")
+        setIsSubmitting(false)
+        return
+      }
+      if (!donateForm.donorEmail) {
+        toast.error("Email donatur wajib diisi.")
+        setIsSubmitting(false)
+        return
+      }
+
+      // Simpan record donasi uang ke DB dulu
+      const result = await createMoneyDonation({
+        activityId: activity.id,
+        userId: user?.id ?? null,
+        donorName: donateForm.donorName || "Donatur",
+        donorEmail: donateForm.donorEmail,
+        amount,
+        note: donateForm.note || undefined,
+        isAnonymous: donateForm.isAnonymous,
+      })
+
+      if (!result.success) {
+        toast.error(result.error ?? "Gagal menyimpan donasi. Coba lagi.")
+        setIsSubmitting(false)
+        return
+      }
+
+      // Buka payment simulation dengan donationId tersimpan
       setTimeout(() => {
         setPaymentSim({
           isOpen: true,
           step: "method",
-          amount: amount,
+          amount,
           method: "",
-          timeLeft: 30
+          timeLeft: 30,
+          donationId: result.donationId!,
+          donationType: "money",
         });
         setIsSubmitting(false);
-      }, 500);
+      }, 300);
+
     } else {
-      // Fulfillment barang - calculate total from cart
+      // Fulfillment barang
       if (!activity.items_needed || !fulfillmentCart.some(q => q > 0)) {
         toast.error("Pilih minimal 1 barang untuk di-fulfill.")
         setIsSubmitting(false)
         return
       }
 
+      if (!donateForm.donorName && !donateForm.isAnonymous) {
+        toast.error("Nama donatur wajib diisi.")
+        setIsSubmitting(false)
+        return
+      }
+      if (!donateForm.donorEmail) {
+        toast.error("Email donatur wajib diisi.")
+        setIsSubmitting(false)
+        return
+      }
+
+      // Hitung total pembayaran
       const totalAmount = activity.items_needed.reduce((sum, item, index) => {
         const qty = fulfillmentCart[index] || 0
         const markedUpPrice = calcMarkup(item.unit_price || 0)
@@ -549,20 +613,46 @@ export default function ActivityDetailPage() {
         return
       }
 
-      // Open payment simulation with total fulfillment amount
+      // Siapkan items untuk disimpan
+      const itemsToSave = activity.items_needed
+        .map((item, index) => ({
+          itemName: item.item_name,
+          quantity: fulfillmentCart[index] || 0,
+          itemCondition: "new" as const,
+        }))
+        .filter(item => item.quantity > 0)
+
+      // Simpan record donasi barang ke DB
+      const result = await createItemDonation({
+        activityId: activity.id,
+        userId: user?.id ?? null,
+        donorName: donateForm.donorName || "Donatur",
+        donorEmail: donateForm.donorEmail,
+        note: donateForm.note || undefined,
+        isAnonymous: donateForm.isAnonymous,
+        items: itemsToSave,
+      })
+
+      if (!result.success) {
+        toast.error(result.error ?? "Gagal menyimpan donasi barang. Coba lagi.")
+        setIsSubmitting(false)
+        return
+      }
+
+      // Buka payment simulation
       setTimeout(() => {
         setPaymentSim({
           isOpen: true,
           step: "method",
           amount: totalAmount,
           method: "",
-          timeLeft: 30
+          timeLeft: 30,
+          donationId: result.donationId!,
+          donationType: "fulfillment",
         });
         setIsSubmitting(false);
-      }, 500);
+      }, 300);
     }
-
-    setIsSubmitting(false)
   }
 
   return (

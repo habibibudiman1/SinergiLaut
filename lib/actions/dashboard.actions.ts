@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { createNotification } from "@/lib/actions/notification.actions"
 
 // --- ADMIN DASHBOARD ---
 
@@ -93,38 +94,136 @@ export async function getAllCommunities() {
 
 export async function approveCommunityAction(id: string) {
   const supabase = await createClient()
-  const { error } = await supabase.from("communities").update({ is_verified: true, verification_status: "approved" }).eq("id", id)
-  return error ? { success: false, error: error.message } : { success: true }
+  const { data: community, error } = await supabase
+    .from("communities")
+    .update({ is_verified: true, verification_status: "approved" })
+    .eq("id", id)
+    .select("name, owner_id")
+    .single()
+  if (error) return { success: false, error: error.message }
+  // Kirim notifikasi ke pemilik komunitas
+  if (community?.owner_id) {
+    await createNotification(
+      community.owner_id,
+      "Komunitas Disetujui ✅",
+      `Komunitas "${community.name}" Anda telah diverifikasi dan disetujui oleh admin. Sekarang Anda dapat mulai membuat kegiatan.`,
+      "success",
+      "/community/dashboard"
+    )
+  }
+  return { success: true }
 }
 
 export async function rejectCommunityAction(id: string) {
   const supabase = await createClient()
-  const { error } = await supabase.from("communities").update({ is_verified: false, verification_status: "rejected" }).eq("id", id)
-  return error ? { success: false, error: error.message } : { success: true }
+  const { data: community, error } = await supabase
+    .from("communities")
+    .update({ is_verified: false, verification_status: "rejected" })
+    .eq("id", id)
+    .select("name, owner_id")
+    .single()
+  if (error) return { success: false, error: error.message }
+  // Kirim notifikasi ke pemilik komunitas
+  if (community?.owner_id) {
+    await createNotification(
+      community.owner_id,
+      "Komunitas Ditolak ❌",
+      `Maaf, komunitas "${community.name}" Anda belum dapat disetujui. Silakan hubungi admin untuk info lebih lanjut.`,
+      "error",
+      "/community"
+    )
+  }
+  return { success: true }
 }
 
 export async function approveActivityAction(id: string) {
   const supabase = await createClient()
-  const { error } = await supabase.from("activities").update({ status: "published", published_at: new Date().toISOString() }).eq("id", id)
-  return error ? { success: false, error: error.message } : { success: true }
+  const { data: activity, error } = await supabase
+    .from("activities")
+    .update({ status: "published", published_at: new Date().toISOString() })
+    .eq("id", id)
+    .select("title, community_id, community:communities(owner_id)")
+    .single()
+  if (error) return { success: false, error: error.message }
+  // Kirim notifikasi ke pemilik komunitas
+  const ownerId = (activity?.community as any)?.owner_id
+  if (ownerId) {
+    await createNotification(
+      ownerId,
+      "Kegiatan Disetujui ✅",
+      `Kegiatan "${activity.title}" telah disetujui oleh admin dan kini tampil ke publik.`,
+      "success",
+      "/community/dashboard"
+    )
+  }
+  return { success: true }
 }
 
 export async function rejectActivityAction(id: string) {
   const supabase = await createClient()
-  const { error } = await supabase.from("activities").update({ status: "draft", admin_note: "Ditolak oleh admin" }).eq("id", id)
-  return error ? { success: false, error: error.message } : { success: true }
+  const { data: activity, error } = await supabase
+    .from("activities")
+    .update({ status: "draft", admin_note: "Ditolak oleh admin" })
+    .eq("id", id)
+    .select("title, community_id, community:communities(owner_id)")
+    .single()
+  if (error) return { success: false, error: error.message }
+  // Kirim notifikasi ke pemilik komunitas
+  const ownerId = (activity?.community as any)?.owner_id
+  if (ownerId) {
+    await createNotification(
+      ownerId,
+      "Kegiatan Ditolak ❌",
+      `Kegiatan "${activity.title}" ditolak oleh admin. Silakan periksa catatan admin dan perbaiki sebelum submit ulang.`,
+      "error",
+      "/community/dashboard"
+    )
+  }
+  return { success: true }
 }
 
 export async function approveReportAction(id: string) {
   const supabase = await createClient()
-  const { error } = await supabase.from("reports").update({ status: "validated" }).eq("id", id)
-  return error ? { success: false, error: error.message } : { success: true }
+  const { data: report, error } = await supabase
+    .from("reports")
+    .update({ status: "validated" })
+    .eq("id", id)
+    .select("title, community_id, community:communities(owner_id)")
+    .single()
+  if (error) return { success: false, error: error.message }
+  const ownerId = (report?.community as any)?.owner_id
+  if (ownerId) {
+    await createNotification(
+      ownerId,
+      "Laporan Kegiatan Divalidasi ✅",
+      `Laporan "${report.title}" telah divalidasi oleh admin. Proses pencairan dana dapat dilanjutkan.`,
+      "success",
+      "/community/dashboard"
+    )
+  }
+  return { success: true }
 }
 
 export async function rejectReportAction(id: string) {
   const supabase = await createClient()
-  const { error } = await supabase.from("reports").update({ status: "rejected" }).eq("id", id)
-  return error ? { success: false, error: error.message } : { success: true }
+  const { data: report, error } = await supabase
+    .from("reports")
+    .update({ status: "rejected" })
+    .eq("id", id)
+    .select("title, community_id, community:communities(owner_id)")
+    .single()
+  if (error) return { success: false, error: error.message }
+  const ownerId = (report?.community as any)?.owner_id
+  if (ownerId) {
+    await createNotification(
+      ownerId,
+      "Laporan Kegiatan Ditolak ❌",
+      `Laporan "${report.title}" ditolak oleh admin. Silakan perbaiki laporan dan submit ulang.`,
+      "error",
+      "/community/dashboard"
+    )
+  }
+  return { success: true }
 }
 
 // --- COMMUNITY DASHBOARD ---

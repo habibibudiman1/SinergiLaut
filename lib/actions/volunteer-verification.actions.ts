@@ -6,6 +6,7 @@
  */
 
 import { createClient, createAdminClient } from "@/lib/supabase/server"
+import { createNotification } from "@/lib/actions/notification.actions"
 import type { VerificationStatus } from "@/lib/types"
 
 /** Submit/update data diri volunteer untuk diverifikasi admin */
@@ -103,6 +104,15 @@ export async function approveVolunteerVerification(userId: string) {
     return { success: false, error: "Gagal menyetujui verifikasi." }
   }
 
+  // Kirim notifikasi ke user
+  await createNotification(
+    userId,
+    "Verifikasi Data Diri Disetujui ✅",
+    "Selamat! Data diri Anda (termasuk KTP) telah diverifikasi oleh admin. Anda kini dapat mendaftar sebagai relawan untuk kegiatan.",
+    "success",
+    "/user/dashboard"
+  )
+
   return { success: true, data }
 }
 
@@ -135,6 +145,15 @@ export async function rejectVolunteerVerification(userId: string, reason: string
     console.error("[rejectVolunteerVerification] error:", error)
     return { success: false, error: "Gagal menolak verifikasi." }
   }
+
+  // Kirim notifikasi ke user
+  await createNotification(
+    userId,
+    "Verifikasi Data Diri Ditolak ❌",
+    `Maaf, verifikasi data diri Anda ditolak. Alasan: ${reason}. Silakan perbaiki dan ajukan ulang.`,
+    "error",
+    "/user/profile"
+  )
 
   return { success: true, data }
 }

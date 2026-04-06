@@ -1,10 +1,10 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/auth-context"
-import { Menu, X, Bell, ChevronDown, LogOut, User, LayoutDashboard, Settings, Shield, Building2 } from "lucide-react"
+import { Menu, X, Bell, ChevronDown, LogOut, User, LayoutDashboard, Shield, Building2, CheckCheck } from "lucide-react"
 import Image from "next/image"
 import {
   DropdownMenu,
@@ -13,9 +13,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { getInitials } from "@/lib/utils/helpers"
+import { getInitials, formatDate } from "@/lib/utils/helpers"
 import { useRouter, usePathname } from "next/navigation"
 import { toast } from "sonner"
+import {
+  getMyNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+} from "@/lib/actions/notification.actions"
 
 const publicNavLinks = [
   { href: "/activities", label: "Kegiatan" },
@@ -29,7 +34,6 @@ const userNavLinks = [
   { href: "/community", label: "Komunitas" },
   { href: "/endowment", label: "Dana Abadi" },
   { href: "/user/dashboard", label: "Dashboard" },
-  { href: "/user/profile", label: "Profil" },
 ]
 
 const communityNavLinks = [
@@ -46,8 +50,28 @@ const adminNavLinks = [
   { href: "/endowment", label: "Dana Abadi" },
 ]
 
+// Tipe data notifikasi
+interface Notification {
+  id: string
+  title: string
+  message: string
+  type: "info" | "success" | "warning" | "error"
+  link: string | null
+  is_read: boolean
+  created_at: string
+}
+
+const notifTypeColor: Record<string, string> = {
+  info:    "bg-blue-500",
+  success: "bg-green-500",
+  warning: "bg-amber-500",
+  error:   "bg-red-500",
+}
+
 export function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [notifOpen, setNotifOpen] = useState(false)
+  const [notifications, setNotifications] = useState<Notification[]>([])
   const { user, profile, role, signOut, isLoading } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
@@ -71,6 +95,52 @@ export function Navigation() {
     toast.success("Berhasil keluar.")
     router.push("/")
   }
+
+  // ─── Notifications ────────────────────────────────────────────────────────
+
+  const fetchNotifications = useCallback(async () => {
+    if (!user) return
+    const result = await getMyNotifications()
+    if (result.success) {
+      setNotifications(result.data as Notification[])
+    }
+  }, [user])
+
+  // Fetch on mount + setiap 30 detik
+  useEffect(() => {
+    fetchNotifications()
+    const interval = setInterval(fetchNotifications, 30_000)
+    return () => clearInterval(interval)
+  }, [fetchNotifications])
+
+  // Fetch ulang saat dropdown dibuka
+  useEffect(() => {
+    if (notifOpen) fetchNotifications()
+  }, [notifOpen, fetchNotifications])
+
+  const unreadCount = notifications.filter((n) => !n.is_read).length
+
+  const handleNotifClick = async (notif: Notification) => {
+    if (!notif.is_read) {
+      await markNotificationRead(notif.id)
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notif.id ? { ...n, is_read: true } : n))
+      )
+    }
+    setNotifOpen(false)
+    if (notif.link) router.push(notif.link)
+  }
+
+  const handleMarkAllRead = async () => {
+    await markAllNotificationsRead()
+    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })))
+    toast.success("Semua notifikasi telah ditandai dibaca")
+  }
+
+  // Render ikon dot berdasarkan tipe
+  const NotifDot = ({ type }: { type: string }) => (
+    <span className={`w-2 h-2 rounded-full flex-shrink-0 mt-1.5 ${notifTypeColor[type] ?? "bg-gray-400"}`} />
+  )
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
@@ -113,12 +183,77 @@ export function Navigation() {
               <div className="w-8 h-8 rounded-full bg-secondary animate-pulse" />
             ) : user ? (
               <>
-                {/* Notification bell */}
-                <Button variant="ghost" size="sm" className="relative" asChild>
-                  <Link href={getDashboardLink()}>
-                    <Bell className="h-4 w-4" />
-                  </Link>
-                </Button>
+                {/* ── Notification Bell Dropdown ── */}
+                <DropdownMenu open={notifOpen} onOpenChange={setNotifOpen}>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="relative" aria-label="Notifikasi">
+                      <Bell className="h-4 w-4" />
+                      {unreadCount > 0 && (
+                        <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full text-[9px] font-bold text-white flex items-center justify-center leading-none">
+                          {unreadCount > 9 ? "9+" : unreadCount}
+                        </span>
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-80 max-h-[480px] overflow-hidden flex flex-col p-0">
+                    {/* Header */}
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-secondary/50">
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">Notifikasi</p>
+                        {unreadCount > 0 && (
+                          <p className="text-xs text-muted-foreground">{unreadCount} belum dibaca</p>
+                        )}
+                      </div>
+                      {unreadCount > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs text-primary hover:text-primary"
+                          onClick={handleMarkAllRead}
+                        >
+                          <CheckCheck className="h-3.5 w-3.5 mr-1" />
+                          Tandai semua
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* List */}
+                    <div className="overflow-y-auto flex-1">
+                      {notifications.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-10 text-center px-4">
+                          <Bell className="h-8 w-8 text-muted-foreground/30 mb-2" />
+                          <p className="text-sm text-muted-foreground">Tidak ada notifikasi</p>
+                        </div>
+                      ) : (
+                        notifications.map((notif) => (
+                          <button
+                            key={notif.id}
+                            onClick={() => handleNotifClick(notif)}
+                            className={`w-full text-left flex items-start gap-3 px-4 py-3 border-b border-border/50 hover:bg-secondary/60 transition-colors ${
+                              !notif.is_read ? "bg-primary/5" : ""
+                            }`}
+                          >
+                            <NotifDot type={notif.type} />
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-sm font-medium line-clamp-1 ${!notif.is_read ? "text-foreground" : "text-muted-foreground"}`}>
+                                {notif.title}
+                              </p>
+                              <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+                                {notif.message}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground/60 mt-1">
+                                {formatDate(notif.created_at)}
+                              </p>
+                            </div>
+                            {!notif.is_read && (
+                              <span className="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-1.5" />
+                            )}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
                 {/* Role Badge */}
                 {role === "admin" && (
@@ -218,6 +353,12 @@ export function Navigation() {
                         <p className="text-sm font-medium">{profile?.full_name || user.email}</p>
                         <p className="text-xs text-muted-foreground capitalize">{role}</p>
                       </div>
+                      {/* Notif badge mobile */}
+                      {unreadCount > 0 && (
+                        <span className="ml-auto flex items-center gap-1 text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold">
+                          <Bell className="h-3 w-3" /> {unreadCount}
+                        </span>
+                      )}
                     </div>
                     <Button variant="outline" className="w-full" asChild onClick={() => setIsMenuOpen(false)}>
                       <Link href={getDashboardLink()}>Dashboard</Link>
