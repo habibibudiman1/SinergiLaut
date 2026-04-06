@@ -31,20 +31,18 @@ Platform full-stack yang mempertemukan komunitas konservasi laut, relawan, donat
 
 ## 🛠️ Cara Setup Project (Tutorial Lengkap)
 
-### Prasyarat
+Ikuti langkah-langkah di bawah ini untuk clone dan menjalankan SinergiLaut secara lokal.
 
-Pastikan sudah tersedia di komputer kamu:
-
-| Tool | Versi | Cara Install |
-|------|-------|--------------|
-| **Node.js** | 20+ | [nodejs.org](https://nodejs.org) |
-| **pnpm** | Latest | `npm install -g pnpm` |
-| **Git** | Latest | [git-scm.com](https://git-scm.com) |
+### Prasyarat Sistem
+Pastikan tool berikut sudah terinstal di komputer kamu:
+- **Node.js** (v20+) — [nodejs.org](https://nodejs.org)
+- **pnpm** (Latest) — `npm install -g pnpm`
+- **Git** (Latest) — [git-scm.com](https://git-scm.com)
 
 ---
 
-### Langkah 1 — Clone & Install
-
+### Langkah 1 — Clone & Install Dependency
+Buka terminal dan clone repository ini dari GitHub:
 ```bash
 git clone https://github.com/habibibudiman1/SinergiLaut.git
 cd SinergiLaut
@@ -53,124 +51,82 @@ pnpm install
 
 ---
 
-### Langkah 2 — Buat Project Supabase
-
-1. Buka [supabase.com](https://supabase.com) → **Start your project** → Login/Register
-2. Klik **New Project**, isi nama project (contoh: `sinergilaut-dev`), pilih region **Southeast Asia**
-3. Salin **Project URL** dan **API Keys** dari:
-   > **Project Settings → API**
+### Langkah 2 — Setup Akun & Project Supabase
+SinergiLaut menggunakan Supabase untuk Database, Authentication, dan Storage.
+1. Buka [supabase.com](https://supabase.com) dan buat akun/login.
+2. Klik **New Project**, beri tipe/nama project bebas (misal: `sinergilaut-dev`), set password database (wajib diingat), lalu pilih region **Southeast Asia**.
+3. Tunggu hingga proses setup database Supabase selesai.
 
 ---
 
-### Langkah 3 — Konfigurasi Environment Variables
-
-Salin file template:
-
+### Langkah 3 — Konfigurasi Environment Variables (`.env.local`)
+Gandakan template environment yang sudah disediakan:
 ```bash
 cp .env.example .env.local
 ```
+*(Pengguna Windows: Kamu bisa *copy-paste* file `.env.example` lalu ubah namanya menjadi `.env.local` secara manual via File Explorer).*
 
-Buka `.env.local` dan isi variabel berikut:
+Buka `.env.local` lalu isi dengan nilai dari dashboard Supabase:
+1. **`NEXT_PUBLIC_SUPABASE_URL`** dan **`NEXT_PUBLIC_SUPABASE_ANON_KEY`**: Didapat dari menu **Project Settings → API**.
+2. **`SUPABASE_SERVICE_ROLE_KEY`**: Didapat di halaman yang sama (bagian bawah `service_role`).
+3. **`DATABASE_URL`** dan **`DIRECT_URL`**: Didapat dari menu **Project Settings → Database** lalu temukan string koneksi `URI`. 
+   - Gunakan format connection string **Transaction** berakhiran `6543/postgres?pgbouncer=true` untuk `DATABASE_URL`.
+   - Gunakan format **Session** berakhiran `5432/postgres` untuk `DIRECT_URL`.
+   - (Jangan lupa ganti bagian `[YOUR-PASSWORD]` di link dengan password databasemu).
 
-```env
-# ── WAJIB DIISI ─────────────────────────────────────────
-NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co        # dari Project Settings → API
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJh...                    # "anon / public" key
-SUPABASE_SERVICE_ROLE_KEY=eyJh...                        # "service_role" key ⚠️ RAHASIA!
-
-NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET=sinergilaut-assets
-NEXT_PUBLIC_BASE_URL=http://localhost:3000
-
-# ── PEMBAYARAN (untuk fitur donasi uang) ─────────────────
-MIDTRANS_SERVER_KEY=SB-Mid-server-xxxx                   # dari dashboard.sandbox.midtrans.com
-NEXT_PUBLIC_MIDTRANS_CLIENT_KEY=SB-Mid-client-xxxx
-MIDTRANS_IS_PRODUCTION=false
-NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION=false
-```
-
-> ⚠️ **JANGAN commit file `.env.local` ke Git!** File ini sudah ada di `.gitignore`.
+> ⚠️ PENTING: Jangan ubah baris kode `# ── WAJIB DIISI ──` karena SinergiLaut membutuhkan kredensial ini. Jangan sesekali commit `.env.local` ke Git.
 
 ---
 
-### Langkah 4 — Setup Database
+### Langkah 4 — Setup Database & Trigger SQL Terpusat
+Untuk membangun skema, fungsi (trigger logic), dan migrasi tabel yang dibutuhkan:
+1. Di dashboard Supabase, masuk ke tab **SQL Editor** → Klik **New Query**.
+2. Salin isi dari *file* `supabase/schema.sql` dan **Run** *(jalan-kan hingga sukses)*.
+3. Buka Query baru, salin isi dari `supabase/migrations/20260404_add_items_needed_receipt_urls.sql` dan **Run**.
+4. Terakhir, buka Query baru, salin isi dari `supabase/rls-policies.sql` dan **Run**.
 
-Pergi ke **Supabase Dashboard → SQL Editor → New Query**, lalu jalankan file-file SQL berikut **satu per satu secara berurutan**:
-
-#### Step 4a — Schema Utama
-Salin dan jalankan isi file:
-```
-supabase/schema.sql
-```
-
-#### Step 4b — Migration (Fitur Donasi Barang)
-Salin dan jalankan isi file:
-```
-supabase/migrations/20260404_add_items_needed_receipt_urls.sql
-```
-
-#### Step 4c — Row Level Security (RLS)
-Salin dan jalankan isi file:
-```
-supabase/rls-policies.sql
-```
-
-#### Step 4d — Nonaktifkan Email Konfirmasi (untuk testing lokal)
-Masuk ke: **Authentication → Providers → Email**
-→ Matikan toggle **"Confirm email"**
+*(Langkah ini sangat penting agar fitur keamanan akses data per level user bekerja optimal).*
 
 ---
 
-### Langkah 5 — Setup Storage Bucket
+### Langkah 5 — Nonaktifkan Email Konfirmasi (Tujuan Testing)
+Agar kamu tidak perlu memverifikasi email saat login *testing* lokal:
+- Pergi ke menu **Authentication → Providers → Email** di Supabase.
+- Matikan/nonaktifkan toggle **"Confirm email"** lalu simpan.
 
-Bucket storage dibutuhkan untuk menyimpan foto kegiatan, foto nota verifikasi, dan dokumen komunitas.
+---
 
+### Langkah 6 — Setup Storage Bucket
+Sistem mermbutuhkan *bucket* storage untuk pendaftaran user, upload gambar dll. Kami sudah menyiapkan *script* node untuk membuatnya secara instan:
 ```bash
 node setup-storage.mjs
 ```
 
-Output yang diharapkan:
-```
-Checking bucket: sinergilaut-assets
-Bucket already exists.  ✓
-```
-
 ---
 
-### Langkah 6 — Generate Prisma Client
-
-Prisma digunakan untuk type-safe query dan script seeding.
-
+### Langkah 7 — Generate Prisma Client
+Agar TypeScript dan backend Next.js mengenali tipe data dari server kamu (menggunakan `DATABASE_URL`), jalankan:
 ```bash
 npx prisma generate
 ```
 
 ---
 
-### Langkah 7 — Jalankan Server Development
-
-```bash
-pnpm run dev
-```
-
-Buka browser dan kunjungi → **[http://localhost:3000](http://localhost:3000)** 🎉
-
----
-
-### Langkah 8 — Seed Data Dummy (Opsional tapi Direkomendasikan)
-
-Agar dashboard tidak kosong saat testing, jalankan script seed:
-
+### Langkah 8 — (Sangat Disarankan) Seed Data Dummy
+Untuk mempermudah validasi semua fitur tanpa perlu membuat data manual, jalankan seed master:
 ```bash
 npx tsx prisma/seed.ts
 ```
+*(Script ini otomatis mendaftarkan admin, 3 komunitas, serta berbagai relawan dan kegiatan status review)*
 
-Script ini akan otomatis membuat:
-- **1 akun admin**
-- **3 komunitas** (masing-masing sudah terverifikasi)
-- **6 kegiatan** (beberapa dalam status review)
-- **5 akun relawan/donatur**
+---
 
-> ⚠️ Menjalankan seed akan menghapus data dummy sebelumnya dan membuat ulang. Data real tidak terpengaruh.
+### Langkah 9 — Jalankan Server Development!
+Terakhir, jalankan SinergiLaut:
+```bash
+pnpm run dev
+```
+Buka browser dan seret navigasi web kamu ke → **[http://localhost:3000](http://localhost:3000)** 🎉
 
 ---
 
