@@ -350,6 +350,7 @@ export default function ActivityDetailPage() {
         .single()
 
       if (error || !data) {
+        console.error("DEBUG fetchActivity - params.id:", params.id, "error:", error, "data:", data);
         toast.error("Kegiatan tidak ditemukan.")
         router.push("/activities")
         return

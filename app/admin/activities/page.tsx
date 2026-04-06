@@ -7,12 +7,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
-  Activity, CheckCircle2, X, Eye, Clock, FileText, Loader2
+  Activity, CheckCircle2, X, Eye, Clock, FileText, Loader2, Users, Banknote
 } from "lucide-react"
 import { formatDate, formatCurrency } from "@/lib/utils/helpers"
 import { toast } from "sonner"
 import {
-  getPendingActivities, getPendingReports,
+  getPendingActivities, getPendingReports, getOngoingActivities,
   approveActivityAction, rejectActivityAction,
   approveReportAction, rejectReportAction
 } from "@/lib/actions/dashboard.actions"
@@ -20,14 +20,16 @@ import {
 export default function AdminActivitiesPage() {
   const [pendingActivities, setPendingActivities] = useState<any[]>([])
   const [pendingReports, setPendingReports] = useState<any[]>([])
+  const [ongoingActivities, setOngoingActivities] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
       setIsLoading(true)
-      const [pa, pr] = await Promise.all([getPendingActivities(), getPendingReports()])
+      const [pa, pr, oa] = await Promise.all([getPendingActivities(), getPendingReports(), getOngoingActivities()])
       setPendingActivities(pa)
       setPendingReports(pr)
+      setOngoingActivities(oa)
       setIsLoading(false)
     }
     load()
@@ -132,6 +134,57 @@ export default function AdminActivitiesPage() {
                               <X className="h-4 w-4 mr-1" /> Tolak
                             </Button>
                           </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Kegiatan Berjalan (Monitoring) */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-primary" />
+                  Monitoring Kegiatan Berjalan
+                  {ongoingActivities.length > 0 && (
+                    <Badge className="bg-primary/10 text-primary ml-1">{ongoingActivities.length}</Badge>
+                  )}
+                </CardTitle>
+                <CardDescription>Pantau kegiatan yang sedang berjalan atau sudah selesai</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
+                ) : ongoingActivities.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <CheckCircle2 className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                    <p className="text-sm">Tidak ada kegiatan yang sedang berjalan.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {ongoingActivities.map(a => (
+                      <div key={a.id} className="p-4 border rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex-1">
+                          <p className="font-semibold text-foreground">{a.title}</p>
+                          <p className="text-sm text-muted-foreground mt-0.5">
+                            {a.community?.name || "Komunitas"} • {formatDate(a.start_date)}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-muted-foreground">
+                            <span className="flex items-center gap-1"><Users className="h-3 w-3"/> {a.volunteer_count} / {a.volunteer_quota}</span>
+                            <span className="flex items-center gap-1"><Banknote className="h-3 w-3"/> {formatCurrency(a.funding_raised || 0)}</span>
+                            <Badge variant="outline" className={a.status === "published" ? "text-green-600 border-green-200" : "text-gray-500"}>
+                              {a.status === "published" ? "Aktif" : "Selesai"}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="flex gap-2 flex-shrink-0">
+                          <Button size="sm" variant="outline" asChild>
+                            <Link href={`/activities/${a.id}`}>
+                              <Eye className="h-4 w-4 mr-1" /> Pantau Detail
+                            </Link>
+                          </Button>
                         </div>
                       </div>
                     ))}

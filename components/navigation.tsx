@@ -44,9 +44,6 @@ const communityNavLinks = [
 
 const adminNavLinks = [
   { href: "/admin/dashboard", label: "Dashboard Admin" },
-  { href: "/admin/communities", label: "Kelola Komunitas" },
-  { href: "/admin/activities", label: "Kelola Kegiatan" },
-  { href: "/admin/users", label: "Kelola Pengguna" },
   { href: "/endowment", label: "Dana Abadi" },
 ]
 

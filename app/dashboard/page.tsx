@@ -22,7 +22,7 @@ import {
 import { getVolunteersPendingVerification } from "@/lib/actions/volunteer-verification.actions"
 
 export default function AdminDashboardPage() {
-  const [stats, setStats] = useState({ totalCommunities: 0, totalUsers: 0, totalActivities: 0, totalDonations: 0 })
+  const [stats, setStats] = useState({ totalCommunities: 0, totalUsers: 0, totalActivities: 0, totalEndowment: 0 })
   const [pendingCommunities, setPendingCommunities] = useState<any[]>([])
   const [pendingActivities, setPendingActivities] = useState<any[]>([])
   const [pendingReports, setPendingReports] = useState<any[]>([])
@@ -71,14 +71,14 @@ export default function AdminDashboardPage() {
     { label: "Total Komunitas", value: stats.totalCommunities, icon: Building2, color: "text-primary" },
     { label: "Pengguna Aktif", value: stats.totalUsers, icon: Users, color: "text-blue-600" },
     { label: "Kegiatan Aktif", value: stats.totalActivities, icon: Activity, color: "text-green-600" },
-    { label: "Donasi Terkumpul", value: formatCurrency(stats.totalDonations), icon: Banknote, color: "text-amber-600" },
+    { label: "Total Dana Abadi", value: formatCurrency(stats.totalEndowment), icon: Banknote, color: "text-amber-600" },
   ]
 
   const alertCards = [
     { label: `${pendingCommunities.length} komunitas`, sub: "Menunggu verifikasi", color: "bg-yellow-50 border-yellow-200 text-yellow-800", icon: "🏢", href: "/admin/communities" },
     { label: `${pendingActivities.length} kegiatan`, sub: "Menunggu persetujuan", color: "bg-blue-50 border-blue-200 text-blue-800", icon: "📋", href: "/admin/activities" },
     { label: `${pendingReports.length} laporan`, sub: "Menunggu validasi", color: "bg-green-50 border-green-200 text-green-800", icon: "📄", href: "/admin/activities" },
-    { label: `${pendingVolunteers} volunteer`, sub: "Menunggu verifikasi data diri", color: "bg-purple-50 border-purple-200 text-purple-800", icon: "👤", href: "/admin/users" },
+    { label: `${pendingVolunteers} pengguna`, sub: "Menunggu verifikasi data diri", color: "bg-purple-50 border-purple-200 text-purple-800", icon: "👤", href: "/admin/users" },
   ]
 
   return (
@@ -258,7 +258,7 @@ export default function AdminDashboardPage() {
               <CardHeader className="flex flex-row items-center justify-between pb-3">
                 <div>
                   <CardTitle className="text-base flex items-center gap-2">
-                    <UserCheck className="h-4 w-4 text-purple-500" /> Verifikasi Volunteer
+                    <UserCheck className="h-4 w-4 text-purple-500" /> Verifikasi Pengguna
                   </CardTitle>
                   <CardDescription>Data diri perlu diverifikasi</CardDescription>
                 </div>
@@ -271,7 +271,7 @@ export default function AdminDashboardPage() {
                   <div className="w-14 h-14 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
                     <span className="text-2xl font-bold text-purple-700">{pendingVolunteers}</span>
                   </div>
-                  <p className="text-sm text-muted-foreground">volunteer menunggu verifikasi data diri</p>
+                  <p className="text-sm text-muted-foreground">pengguna menunggu verifikasi data diri</p>
                   {pendingVolunteers > 0 && (
                     <Button size="sm" className="mt-3" asChild>
                       <Link href="/admin/users">Verifikasi Sekarang</Link>

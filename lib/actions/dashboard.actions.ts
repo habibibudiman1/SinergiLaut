@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { createNotification } from "@/lib/actions/notification.actions"
+import { getEndowmentStats } from "@/lib/actions/endowment.actions"
 
 // --- ADMIN DASHBOARD ---
 
@@ -24,19 +25,15 @@ export async function getAdminDashboardStats() {
     .select("*", { count: "exact", head: true })
     .in("status", ["published", "completed"])
 
-  // Donations collected
-  const { data: donations } = await supabase
-    .from("donations")
-    .select("amount")
-    .eq("status", "completed")
-
-  const totalDonations = donations?.reduce((sum, d) => sum + Number(d.amount || 0), 0) || 0
+  // Endowment stats
+  const { totalRaised } = await getEndowmentStats()
+  const totalEndowment = totalRaised
 
   return {
     totalCommunities: totalCommunities || 0,
     totalUsers: totalUsers || 0,
     totalActivities: totalActivities || 0,
-    totalDonations
+    totalEndowment
   }
 }
 
@@ -61,6 +58,18 @@ export async function getPendingActivities() {
     .order("created_at", { ascending: false })
 
   if (error) console.error("Error fetching pending activities:", error)
+  return data || []
+}
+
+export async function getOngoingActivities() {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("activities")
+    .select("*, community:communities(name)")
+    .in("status", ["published", "completed"])
+    .order("created_at", { ascending: false })
+
+  if (error) console.error("Error fetching ongoing activities:", error)
   return data || []
 }
 
