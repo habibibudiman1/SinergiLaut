@@ -137,9 +137,12 @@ export default function CommunityDashboardPage() {
                       )}
                     </div>
 
-                    <div className="pt-3 border-t border-border">
-                      <Button size="sm" className="w-full text-xs h-9" asChild>
-                        <Link href={`/activities/${a.id}`}><Eye className="h-3.5 w-3.5 mr-1.5" /> Kelola Kegiatan</Link>
+                    <div className="pt-3 border-t border-border flex gap-2">
+                      <Button size="sm" className="flex-1 text-xs h-9" asChild>
+                        <Link href={`/activities/${a.id}`}><Eye className="h-3.5 w-3.5 mr-1.5" /> Kelola</Link>
+                      </Button>
+                      <Button size="sm" variant="outline" className="flex-1 text-xs h-9 border-primary/20 text-primary hover:bg-primary/5 hover:border-primary/40" asChild>
+                        <Link href={`/community/dashboard/activities/${a.id}/edit`}><Edit className="h-3.5 w-3.5 mr-1.5" /> Edit</Link>
                       </Button>
                     </div>
                   </div>

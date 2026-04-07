@@ -9,6 +9,7 @@
  */
 
 import { useState, useEffect } from "react"
+import dynamic from "next/dynamic"
 import Image from "next/image"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
@@ -35,6 +36,12 @@ import { registerVolunteer } from "@/lib/actions/volunteer.actions"
 import { createMoneyDonation, createItemDonation } from "@/lib/actions/donation.actions"
 import { submitFeedback, getMyFeedback } from "@/lib/actions/feedback.actions"
 import type { Activity, VolunteerRegistration, Donation } from "@/lib/types"
+
+const MapView = dynamic(() => import("@/components/map/map-view"), {
+  ssr: false,
+  loading: () => <div className="h-[300px] w-full bg-secondary animate-pulse rounded-xl flex items-center justify-center text-muted-foreground">Memuat peta...</div>
+})
+
 type TabType = "detail" | "volunteer" | "donate" | "items" | "reports" | "feedback"
 
 const MARKUP_PERCENT = 10 // 10% markup on item prices
@@ -766,7 +773,16 @@ export default function ActivityDetailPage() {
                         </div>
                       </div>
                       <h3 className="font-semibold text-foreground mb-3">Deskripsi Kegiatan</h3>
-                      <div className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">{activity.description}</div>
+                      <div className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line mb-6">{activity.description}</div>
+
+                      {activity.latitude && activity.longitude && (
+                        <div className="space-y-3">
+                          <h3 className="font-semibold text-foreground flex items-center gap-2">
+                            <MapPin className="h-5 w-5 text-primary" /> Peta Lokasi
+                          </h3>
+                          <MapView lat={Number(activity.latitude)} lng={Number(activity.longitude)} label={activity.title} />
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 </div>

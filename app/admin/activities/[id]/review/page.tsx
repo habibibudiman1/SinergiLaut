@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import dynamic from "next/dynamic"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { Navigation } from "@/components/navigation"
@@ -21,6 +22,11 @@ import { formatCurrency, formatDate } from "@/lib/utils/helpers"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
 import { approveActivityAction, rejectActivityAction } from "@/lib/actions/dashboard.actions"
+
+const MapView = dynamic(() => import("@/components/map/map-view"), {
+  ssr: false,
+  loading: () => <div className="h-[200px] w-full bg-secondary animate-pulse rounded-xl flex items-center justify-center text-muted-foreground">Memuat peta...</div>
+})
 
 const MARKUP_PERCENT = 10
 
@@ -227,6 +233,15 @@ export default function AdminActivityReviewPage() {
                     </div>
                   </div>
                 </div>
+
+                {activity.latitude && activity.longitude && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <MapPin className="h-3 w-3" /> Peta Lokasi
+                    </p>
+                    <MapView lat={Number(activity.latitude)} lng={Number(activity.longitude)} label={activity.title} />
+                  </div>
+                )}
 
                 <div>
                   <p className="text-xs text-muted-foreground mb-2">Kategori</p>

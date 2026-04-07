@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Navigation } from "@/components/navigation"
@@ -13,6 +14,12 @@ import { ArrowLeft, Loader2, Calendar, MapPin, Users, Banknote, Image as ImageIc
 import Link from "next/link"
 import { ACTIVITY_CATEGORIES } from "@/lib/constants"
 import { toast } from "sonner"
+
+// Import MapPicker dynamically to avoid SSR issues
+const MapPicker = dynamic(() => import("@/components/map/map-picker"), { 
+  ssr: false,
+  loading: () => <div className="h-[300px] w-full bg-secondary animate-pulse rounded-xl flex items-center justify-center text-muted-foreground">Memuat peta...</div>
+})
 
 interface NeededItem {
   item_name: string
@@ -50,6 +57,8 @@ export default function CreateActivityPage() {
     endDate: "",
     executionDate: "",
     location: "",
+    latitude: null as number | null,
+    longitude: null as number | null,
     volunteerQuota: "",
     fundingGoal: "",
     allowItemDonation: false,
@@ -254,6 +263,8 @@ export default function CreateActivityPage() {
           end_date: form.endDate ? new Date(form.endDate).toISOString() : null,
           execution_date: new Date(form.executionDate).toISOString(),
           location: form.location,
+          latitude: form.latitude,
+          longitude: form.longitude,
           volunteer_quota: parseInt(form.volunteerQuota) || 0,
           funding_goal: parseInt(form.fundingGoal) || 0,
           allow_item_donation: form.allowItemDonation,
@@ -338,10 +349,25 @@ export default function CreateActivityPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="location">Lokasi Kegiatan *</Label>
-                  <div className="relative">
+                  <div className="relative mb-3">
                     <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input id="location" name="location" value={form.location} onChange={handleChange} required
                       placeholder="Nama tempat, Kota" className="pl-10" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                      <MapPin className="h-3 w-3" /> Pin lokasi di peta (opsional namun disarankan)
+                    </Label>
+                    <MapPicker 
+                      lat={form.latitude} 
+                      lng={form.longitude} 
+                      onChange={(lat, lng) => setForm(prev => ({ ...prev, latitude: lat, longitude: lng }))} 
+                    />
+                    {form.latitude && form.longitude && (
+                      <p className="text-[10px] text-muted-foreground">
+                        Koordinat terpilih: {form.latitude.toFixed(6)}, {form.longitude.toFixed(6)}
+                      </p>
+                    )}
                   </div>
                 </div>
               </CardContent>
