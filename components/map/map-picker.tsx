@@ -28,7 +28,27 @@ export default function MapPicker({ lat, lng, onChange, defaultCenter = [106.816
     // Initialize MapLibre
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
-      style: `https://api.maptiler.com/maps/streets-v2/style.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY || 'get_your_own_free_key_at_maptiler'}`,
+      style: process.env.NEXT_PUBLIC_MAPTILER_KEY
+        ? `https://api.maptiler.com/maps/streets-v2/style.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`
+        : {
+            version: 8 as const,
+            sources: {
+              osm: {
+                type: "raster" as const,
+                tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+                tileSize: 256,
+                attribution: "&copy; OpenStreetMap Contributors",
+                maxzoom: 19,
+              },
+            },
+            layers: [
+              {
+                id: "osm",
+                type: "raster" as const,
+                source: "osm",
+              },
+            ],
+          },
       center: lat && lng ? [lng, lat] : [defaultCenter[0], defaultCenter[1]],
       zoom: 13,
     })
@@ -47,16 +67,16 @@ export default function MapPicker({ lat, lng, onChange, defaultCenter = [106.816
                 feature.bbox[1] + (feature.bbox[3] - feature.bbox[1]) / 2
               ]
               const point = {
-                type: 'Feature',
+                type: 'Feature' as const,
                 geometry: {
-                  type: 'Point',
-                  coordinates: center
+                  type: 'Point' as const,
+                  coordinates: center as [number, number]
                 },
                 place_name: feature.properties.display_name,
                 properties: feature.properties,
                 text: feature.properties.display_name,
                 place_type: ['place'],
-                center: center
+                center: center as [number, number]
               }
               features.push(point)
             }
@@ -64,6 +84,7 @@ export default function MapPicker({ lat, lng, onChange, defaultCenter = [106.816
             console.error('Failed to forwardGeocode', e)
           }
           return {
+            type: 'FeatureCollection' as const,
             features: features
           }
         }
