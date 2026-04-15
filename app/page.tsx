@@ -1,24 +1,57 @@
 import Link from "next/link"
 import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
-import { ArrowRight, Users, Heart, Leaf, Calendar, MapPin, CheckCircle, Search, Gift, LineChart, FileText } from "lucide-react"
-
-// No more dummy data, we fetch fully from Supabase
+import {
+  ArrowRight, Users, Heart, Leaf, Calendar, MapPin,
+  CheckCircle, Search, Gift, LineChart, FileText,
+  Sparkles, Fish, Waves, Anchor, Zap, ShieldCheck,
+  TrendingUp, Globe, Star
+} from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { formatDate } from "@/lib/utils/helpers"
 
 const stats = [
-  { value: "15,000+", label: "Volunteers" },
-  { value: "250+", label: "Activities" },
-  { value: "50+", label: "Coastal Areas Protected" },
-  { value: "$2.5M", label: "Funds Raised" },
+  { icon: Users, value: "15,000+", label: "Relawan Aktif" },
+  { icon: Globe, value: "250+", label: "Kegiatan Berlangsung" },
+  { icon: Anchor, value: "50+", label: "Area Pesisir Terlindungi" },
+  { icon: Heart, value: "Rp 2,5M+", label: "Dana Terkumpul" },
+]
+
+const pillars = [
+  {
+    icon: ShieldCheck,
+    title: "100% Transparan",
+    description: "Setiap donasi dan kegiatan dipantau secara publik. Laporan real-time tersedia untuk semua kontributor.",
+    color: "#3b82f6",
+    bg: "rgba(59,130,246,0.08)",
+  },
+  {
+    icon: Users,
+    title: "Komunitas Lokal",
+    description: "Dipimpin oleh komunitas yang memahami kebutuhan nyata ekosistem laut di wilayah mereka.",
+    color: "#06958a",
+    bg: "rgba(6,149,138,0.08)",
+  },
+  {
+    icon: TrendingUp,
+    title: "Dampak Nyata",
+    description: "Dari pembersihan pantai hingga restorasi terumbu karang — setiap aksi meninggalkan jejak positif.",
+    color: "#f59e0b",
+    bg: "rgba(245,158,11,0.08)",
+  },
+]
+
+const donationSteps = [
+  { step: "01", icon: Search, title: "Pilih Kegiatan", desc: "Telusuri dan pilih aksi pelestarian lingkungan atau pesisir yang ingin Anda dukung." },
+  { step: "02", icon: Gift, title: "Pilih Jenis Donasi", desc: "Sumbangkan sejumlah dana atau belikan barang yang sedang dibutuhkan oleh relawan." },
+  { step: "03", icon: LineChart, title: "Pantau Eksekusi", desc: "Lacak setiap progres pendanaan dan persiapan aksi secara transparan dan real-time." },
+  { step: "04", icon: FileText, title: "Terima Laporan", desc: "Buka tab laporan untuk melihat bukti dokumen RAB dan galeri foto hasil kegiatan." },
 ]
 
 export default async function HomePage() {
   const supabase = await createClient()
+
   const { data: realActivities } = await supabase
     .from("activities")
     .select("*")
@@ -26,18 +59,15 @@ export default async function HomePage() {
     .order("created_at", { ascending: false })
     .limit(3)
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let featuredActivities: any[] = []
   if (realActivities) {
     featuredActivities = realActivities.map(d => ({
       ...d,
-      id: d.id,
-      title: d.title,
-      description: d.description,
       image: d.cover_image_url || "/images/placeholder.jpg",
       date: formatDate(d.start_date || new Date().toISOString()),
       location: d.location || "Online",
       volunteers: d.volunteer_count || 0,
-      icon: Leaf,
     }))
   }
 
@@ -48,326 +78,845 @@ export default async function HomePage() {
     .order("start_date", { ascending: false })
     .limit(2)
 
-  let mappedCompletedActivities: any[] = []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let completedActivities: any[] = []
   if (realCompletedActivities) {
-    mappedCompletedActivities = realCompletedActivities.map(d => ({
+    completedActivities = realCompletedActivities.map(d => ({
       ...d,
-      id: d.id,
-      title: d.title,
-      description: d.description,
       image: d.cover_image_url || "/images/placeholder.jpg",
       date: formatDate(d.start_date || new Date().toISOString()),
       location: d.location || "Online",
       volunteers: d.volunteer_count || 0,
-      icon: CheckCircle,
     }))
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", fontFamily: "'Inter', sans-serif" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+        /* ── HERO ── */
+        .home-hero {
+          position: relative;
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          overflow: hidden;
+          padding: 6rem 1.5rem 6rem;
+          text-align: center;
+        }
+        .home-hero-bg {
+          position: absolute; inset: 0;
+          background-image: url('/images/hero-ocean.jpg');
+          background-size: cover;
+          background-position: center 40%;
+        }
+        .home-hero-overlay {
+          position: absolute; inset: 0;
+          background: linear-gradient(
+            160deg,
+            rgba(2, 14, 36, 0.92) 0%,
+            rgba(4, 55, 82, 0.78) 50%,
+            rgba(3, 40, 60, 0.92) 100%
+          );
+        }
+        .home-hero-particles {
+          position: absolute; inset: 0;
+          background-image:
+            radial-gradient(circle, rgba(103,232,249,0.14) 1px, transparent 1px),
+            radial-gradient(circle, rgba(165,243,252,0.08) 1px, transparent 1px);
+          background-size: 55px 55px, 28px 28px;
+          background-position: 0 0, 14px 14px;
+          animation: particleDrift 28s linear infinite;
+          pointer-events: none;
+        }
+        @keyframes particleDrift {
+          from { transform: translateY(0); }
+          to { transform: translateY(-60px); }
+        }
+        .home-hero-content { position: relative; z-index: 10; max-width: 860px; }
+
+        .home-hero-badge {
+          display: inline-flex; align-items: center; gap: 0.5rem;
+          background: rgba(103,232,249,0.12);
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(103,232,249,0.28);
+          color: #a5f3fc;
+          font-size: 0.8125rem; font-weight: 600;
+          letter-spacing: 0.06em; text-transform: uppercase;
+          padding: 0.45rem 1.25rem; border-radius: 9999px;
+          margin-bottom: 2.5rem;
+        }
+
+        .home-hero-logo {
+          width: 88px; height: 88px;
+          background: white;
+          border-radius: 1.5rem;
+          display: flex; align-items: center; justify-content: center;
+          margin: 0 auto 2rem;
+          box-shadow: 0 8px 40px rgba(6,149,138,0.4), 0 0 0 6px rgba(255,255,255,0.1);
+          padding: 1rem;
+          animation: logoPulse 4s ease-in-out infinite;
+        }
+        @keyframes logoPulse {
+          0%,100% { box-shadow: 0 8px 40px rgba(6,149,138,0.4), 0 0 0 6px rgba(255,255,255,0.1); }
+          50% { box-shadow: 0 12px 60px rgba(6,149,138,0.6), 0 0 0 10px rgba(255,255,255,0.06); }
+        }
+
+        .home-hero-title {
+          font-size: clamp(2.5rem, 6vw, 4.5rem);
+          font-weight: 900; color: white;
+          line-height: 1.08; letter-spacing: -0.03em;
+          margin-bottom: 1.5rem;
+        }
+        .home-hero-title .shimmer {
+          background: linear-gradient(90deg, #67e8f9, #a5f3fc, #67e8f9);
+          background-size: 200%;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          animation: shimmer 4s linear infinite;
+        }
+        @keyframes shimmer {
+          from { background-position: 0% center; }
+          to { background-position: 200% center; }
+        }
+
+        .home-hero-desc {
+          font-size: 1.125rem; color: rgba(255,255,255,0.72);
+          line-height: 1.75; max-width: 620px; margin: 0 auto 3rem;
+        }
+
+        .home-hero-btns {
+          display: flex; gap: 1rem; flex-wrap: wrap;
+          align-items: center; justify-content: center;
+          margin-bottom: 3.5rem;
+        }
+        .home-btn-primary {
+          padding: 1rem 2.25rem;
+          background: linear-gradient(135deg, #06958a, #0e7268);
+          color: white; border: none; border-radius: 0.875rem;
+          font-size: 1rem; font-weight: 700;
+          text-decoration: none;
+          display: inline-flex; align-items: center; gap: 0.5rem;
+          transition: all 0.25s ease;
+          box-shadow: 0 4px 20px rgba(6,149,138,0.45);
+        }
+        .home-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(6,149,138,0.55); }
+        .home-btn-ghost {
+          padding: 1rem 2.25rem;
+          background: rgba(255,255,255,0.1);
+          backdrop-filter: blur(10px);
+          color: white; border: 1.5px solid rgba(255,255,255,0.25);
+          border-radius: 0.875rem;
+          font-size: 1rem; font-weight: 600;
+          text-decoration: none;
+          display: inline-flex; align-items: center; gap: 0.5rem;
+          transition: all 0.25s ease;
+        }
+        .home-btn-ghost:hover { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.4); }
+
+        /* Hero scroll indicator */
+        .home-hero-scroll {
+          position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);
+          z-index: 10; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+        }
+        .home-hero-scroll span {
+          font-size: 0.75rem; color: rgba(255,255,255,0.45); letter-spacing: 0.08em; text-transform: uppercase;
+        }
+        .home-scroll-dot {
+          width: 24px; height: 38px;
+          border: 2px solid rgba(255,255,255,0.3);
+          border-radius: 12px;
+          display: flex; align-items: flex-start; justify-content: center;
+          padding-top: 6px;
+        }
+        .home-scroll-dot::after {
+          content: '';
+          width: 4px; height: 8px;
+          background: rgba(255,255,255,0.6);
+          border-radius: 2px;
+          animation: scrollBounce 1.8s ease-in-out infinite;
+        }
+        @keyframes scrollBounce {
+          0%,100% { transform: translateY(0); opacity: 1; }
+          50% { transform: translateY(8px); opacity: 0.3; }
+        }
+
+        /* Wave */
+        .home-wave { position: absolute; bottom: -2px; left: 0; right: 0; z-index: 5; line-height: 0; }
+
+        /* ── Stats Bar ── */
+        .home-stats-bar {
+          background: linear-gradient(135deg, #0e4d6d, #06958a);
+          padding: 2.5rem 1.5rem;
+        }
+        .home-stats-inner {
+          max-width: 900px; margin: 0 auto;
+          display: grid; grid-template-columns: repeat(2,1fr); gap: 1.5rem;
+        }
+        @media(min-width:768px){ .home-stats-inner{ grid-template-columns: repeat(4,1fr); } }
+        .home-stat-item {
+          text-align: center;
+          padding-right: 1.5rem;
+          border-right: 1px solid rgba(255,255,255,0.15);
+        }
+        .home-stat-item:nth-child(2){ border-right: none; }
+        @media(min-width:768px){
+          .home-stat-item:nth-child(2){ border-right: 1px solid rgba(255,255,255,0.15); }
+          .home-stat-item:last-child{ border-right: none; }
+        }
+        .home-stat-icon-wrap {
+          width: 42px; height: 42px;
+          background: rgba(255,255,255,0.12);
+          border-radius: 0.75rem;
+          display: flex; align-items: center; justify-content: center;
+          margin: 0 auto 0.875rem;
+        }
+        .home-stat-val { font-size: 1.75rem; font-weight: 900; color: white; line-height: 1; margin-bottom: 0.3rem; letter-spacing: -0.03em; }
+        .home-stat-lbl { font-size: 0.75rem; font-weight: 500; color: rgba(255,255,255,0.65); text-transform: uppercase; letter-spacing: 0.07em; }
+
+        /* ── Sections ── */
+        .home-section { padding: 5.5rem 1.5rem; }
+        .home-section-alt { padding: 5.5rem 1.5rem; background: #f0f9ff; }
+        .home-container { max-width: 1200px; margin: 0 auto; }
+        .home-container-md { max-width: 900px; margin: 0 auto; }
+        .home-eyebrow {
+          display: inline-flex; align-items: center; gap: 0.5rem;
+          font-size: 0.8rem; font-weight: 700; text-transform: uppercase;
+          letter-spacing: 0.08em; color: #06958a; margin-bottom: 0.875rem;
+        }
+        .home-eyebrow-dot { width: 6px; height: 6px; border-radius: 50%; background: #06958a; }
+        .home-section-title {
+          font-size: clamp(1.75rem, 3.5vw, 2.625rem);
+          font-weight: 800; color: #0e2a3a;
+          line-height: 1.2; letter-spacing: -0.02em; margin-bottom: 1rem;
+        }
+        .home-section-desc { font-size: 1.0625rem; color: #475569; line-height: 1.7; max-width: 580px; }
+        .text-center { text-align: center; }
+        .mx-auto { margin-left: auto; margin-right: auto; }
+
+        /* ── Intro Banner ── */
+        .home-intro-card {
+          background: white;
+          border-radius: 1.75rem;
+          padding: 3rem 2.5rem;
+          border: 1.5px solid rgba(6,149,138,0.12);
+          box-shadow: 0 8px 40px rgba(6,149,138,0.08);
+          max-width: 860px; margin: 0 auto;
+          text-align: center;
+        }
+        .home-intro-title {
+          font-size: clamp(1.5rem, 3vw, 2.25rem);
+          font-weight: 800; color: #0e2a3a;
+          letter-spacing: -0.02em; margin-bottom: 1rem;
+        }
+        .home-intro-desc {
+          font-size: 1.0625rem; color: #475569;
+          line-height: 1.75; margin-bottom: 2rem; max-width: 640px; margin-left: auto; margin-right: auto;
+        }
+        .home-intro-btn {
+          display: inline-flex; align-items: center; gap: 0.5rem;
+          padding: 0.875rem 2rem;
+          background: linear-gradient(135deg, #0e4d6d, #06958a);
+          color: white; border-radius: 0.875rem;
+          font-size: 0.9375rem; font-weight: 700;
+          text-decoration: none; transition: all 0.25s ease;
+          box-shadow: 0 4px 20px rgba(6,149,138,0.3);
+        }
+        .home-intro-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(6,149,138,0.4); }
+
+        /* ── Pillar Cards ── */
+        .home-pillars-grid {
+          display: grid; gap: 1.5rem;
+          grid-template-columns: 1fr;
+        }
+        @media(min-width:768px){ .home-pillars-grid{ grid-template-columns: repeat(3,1fr); } }
+        .home-pillar-card {
+          background: white;
+          border-radius: 1.25rem;
+          padding: 2rem;
+          border: 1.5px solid rgba(0,0,0,0.06);
+          box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+          transition: all 0.3s ease;
+          position: relative; overflow: hidden;
+        }
+        .home-pillar-card::after {
+          content: '';
+          position: absolute; bottom: 0; left: 0; right: 0;
+          height: 3px; opacity: 0; transition: opacity 0.3s;
+        }
+        .home-pillar-card:hover { transform: translateY(-5px); box-shadow: 0 20px 50px rgba(0,0,0,0.1); }
+        .home-pillar-card:hover::after { opacity: 1; }
+        .home-pillar-icon {
+          width: 52px; height: 52px; border-radius: 1rem;
+          display: flex; align-items: center; justify-content: center;
+          margin-bottom: 1.25rem;
+        }
+        .home-pillar-title { font-size: 1.0625rem; font-weight: 700; color: #0e2a3a; margin-bottom: 0.5rem; }
+        .home-pillar-desc { font-size: 0.875rem; color: #64748b; line-height: 1.65; }
+
+        /* ── Activity Cards ── */
+        .home-act-grid {
+          display: grid; gap: 1.5rem;
+          grid-template-columns: 1fr;
+        }
+        @media(min-width:640px){ .home-act-grid{ grid-template-columns: repeat(2,1fr); } }
+        @media(min-width:1024px){ .home-act-grid{ grid-template-columns: repeat(3,1fr); } }
+
+        .home-act-card {
+          background: white;
+          border-radius: 1.25rem;
+          overflow: hidden;
+          border: 1.5px solid rgba(0,0,0,0.06);
+          box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+          transition: all 0.3s ease;
+          display: flex; flex-direction: column;
+        }
+        .home-act-card:hover { transform: translateY(-5px); box-shadow: 0 20px 50px rgba(0,0,0,0.1); }
+        .home-act-img { position: relative; height: 200px; overflow: hidden; }
+        .home-act-img img { transition: transform 0.4s ease; }
+        .home-act-card:hover .home-act-img img { transform: scale(1.05); }
+        .home-act-badge {
+          position: absolute; top: 12px; left: 12px;
+          background: rgba(14,77,109,0.85);
+          backdrop-filter: blur(8px);
+          color: white;
+          font-size: 0.75rem; font-weight: 700;
+          padding: 0.3rem 0.875rem; border-radius: 9999px;
+          text-transform: capitalize; border: 1px solid rgba(255,255,255,0.2);
+        }
+        .home-act-body { padding: 1.5rem; flex: 1; display: flex; flex-direction: column; }
+        .home-act-title { font-size: 1rem; font-weight: 700; color: #0e2a3a; margin-bottom: 0.5rem; line-height: 1.3; }
+        .home-act-desc { font-size: 0.875rem; color: #64748b; line-height: 1.65; margin-bottom: 1rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .home-act-meta { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem; }
+        .home-act-meta-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8125rem; color: #64748b; }
+        .home-act-btn {
+          margin-top: auto;
+          display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+          padding: 0.7rem 1rem;
+          background: transparent;
+          color: #0e4d6d; border: 1.5px solid rgba(14,77,109,0.2);
+          border-radius: 0.75rem;
+          font-size: 0.875rem; font-weight: 600;
+          text-decoration: none; transition: all 0.2s ease;
+        }
+        .home-act-btn:hover { background: rgba(14,77,109,0.05); border-color: rgba(14,77,109,0.4); }
+
+        /* ── Completed Cards ── */
+        .home-comp-grid {
+          display: grid; gap: 1.5rem;
+          grid-template-columns: 1fr;
+        }
+        @media(min-width:768px){ .home-comp-grid{ grid-template-columns: repeat(2,1fr); } }
+        .home-comp-card {
+          display: flex; flex-direction: row;
+          background: white;
+          border-radius: 1.25rem;
+          overflow: hidden;
+          border: 1.5px solid rgba(34,197,94,0.15);
+          box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+          transition: all 0.3s ease;
+        }
+        .home-comp-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(34,197,94,0.12); }
+        .home-comp-img { position: relative; width: 160px; flex-shrink: 0; overflow: hidden; }
+        .home-comp-img img { transition: transform 0.4s ease; }
+        .home-comp-card:hover .home-comp-img img { transform: scale(1.05); }
+        .home-comp-badge {
+          position: absolute; top: 10px; left: 10px; z-index: 1;
+          display: flex; align-items: center; gap: 0.35rem;
+          background: #16a34a;
+          color: white; font-size: 0.7rem; font-weight: 700;
+          padding: 0.25rem 0.625rem; border-radius: 9999px;
+        }
+        .home-comp-body { padding: 1.5rem; flex: 1; display: flex; flex-direction: column; }
+        .home-comp-title { font-size: 0.9375rem; font-weight: 700; color: #0e2a3a; margin-bottom: 0.5rem; line-height: 1.3; }
+        .home-comp-desc { font-size: 0.8125rem; color: #64748b; line-height: 1.65; margin-bottom: 1rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; flex: 1; }
+        .home-comp-meta { display: flex; align-items: center; gap: 1rem; font-size: 0.8rem; color: #64748b; margin-bottom: 1rem; }
+        .home-comp-btn {
+          display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+          padding: 0.625rem 1rem;
+          background: linear-gradient(135deg, #16a34a, #15803d);
+          color: white; border: none; border-radius: 0.75rem;
+          font-size: 0.8125rem; font-weight: 700;
+          text-decoration: none; transition: all 0.2s ease;
+          box-shadow: 0 2px 8px rgba(22,163,74,0.3);
+        }
+        .home-comp-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(22,163,74,0.4); }
+
+        /* ── Mission Section ── */
+        .home-mission-grid {
+          display: grid; gap: 4rem; grid-template-columns: 1fr;
+          align-items: center;
+        }
+        @media(min-width:1024px){ .home-mission-grid{ grid-template-columns: 1fr 1fr; } }
+        .home-mission-img {
+          border-radius: 1.5rem; overflow: hidden;
+          height: 420px; position: relative;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        }
+        .home-mission-features { display: flex; flex-direction: column; gap: 1.25rem; margin-top: 2rem; }
+        .home-mission-feat {
+          display: flex; align-items: flex-start; gap: 1rem;
+          padding: 1.25rem;
+          background: white; border-radius: 1rem;
+          border: 1.5px solid rgba(6,149,138,0.1);
+          box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+          transition: all 0.2s ease;
+        }
+        .home-mission-feat:hover { transform: translateX(4px); box-shadow: 0 4px 16px rgba(6,149,138,0.1); }
+        .home-mission-feat-icon {
+          width: 44px; height: 44px; flex-shrink: 0;
+          background: linear-gradient(135deg, rgba(14,77,109,0.1), rgba(6,149,138,0.12));
+          border-radius: 0.75rem;
+          display: flex; align-items: center; justify-content: center;
+        }
+        .home-mission-feat-title { font-size: 0.9375rem; font-weight: 700; color: #0e2a3a; margin-bottom: 0.25rem; }
+        .home-mission-feat-desc { font-size: 0.8125rem; color: #64748b; line-height: 1.55; }
+
+        /* ── How to Donate ── */
+        .home-how-grid {
+          display: grid; gap: 1.5rem;
+          grid-template-columns: 1fr;
+          position: relative;
+        }
+        @media(min-width:640px){ .home-how-grid{ grid-template-columns: repeat(2,1fr); } }
+        @media(min-width:1024px){ .home-how-grid{ grid-template-columns: repeat(4,1fr); } }
+        .home-how-card {
+          background: white;
+          border-radius: 1.25rem;
+          padding: 2rem 1.5rem;
+          border: 1.5px solid rgba(6,149,138,0.1);
+          box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+          transition: all 0.3s ease;
+          text-align: center;
+        }
+        .home-how-card:hover { transform: translateY(-4px); box-shadow: 0 14px 35px rgba(6,149,138,0.1); }
+        .home-how-icon {
+          width: 60px; height: 60px;
+          background: linear-gradient(135deg, rgba(14,77,109,0.08), rgba(6,149,138,0.12));
+          border-radius: 1rem;
+          display: flex; align-items: center; justify-content: center;
+          margin: 0 auto 1rem;
+          transition: transform 0.2s ease;
+        }
+        .home-how-card:hover .home-how-icon { transform: scale(1.08); }
+        .home-how-step {
+          font-size: 2.5rem; font-weight: 900;
+          background: linear-gradient(135deg, #0e4d6d, #06958a);
+          -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+          line-height: 1; margin-bottom: 0.75rem; opacity: 0.4;
+        }
+        .home-how-title { font-size: 0.9375rem; font-weight: 700; color: #0e2a3a; margin-bottom: 0.5rem; }
+        .home-how-desc { font-size: 0.8125rem; color: #64748b; line-height: 1.65; }
+
+        /* ── CTA ── */
+        .home-cta {
+          position: relative; overflow: hidden;
+          background: linear-gradient(135deg, #031c36 0%, #043752 45%, #032836 100%);
+          padding: 6rem 1.5rem; text-align: center;
+        }
+        .home-cta-bg {
+          position: absolute; inset: 0;
+          background-image: radial-gradient(circle, rgba(103,232,249,0.07) 1px, transparent 1px);
+          background-size: 40px 40px; pointer-events: none;
+        }
+        .home-cta-glow {
+          position: absolute;
+          width: 700px; height: 500px; border-radius: 50%;
+          background: radial-gradient(ellipse, rgba(6,149,138,0.2), transparent 70%);
+          top: -150px; left: 50%; transform: translateX(-50%);
+          pointer-events: none;
+        }
+        .home-cta-inner { position: relative; z-index: 1; max-width: 700px; margin: 0 auto; }
+        .home-cta-badge {
+          display: inline-flex; align-items: center; gap: 0.5rem;
+          background: rgba(103,232,249,0.1); border: 1px solid rgba(103,232,249,0.22);
+          color: #a5f3fc; font-size: 0.8125rem; font-weight: 600;
+          letter-spacing: 0.05em; text-transform: uppercase;
+          padding: 0.4rem 1.25rem; border-radius: 9999px; margin-bottom: 1.5rem;
+        }
+        .home-cta-title {
+          font-size: clamp(2rem, 4.5vw, 3.25rem); font-weight: 900; color: white;
+          letter-spacing: -0.02em; line-height: 1.15; margin-bottom: 1.25rem;
+        }
+        .home-cta-desc { font-size: 1.0625rem; color: rgba(255,255,255,0.62); line-height: 1.7; margin-bottom: 2.5rem; }
+        .home-cta-btns { display: flex; align-items: center; justify-content: center; gap: 1rem; flex-wrap: wrap; }
+        .home-cta-btn-primary {
+          padding: 1rem 2.5rem;
+          background: linear-gradient(135deg, #06958a, #04756c);
+          color: white; border: none; border-radius: 0.875rem;
+          font-size: 1rem; font-weight: 700; text-decoration: none;
+          display: inline-flex; align-items: center; gap: 0.5rem;
+          transition: all 0.25s ease;
+          box-shadow: 0 4px 20px rgba(6,149,138,0.4);
+        }
+        .home-cta-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(6,149,138,0.55); }
+        .home-cta-btn-ghost {
+          padding: 1rem 2.5rem;
+          background: rgba(255,255,255,0.07); backdrop-filter: blur(10px);
+          color: white; border: 1.5px solid rgba(255,255,255,0.18);
+          border-radius: 0.875rem; font-size: 1rem; font-weight: 600;
+          text-decoration: none;
+          display: inline-flex; align-items: center; gap: 0.5rem;
+          transition: all 0.25s ease;
+        }
+        .home-cta-btn-ghost:hover { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.32); }
+        .home-trust { display: flex; align-items: center; justify-content: center; gap: 2rem; flex-wrap: wrap; margin-top: 2.5rem; }
+        .home-trust-item { display: flex; align-items: center; gap: 0.5rem; color: rgba(255,255,255,0.5); font-size: 0.8125rem; }
+
+        /* ── View All Button ── */
+        .home-view-all {
+          display: inline-flex; align-items: center; gap: 0.5rem;
+          padding: 0.875rem 2.25rem;
+          background: linear-gradient(135deg, #0e4d6d, #06958a);
+          color: white; border-radius: 0.875rem;
+          font-size: 0.9375rem; font-weight: 700;
+          text-decoration: none; transition: all 0.25s ease;
+          box-shadow: 0 4px 20px rgba(6,149,138,0.3);
+        }
+        .home-view-all:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(6,149,138,0.4); }
+      `}</style>
+
       <Navigation />
+      <main style={{ flex: 1, paddingTop: "4rem" }}>
 
-      <main className="flex-1">
-        {/* Hero Section */}
-        <section className="relative min-h-[90vh] flex items-center justify-center pt-16">
-          <div className="absolute inset-0 z-0">
-            <Image
-              src="/images/hero-ocean.jpg"
-              alt="Ocean waves"
-              fill
-              className="object-cover"
-              priority
-            />
-            <div className="absolute inset-0 bg-foreground/60" />
-          </div>
+        {/* ── HERO ── */}
+        <section className="home-hero">
+          <div className="home-hero-bg" />
+          <div className="home-hero-overlay" />
+          <div className="home-hero-particles" />
 
-          <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div className="flex justify-center mb-8">
-              <div className="w-24 h-24 sm:w-32 sm:h-32 bg-white shadow-xl shadow-black/10 rounded-3xl flex items-center justify-center p-5 ring-4 ring-white/20 transform transition-transform hover:scale-105 duration-300">
-                <Image src="/images/SinergiLautLogo-transparent.png" alt="SinergiLaut Logo" width={120} height={120} className="w-full h-auto object-contain" priority />
-              </div>
+          {/* Floating deco */}
+          <Fish style={{ position: "absolute", top: "15%", right: "6%", width: 80, height: 80, color: "rgba(103,232,249,0.07)", zIndex: 2 }} />
+          <Anchor style={{ position: "absolute", bottom: "20%", left: "4%", width: 60, height: 60, color: "rgba(165,243,252,0.06)", zIndex: 2 }} />
+          <Waves style={{ position: "absolute", top: "40%", left: "8%", width: 70, height: 70, color: "rgba(103,232,249,0.06)", zIndex: 2 }} />
+          <Star style={{ position: "absolute", top: "25%", left: "15%", width: 30, height: 30, color: "rgba(165,243,252,0.1)", zIndex: 2 }} />
+
+          <div className="home-hero-content">
+            <div className="home-hero-badge">
+              <Sparkles style={{ width: 12, height: 12 }} />
+              Platform Konservasi Laut Indonesia
             </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight text-balance">
-              Join the Movement to Protect Our Oceans
+
+            <div className="home-hero-logo">
+              <Image
+                src="/images/SinergiLautLogo-transparent.png"
+                alt="SinergiLaut Logo"
+                width={64}
+                height={64}
+                style={{ width: "100%", height: "auto", objectFit: "contain" }}
+                priority
+              />
+            </div>
+
+            <h1 className="home-hero-title">
+              Bersama Jaga<br />
+              <span className="shimmer">Laut Indonesia</span>
             </h1>
-            <p className="mt-6 text-lg sm:text-xl text-white/90 max-w-2xl mx-auto leading-relaxed">
-              Connect with marine conservation communities, volunteers, and donors to make a lasting impact on our ocean ecosystems.
+            <p className="home-hero-desc">
+              Terhubung dengan komunitas konservasi, relawan, dan donatur untuk menciptakan dampak nyata bagi ekosistem laut Nusantara.
             </p>
-
-          </div>
-        </section>
-
-        {/* Stats Section */}
-        <section className="py-16 bg-primary">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-              {stats.map((stat) => (
-                <div key={stat.label} className="text-center">
-                  <p className="text-3xl sm:text-4xl font-bold text-primary-foreground">{stat.value}</p>
-                  <p className="mt-2 text-sm text-primary-foreground/80">{stat.label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Introduction Banner Section */}
-        <section className="py-16 bg-blue-50/50 dark:bg-blue-950/20 border-y border-border">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">
-              Mengenal SinergiLaut Lebih Dekat
-            </h2>
-            <p className="text-lg text-muted-foreground mb-8 text-balance leading-relaxed">
-              SinergiLaut hadir sebagai wadah kolaboratif yang menghubungkan berbagai elemen masyarakat—mulai dari relawan, donatur, hingga komunitas lokal—untuk bersinergi melindungi dan menjaga kelestarian ekosistem laut Nusantara melalui aksi nyata dan berkesinambungan.
-            </p>
-            <Button size="lg" className="rounded-full px-8" asChild>
-              <Link href="/about">
-                Tentang SinergiLaut
-                <ArrowRight className="ml-2 h-5 w-5" />
+            <div className="home-hero-btns">
+              <Link href="/activities" className="home-btn-primary">
+                Lihat Kegiatan <ArrowRight style={{ width: 18, height: 18 }} />
               </Link>
-            </Button>
+              <Link href="/register" className="home-btn-ghost">
+                Daftar Gratis
+              </Link>
+            </div>
+          </div>
+
+          {/* Scroll indicator */}
+          <div className="home-hero-scroll">
+            <div className="home-scroll-dot" />
+            <span>Scroll</span>
+          </div>
+
+          <div className="home-wave">
+            <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: "block", width: "100%" }}>
+              <path d="M0,40 C360,80 720,0 1080,40 C1260,60 1380,30 1440,40 L1440,80 L0,80 Z" fill="white" />
+            </svg>
           </div>
         </section>
 
-        {/* Successful Conservation Section */}
-        <section className="py-20 lg:py-28 bg-green-50/30 dark:bg-green-950/10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl sm:text-4xl font-bold text-foreground text-balance flex items-center justify-center gap-3">
-                <CheckCircle className="h-8 w-8 text-green-600" />
-                Successful Conservation
-              </h2>
-              <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-                Aksi nyata yang telah berhasil diselesaikan berkat dukungan dari donatur dan relawan kami yang luar biasa.
+        {/* ── STATS BAR ── */}
+        <section className="home-stats-bar">
+          <div className="home-stats-inner">
+            {stats.map((s) => (
+              <div key={s.label} className="home-stat-item">
+                <div className="home-stat-icon-wrap">
+                  <s.icon style={{ width: 19, height: 19, color: "rgba(255,255,255,0.9)" }} />
+                </div>
+                <div className="home-stat-val">{s.value}</div>
+                <div className="home-stat-lbl">{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── INTRO ── */}
+        <section className="home-section">
+          <div className="home-container">
+            <div className="home-intro-card">
+              <div className="home-eyebrow mx-auto" style={{ justifyContent: "center" }}>
+                <span className="home-eyebrow-dot" />
+                Tentang SinergiLaut
+              </div>
+              <h2 className="home-intro-title">Mengenal SinergiLaut Lebih Dekat</h2>
+              <p className="home-intro-desc">
+                SinergiLaut hadir sebagai wadah kolaboratif yang menghubungkan berbagai elemen masyarakat — dari relawan, donatur, hingga komunitas lokal — untuk bersinergi melindungi dan menjaga kelestarian ekosistem laut Nusantara melalui aksi nyata dan berkesinambungan.
+              </p>
+              <Link href="/about" className="home-intro-btn">
+                Pelajari Lebih Lanjut <ArrowRight style={{ width: 16, height: 16 }} />
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* ── PILLARS ── */}
+        <section className="home-section-alt">
+          <div className="home-container">
+            <div className="text-center" style={{ marginBottom: "3rem" }}>
+              <div className="home-eyebrow mx-auto" style={{ justifyContent: "center" }}>
+                <span className="home-eyebrow-dot" />
+                Nilai Kami
+              </div>
+              <h2 className="home-section-title">Dibangun di Atas Tiga Prinsip</h2>
+              <p className="home-section-desc mx-auto">
+                Fondasi kuat yang membuat setiap langkah konservasi kami bermakna dan berdampak.
+              </p>
+            </div>
+            <div className="home-pillars-grid">
+              {pillars.map((p, i) => (
+                <div key={p.title} className="home-pillar-card">
+                  <style>{`.home-pillar-card:nth-child(${i + 1})::after { background: linear-gradient(90deg, ${p.color}, ${p.color}88); }`}</style>
+                  <div className="home-pillar-icon" style={{ background: p.bg }}>
+                    <p.icon style={{ width: 24, height: 24, color: p.color }} />
+                  </div>
+                  <h3 className="home-pillar-title">{p.title}</h3>
+                  <p className="home-pillar-desc">{p.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── FEATURED ACTIVITIES ── */}
+        <section className="home-section">
+          <div className="home-container">
+            <div className="text-center" style={{ marginBottom: "3rem" }}>
+              <div className="home-eyebrow mx-auto" style={{ justifyContent: "center" }}>
+                <span className="home-eyebrow-dot" />
+                Kegiatan Unggulan
+              </div>
+              <h2 className="home-section-title">Kegiatan Konservasi Terbaru</h2>
+              <p className="home-section-desc mx-auto">
+                Temukan cara bermakna untuk berkontribusi bagi pelestarian laut melalui berbagai program kami.
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
-              {mappedCompletedActivities.map((activity) => (
-                <Card key={activity.id} className="overflow-hidden border-green-200 dark:border-green-800/50 hover:shadow-xl transition-all shadow-md group">
-                  <div className="flex flex-col sm:flex-row h-full">
-                    <div className="relative w-full sm:w-2/5 h-56 sm:h-auto overflow-hidden">
-                      <Image
-                        src={activity.image}
-                        alt={activity.title}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <div className="absolute top-3 left-3 bg-green-600 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1 shadow-sm">
-                        <CheckCircle className="h-3 w-3" /> Completed
-                      </div>
+            {featuredActivities.length > 0 ? (
+              <div className="home-act-grid">
+                {featuredActivities.map((activity) => (
+                  <div key={activity.id} className="home-act-card">
+                    <div className="home-act-img">
+                      <Image src={activity.image} alt={activity.title} fill className="object-cover" />
+                      <span className="home-act-badge">{activity.category || "Konservasi"}</span>
                     </div>
-                    <CardContent className="p-6 sm:w-3/5 flex flex-col justify-between">
-                      <div>
-                        <h3 className="font-bold text-lg text-foreground leading-tight mb-2 group-hover:text-primary transition-colors">{activity.title}</h3>
-                        <p className="text-muted-foreground text-sm leading-relaxed mb-4 line-clamp-3">
-                          {activity.description}
-                        </p>
-                      </div>
-
-                      <div className="mt-auto space-y-4">
-                        <div className="flex items-center justify-between text-sm bg-secondary/50 p-2 rounded-lg">
-                          <div className="flex items-center gap-1.5 text-muted-foreground">
-                            <Users className="h-4 w-4 text-primary" />
-                            <span><strong className="text-foreground">{activity.volunteers}</strong> <span className="hidden sm:inline">Relawan</span></span>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-muted-foreground">
-                            <MapPin className="h-4 w-4 text-primary" />
-                            <span className="truncate max-w-[100px] sm:max-w-none">{activity.location.split(',')[0]}</span>
-                          </div>
+                    <div className="home-act-body">
+                      <h3 className="home-act-title">{activity.title}</h3>
+                      <p className="home-act-desc">{activity.description}</p>
+                      <div className="home-act-meta">
+                        <div className="home-act-meta-item">
+                          <Calendar style={{ width: 14, height: 14, color: "#06958a" }} />
+                          {activity.date}
                         </div>
-                        <Button className="w-full bg-green-600 hover:bg-green-700 text-white" asChild>
-                          <Link href={`/activities/${activity.id}`}>
-                            Lihat Laporan & Dokumentasi
-                          </Link>
-                        </Button>
+                        <div className="home-act-meta-item">
+                          <MapPin style={{ width: 14, height: 14, color: "#06958a" }} />
+                          {activity.location}
+                        </div>
+                        <div className="home-act-meta-item">
+                          <Users style={{ width: 14, height: 14, color: "#06958a" }} />
+                          {activity.volunteers} relawan
+                        </div>
                       </div>
-                    </CardContent>
+                      <Link href={`/activities/${activity.id}`} className="home-act-btn">
+                        Lihat Detail <ArrowRight style={{ width: 14, height: 14 }} />
+                      </Link>
+                    </div>
                   </div>
-                </Card>
-              ))}
+                ))}
+              </div>
+            ) : (
+              <div style={{ textAlign: "center", padding: "3rem", color: "#64748b" }}>
+                <Leaf style={{ width: 48, height: 48, margin: "0 auto 1rem", color: "#94a3b8" }} />
+                <p>Belum ada kegiatan yang dipublikasikan.</p>
+              </div>
+            )}
+
+            <div style={{ textAlign: "center", marginTop: "3rem" }}>
+              <Link href="/activities" className="home-view-all">
+                Lihat Semua Kegiatan <ArrowRight style={{ width: 16, height: 16 }} />
+              </Link>
             </div>
           </div>
         </section>
 
-        {/* Featured Activities Section */}
-        <section className="py-20 lg:py-24">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl sm:text-4xl font-bold text-foreground text-balance">
-                Featured Conservation Activities
-              </h2>
-              <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-                Discover meaningful ways to contribute to ocean conservation through our diverse programs.
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-              {featuredActivities.map((activity) => (
-                <Card key={activity.id} className="overflow-hidden group hover:shadow-lg transition-shadow">
-                  <div className="relative h-52 overflow-hidden">
-                    <Image
-                      src={activity.image}
-                      alt={activity.title}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <div className="absolute top-4 left-4 bg-accent text-accent-foreground px-3 py-1 rounded-full text-sm font-medium">
-                      {activity.volunteers} volunteers
+        {/* ── COMPLETED ACTIVITIES ── */}
+        {completedActivities.length > 0 && (
+          <section className="home-section-alt">
+            <div className="home-container">
+              <div className="text-center" style={{ marginBottom: "3rem" }}>
+                <div className="home-eyebrow mx-auto" style={{ justifyContent: "center" }}>
+                  <span className="home-eyebrow-dot" style={{ background: "#16a34a" }} />
+                  <span style={{ color: "#16a34a" }}>Keberhasilan Kami</span>
+                </div>
+                <h2 className="home-section-title">Konservasi yang Berhasil</h2>
+                <p className="home-section-desc mx-auto">
+                  Aksi nyata yang telah berhasil diselesaikan berkat dukungan donatur dan relawan luar biasa kami.
+                </p>
+              </div>
+              <div className="home-comp-grid">
+                {completedActivities.map((activity) => (
+                  <div key={activity.id} className="home-comp-card">
+                    <div className="home-comp-img">
+                      <Image src={activity.image} alt={activity.title} fill className="object-cover" />
+                      <div className="home-comp-badge">
+                        <CheckCircle style={{ width: 10, height: 10 }} /> Selesai
+                      </div>
+                    </div>
+                    <div className="home-comp-body">
+                      <h3 className="home-comp-title">{activity.title}</h3>
+                      <p className="home-comp-desc">{activity.description}</p>
+                      <div className="home-comp-meta">
+                        <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                          <Users style={{ width: 13, height: 13, color: "#16a34a" }} />
+                          {activity.volunteers} relawan
+                        </span>
+                        <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                          <MapPin style={{ width: 13, height: 13, color: "#16a34a" }} />
+                          {activity.location.split(",")[0]}
+                        </span>
+                      </div>
+                      <Link href={`/activities/${activity.id}`} className="home-comp-btn">
+                        Lihat Laporan <ArrowRight style={{ width: 13, height: 13 }} />
+                      </Link>
                     </div>
                   </div>
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-2 mb-3">
-                      <activity.icon className="h-5 w-5 text-primary" />
-                      <h3 className="font-semibold text-lg text-foreground">{activity.title}</h3>
-                    </div>
-                    <p className="text-muted-foreground text-sm leading-relaxed mb-4 line-clamp-2">
-                      {activity.description}
-                    </p>
-                    <div className="flex flex-col gap-2 text-sm text-muted-foreground mb-4">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        <span>{activity.date}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4" />
-                        <span>{activity.location}</span>
-                      </div>
-                    </div>
-                    <Button className="w-full" variant="outline" asChild>
-                      <Link href={`/activities/${activity.id}`}>Learn More</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
+                ))}
+              </div>
             </div>
+          </section>
+        )}
 
-            <div className="text-center mt-12">
-              <Button size="lg" asChild>
-                <Link href="/activities">
-                  View All Activities
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </section>
-
-        {/* Mission Section */}
-        <section className="py-20 lg:py-28 bg-secondary">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        {/* ── MISSION ── */}
+        <section className="home-section">
+          <div className="home-container">
+            <div className="home-mission-grid">
               <div>
-                <h2 className="text-3xl sm:text-4xl font-bold text-foreground text-balance">
-                  Our Mission: Sustainable Ocean Conservation
-                </h2>
-                <p className="mt-6 text-lg text-muted-foreground leading-relaxed">
-                  SinergiLaut brings together passionate individuals, organizations, and corporations to create lasting positive change for our marine ecosystems. Through collaborative action and education, we're building a future where oceans thrive.
-                </p>
-                <div className="mt-8 grid sm:grid-cols-2 gap-6">
-                  <div className="flex gap-4">
-                    <div className="flex-shrink-0 w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                      <Users className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-foreground">Community First</h3>
-                      <p className="text-sm text-muted-foreground mt-1">Empowering local communities to lead conservation efforts.</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-4">
-                    <div className="flex-shrink-0 w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                      <Heart className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-foreground">Transparent Impact</h3>
-                      <p className="text-sm text-muted-foreground mt-1">Every donation and effort is tracked and reported.</p>
-                    </div>
-                  </div>
+                <div className="home-eyebrow">
+                  <span className="home-eyebrow-dot" />
+                  Misi Kami
                 </div>
-
+                <h2 className="home-section-title">Konservasi Laut yang Berkelanjutan</h2>
+                <p className="home-section-desc" style={{ marginBottom: "0.5rem" }}>
+                  SinergiLaut menyatukan individu, organisasi, dan korporasi yang peduli untuk menciptakan perubahan positif jangka panjang bagi ekosistem laut kita.
+                </p>
+                <div className="home-mission-features">
+                  {[
+                    { icon: Users, title: "Komunitas di Garis Depan", desc: "Kami memberdayakan komunitas lokal untuk memimpin upaya konservasi di wilayah mereka." },
+                    { icon: Heart, title: "Dampak Transparan", desc: "Setiap donasi dan usaha dilacak dan dilaporkan secara terbuka kepada publik." },
+                    { icon: Leaf, title: "Aksi Berkesinambungan", desc: "Program-program dirancang untuk menciptakan perubahan jangka panjang, bukan hanya aksi sesaat." },
+                  ].map((f) => (
+                    <div key={f.title} className="home-mission-feat">
+                      <div className="home-mission-feat-icon">
+                        <f.icon style={{ width: 20, height: 20, color: "#06958a" }} />
+                      </div>
+                      <div>
+                        <p className="home-mission-feat-title">{f.title}</p>
+                        <p className="home-mission-feat-desc">{f.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="relative h-80 lg:h-[500px] rounded-2xl overflow-hidden">
-                <Image
-                  src="/images/mission-ocean.jpg"
-                  alt="Ocean conservation in action"
-                  fill
-                  className="object-cover"
-                />
+              <div className="home-mission-img">
+                <Image src="/images/mission-ocean.jpg" alt="Ocean conservation in action" fill className="object-cover" />
               </div>
             </div>
           </div>
         </section>
 
-        {/* Donation Flow Section */}
-        <section className="py-20 lg:py-28 bg-blue-50/30 dark:bg-blue-950/20 border-t border-border">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl sm:text-4xl font-bold text-foreground text-balance">
-                Bagaimana Cara Berdonasi?
-              </h2>
-              <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-                Langkah mudah dan transparan untuk ikut berkontribusi dalam menjaga kelestarian laut.
+        {/* ── HOW TO DONATE ── */}
+        <section className="home-section-alt">
+          <div className="home-container">
+            <div className="text-center" style={{ marginBottom: "3rem" }}>
+              <div className="home-eyebrow mx-auto" style={{ justifyContent: "center" }}>
+                <span className="home-eyebrow-dot" />
+                Cara Berdonasi
+              </div>
+              <h2 className="home-section-title">Mudah & Transparan dalam 4 Langkah</h2>
+              <p className="home-section-desc mx-auto">
+                Langkah sederhana untuk ikut berkontribusi dalam menjaga kelestarian laut Indonesia.
               </p>
             </div>
-
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 relative">
-              {/* Connector line for desktop */}
-              <div className="hidden lg:block absolute top-12 left-[12%] right-[12%] h-[2px] bg-border z-0" />
-
-              <div className="relative z-10 flex flex-col items-center text-center group">
-                <div className="w-24 h-24 bg-background border-4 border-primary/20 rounded-full flex items-center justify-center mb-6 shadow-md group-hover:scale-105 group-hover:border-primary transition-all duration-300">
-                  <Search className="h-10 w-10 text-primary" />
+            <div className="home-how-grid">
+              {donationSteps.map((d) => (
+                <div key={d.step} className="home-how-card">
+                  <div className="home-how-step">{d.step}</div>
+                  <div className="home-how-icon">
+                    <d.icon style={{ width: 26, height: 26, color: "#06958a" }} />
+                  </div>
+                  <h3 className="home-how-title">{d.title}</h3>
+                  <p className="home-how-desc">{d.desc}</p>
                 </div>
-                <h3 className="text-xl font-semibold mb-2">1. Pilih Kegiatan</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed px-4">
-                  Telusuri dan pilih aksi pelestarian lingkungan atau pesisir yang ingin Anda dukung.
-                </p>
-              </div>
-
-              <div className="relative z-10 flex flex-col items-center text-center group">
-                <div className="w-24 h-24 bg-background border-4 border-primary/20 rounded-full flex items-center justify-center mb-6 shadow-md group-hover:scale-105 group-hover:border-primary transition-all duration-300">
-                  <Gift className="h-10 w-10 text-primary" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">2. Pilih Jenis Donasi</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed px-4">
-                  Sumbangkan sejumlah dana atau belikan barang yang sedang dibutuhkan oleh relawan.
-                </p>
-              </div>
-
-              <div className="relative z-10 flex flex-col items-center text-center group">
-                <div className="w-24 h-24 bg-background border-4 border-primary/20 rounded-full flex items-center justify-center mb-6 shadow-md group-hover:scale-105 group-hover:border-primary transition-all duration-300">
-                  <LineChart className="h-10 w-10 text-primary" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">3. Pantau Eksekusi</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed px-4">
-                  Lacak setiap progres pendanaan dan persiapan aksi kegiatan secara transparan & real-time.
-                </p>
-              </div>
-
-              <div className="relative z-10 flex flex-col items-center text-center group">
-                <div className="w-24 h-24 bg-background border-4 border-primary/20 rounded-full flex items-center justify-center mb-6 shadow-md group-hover:scale-105 group-hover:border-primary transition-all duration-300">
-                  <FileText className="h-10 w-10 text-primary" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">4. Terima Laporan</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed px-4">
-                  Buka tab laporan untuk melihat bukti dokumen RAB dan galeri foto hasil kegiatan konservasi.
-                </p>
-              </div>
+              ))}
             </div>
+            <div style={{ textAlign: "center", marginTop: "3rem" }}>
+              <Link href="/activities" className="home-view-all">
+                Mulai Berdonasi Sekarang <ArrowRight style={{ width: 16, height: 16 }} />
+              </Link>
+            </div>
+          </div>
+        </section>
 
-            <div className="mt-16 text-center">
-              <Button size="lg" className="rounded-full px-8 h-14 text-lg font-semibold shadow-lg hover:shadow-xl transition-all" asChild>
-                <Link href="/activities">
-                  Mulai Berdonasi Sekarang
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
+        {/* ── CTA ── */}
+        <section className="home-cta">
+          <div className="home-cta-bg" />
+          <div className="home-cta-glow" />
+          <div className="home-cta-inner">
+            <div className="home-cta-badge">
+              <Zap style={{ width: 12, height: 12 }} />
+              Bergabung Sekarang
+            </div>
+            <h2 className="home-cta-title">
+              Jadilah Bagian dari<br />Gerakan Laut Bersih
+            </h2>
+            <p className="home-cta-desc">
+              Daftarkan diri atau komunitasmu dan mulai berkontribusi nyata bagi kelestarian ekosistem laut Indonesia hari ini.
+            </p>
+            <div className="home-cta-btns">
+              <Link href="/register" className="home-cta-btn-primary">
+                Daftar Gratis <ArrowRight style={{ width: 16, height: 16 }} />
+              </Link>
+              <Link href="/activities" className="home-cta-btn-ghost">
+                Lihat Kegiatan
+              </Link>
+            </div>
+            <div className="home-trust">
+              {["100% Transparan", "Komunitas Terverifikasi", "Dampak Nyata", "Gratis Bergabung"].map(t => (
+                <div key={t} className="home-trust-item">
+                  <CheckCircle style={{ width: 14, height: 14, color: "#67e8f9" }} />
+                  {t}
+                </div>
+              ))}
             </div>
           </div>
         </section>
 
       </main>
-
       <Footer />
     </div>
   )
