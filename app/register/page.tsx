@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import {
   Mail, Lock, User, Phone, Building, AlertCircle, Loader2,
-  Check, ArrowRight, ArrowLeft, Eye, EyeOff, Fish, Waves, Shell, ShieldCheck
+  Check, ArrowRight, ArrowLeft, Eye, EyeOff, ShieldCheck
 } from "lucide-react"
 import Image from "next/image"
 import { toast } from "sonner"
@@ -632,9 +632,7 @@ function RegisterContent() {
         <div className="reg-left-bg" />
         <div className="reg-left-overlay" />
 
-        <Fish className="float-icon" style={{ width: 90, height: 90, top: '12%', left: '8%', animationDelay: '0s' }} />
-        <Waves className="float-icon" style={{ width: 110, height: 110, top: '42%', right: '6%', animationDelay: '2s' }} />
-        <Shell className="float-icon" style={{ width: 65, height: 65, top: '68%', left: '15%', animationDelay: '4s' }} />
+        {/* Floating decorative icons - removed */}
 
         <svg className="wave-divider" viewBox="0 0 80 900" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M80,0 C60,150 20,200 40,300 C60,400 80,440 60,550 C40,660 10,720 40,800 C60,850 80,880 80,900 L80,0Z" fill="#f0f7ff"/>

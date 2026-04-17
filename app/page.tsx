@@ -308,8 +308,19 @@ export default async function HomePage() {
         }
 
         /* ── Sections ── */
-        .home-section { padding: 5.5rem 1.5rem; }
-        .home-section-alt { padding: 5.5rem 1.5rem; background: #f0f9ff; }
+        .home-section { padding: 6rem 1.5rem; }
+        .home-section-alt {
+          padding: 6rem 1.5rem;
+          background: linear-gradient(165deg, #f8fafc 0%, #eff6ff 100%);
+          position: relative;
+          overflow: hidden;
+        }
+        .home-section-alt::before {
+          content: ''; position: absolute; inset: 0;
+          background-image: radial-gradient(circle at 20% 30%, rgba(6,149,138,0.03) 0%, transparent 50%),
+                            radial-gradient(circle at 80% 70%, rgba(59,130,246,0.03) 0%, transparent 50%);
+          pointer-events: none;
+        }
         .home-container { max-width: 1200px; margin: 0 auto; }
         .home-container-md { max-width: 900px; margin: 0 auto; }
         .home-eyebrow {
@@ -359,33 +370,58 @@ export default async function HomePage() {
 
         /* ── Pillar Cards ── */
         .home-pillars-grid {
-          display: grid; gap: 1.5rem;
+          display: grid; gap: 2rem;
           grid-template-columns: 1fr;
         }
         @media(min-width:768px){ .home-pillars-grid{ grid-template-columns: repeat(3,1fr); } }
         .home-pillar-card {
-          background: white;
-          border-radius: 1.25rem;
-          padding: 2rem;
-          border: 1.5px solid rgba(0,0,0,0.06);
-          box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-          transition: all 0.3s ease;
+          background: rgba(255, 255, 255, 0.72);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border-radius: 1.75rem;
+          padding: 2.75rem 2.25rem;
+          border: 1.5px solid rgba(255, 255, 255, 0.65);
+          box-shadow: 
+            0 4px 10px rgba(0, 0, 0, 0.02),
+            0 14px 28px rgba(0, 0, 0, 0.04);
+          transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
           position: relative; overflow: hidden;
+          display: flex; flex-direction: column; align-items: flex-start;
+          text-align: left;
         }
-        .home-pillar-card::after {
-          content: '';
-          position: absolute; bottom: 0; left: 0; right: 0;
-          height: 3px; opacity: 0; transition: opacity 0.3s;
+        .home-pillar-card::before {
+          content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+          background: transparent; transition: background 0.4s ease;
         }
-        .home-pillar-card:hover { transform: translateY(-5px); box-shadow: 0 20px 50px rgba(0,0,0,0.1); }
-        .home-pillar-card:hover::after { opacity: 1; }
+        .home-pillar-card:hover { 
+          transform: translateY(-10px) scale(1.01);
+          background: rgba(255, 255, 255, 0.88);
+          box-shadow: 
+            0 15px 35px rgba(0, 0, 0, 0.05),
+            0 30px 60px rgba(0, 0, 0, 0.08);
+          border-color: rgba(255, 255, 255, 0.95);
+        }
         .home-pillar-icon {
-          width: 52px; height: 52px; border-radius: 1rem;
+          width: 58px; height: 58px; border-radius: 1.25rem;
           display: flex; align-items: center; justify-content: center;
-          margin-bottom: 1.25rem;
+          margin-bottom: 1.75rem; position: relative;
+          box-shadow: 0 8px 20px -5px rgba(0,0,0,0.1);
+          transition: all 0.4s ease;
         }
-        .home-pillar-title { font-size: 1.0625rem; font-weight: 700; color: #0e2a3a; margin-bottom: 0.5rem; }
-        .home-pillar-desc { font-size: 0.875rem; color: #64748b; line-height: 1.65; }
+        .home-pillar-card:hover .home-pillar-icon { transform: scale(1.1) rotate(5deg); }
+        .home-pillar-icon::after {
+          content: ''; position: absolute; inset: -4px; border-radius: 1.45rem;
+          background: inherit; filter: blur(12px); opacity: 0; transition: opacity 0.4s; z-index: -1;
+        }
+        .home-pillar-card:hover .home-pillar-icon::after { opacity: 0.5; }
+        .home-pillar-title { 
+          font-size: 1.25rem; font-weight: 800; color: #0e2a3a; margin-bottom: 0.875rem;
+          letter-spacing: -0.01em; 
+        }
+        .home-pillar-desc { 
+          font-size: 1rem; color: #475569; line-height: 1.7; 
+          font-weight: 450;
+        }
 
         /* ── Activity Cards ── */
         .home-act-grid {
@@ -610,19 +646,13 @@ export default async function HomePage() {
       `}</style>
 
       <Navigation />
-      <main style={{ flex: 1, paddingTop: "4rem" }}>
+      <main style={{ flex: 1 }}>
 
         {/* ── HERO ── */}
         <section className="home-hero">
           <div className="home-hero-bg" />
           <div className="home-hero-overlay" />
           <div className="home-hero-particles" />
-
-          {/* Floating deco */}
-          <Fish style={{ position: "absolute", top: "15%", right: "6%", width: 80, height: 80, color: "rgba(103,232,249,0.07)", zIndex: 2 }} />
-          <Anchor style={{ position: "absolute", bottom: "20%", left: "4%", width: 60, height: 60, color: "rgba(165,243,252,0.06)", zIndex: 2 }} />
-          <Waves style={{ position: "absolute", top: "40%", left: "8%", width: 70, height: 70, color: "rgba(103,232,249,0.06)", zIndex: 2 }} />
-          <Star style={{ position: "absolute", top: "25%", left: "15%", width: 30, height: 30, color: "rgba(165,243,252,0.1)", zIndex: 2 }} />
 
           <div className="home-hero-content">
             <div className="home-hero-badge">
@@ -677,10 +707,7 @@ export default async function HomePage() {
           </div>
 
           {/* Scroll indicator */}
-          <div className="home-hero-scroll">
-            <div className="home-scroll-dot" />
-            <span>Scroll</span>
-          </div>
+
 
           <div className="home-wave">
             <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: "block", width: "100%" }}>
@@ -724,9 +751,9 @@ export default async function HomePage() {
             <div className="home-pillars-grid">
               {pillars.map((p, i) => (
                 <div key={p.title} className="home-pillar-card">
-                  <style>{`.home-pillar-card:nth-child(${i + 1})::after { background: linear-gradient(90deg, ${p.color}, ${p.color}88); }`}</style>
+                  <style>{`.home-pillar-card:nth-child(${i + 1})::before { background: ${p.color}; }`}</style>
                   <div className="home-pillar-icon" style={{ background: p.bg }}>
-                    <p.icon style={{ width: 24, height: 24, color: p.color }} />
+                    <p.icon style={{ width: 26, height: 26, color: p.color }} />
                   </div>
                   <h3 className="home-pillar-title">{p.title}</h3>
                   <p className="home-pillar-desc">{p.description}</p>

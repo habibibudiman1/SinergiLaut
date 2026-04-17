@@ -18,9 +18,6 @@ import {
   ArrowRight,
   CheckCircle,
   Zap,
-  Fish,
-  Waves,
-  Anchor,
   Target,
   Heart,
   Globe,
@@ -589,7 +586,7 @@ export default function ActivitiesPage() {
       `}</style>
 
       <Navigation />
-      <main style={{ flex: 1, paddingTop: "4rem" }}>
+      <main style={{ flex: 1 }}>
 
         {/* ── HERO ── */}
         <section className="act-hero">
@@ -597,10 +594,8 @@ export default function ActivitiesPage() {
           <div className="act-hero-overlay" />
           <div className="act-hero-particles" />
 
-          {/* Floating deco */}
-          <Fish style={{ position: "absolute", top: "18%", right: "7%", width: 75, height: 75, color: "rgba(103,232,249,0.07)", zIndex: 2 }} />
-          <Anchor style={{ position: "absolute", bottom: "25%", left: "5%", width: 55, height: 55, color: "rgba(165,243,252,0.06)", zIndex: 2 }} />
-          <Waves style={{ position: "absolute", top: "38%", left: "10%", width: 65, height: 65, color: "rgba(103,232,249,0.06)", zIndex: 2 }} />
+          {/* Floating deco - removed */}
+
 
           <div className="act-hero-content">
             <div className="act-hero-badge">

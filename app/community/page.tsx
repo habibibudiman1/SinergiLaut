@@ -7,8 +7,8 @@ import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
 import {
   ArrowRight, Users, MapPin, Globe, Award, Building,
-  Search, CheckCircle, FileText, Shield, Waves, Heart,
-  Star, Activity, Sparkles, Fish, Anchor, Zap,
+  Search, CheckCircle, FileText, Shield, Heart,
+  Star, Activity, Sparkles, Zap,
   ChevronDown, CheckCircle2, MessageCircle
 } from "lucide-react"
 import { getRegisteredCommunities, getAdminDashboardStats } from "@/lib/actions/dashboard.actions"
@@ -476,16 +476,14 @@ export default function CommunityPage() {
       `}</style>
 
       <Navigation />
-      <main style={{ flex: 1, paddingTop: "4rem" }}>
+      <main style={{ flex: 1 }}>
 
         {/* ── HERO ── */}
         <section className="comm-hero">
           <div className="comm-hero-bg" />
           <div className="comm-hero-overlay" />
           <div className="comm-hero-particles" />
-          <Fish style={{ position:"absolute", top:"18%", right:"7%", width:75, height:75, color:"rgba(103,232,249,0.07)", zIndex:2 }} />
-          <Anchor style={{ position:"absolute", bottom:"25%", left:"5%", width:55, height:55, color:"rgba(165,243,252,0.06)", zIndex:2 }} />
-          <Waves style={{ position:"absolute", top:"38%", left:"10%", width:65, height:65, color:"rgba(103,232,249,0.06)", zIndex:2 }} />
+          {/* Floating deco - removed */}
 
           <div className="comm-hero-content">
             <div className="comm-hero-badge">
@@ -711,7 +709,7 @@ export default function CommunityPage() {
             ) : (
               <div className="comm-empty">
                 <div className="comm-empty-icon">
-                  <Waves style={{ width:32, height:32, color:"#06958a" }} />
+                  <Activity style={{ width:32, height:32, color:"#06958a" }} />
                 </div>
                 <h3 style={{ fontSize:"1.125rem", fontWeight:700, color:"#0e2a3a", marginBottom:"0.5rem" }}>Komunitas tidak ditemukan</h3>
                 <p style={{ fontSize:"0.9375rem", color:"#64748b" }}>Coba ubah kata kunci atau filter fokus area.</p>

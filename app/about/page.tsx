@@ -8,9 +8,9 @@ import Image from "next/image"
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
 import {
-  Waves, Users, Target, Eye, Heart, Globe, Award, Leaf, Zap, Banknote,
+  Users, Target, Eye, Heart, Globe, Award, Leaf, Zap, Banknote,
   CheckCircle, BookOpen, Star, TrendingUp, Table2, ArrowRight,
-  Anchor, Shield, Sparkles, Fish
+  Anchor, Shield, Sparkles
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 
@@ -28,7 +28,7 @@ interface JourneyMilestone {
 }
 
 const iconMap: Record<string, React.ElementType> = {
-  Waves, Users, Award, Leaf, Globe, Zap, Banknote, CheckCircle,
+  Users, Award, Leaf, Globe, Zap, Banknote, CheckCircle,
   BookOpen, Star, TrendingUp, Target, Eye, Heart, Anchor,
 }
 
@@ -53,7 +53,7 @@ const stats = [
 ]
 
 const fallbackMilestones: JourneyMilestone[] = [
-  { id: "1", year: 2020, title: "SinergiLaut Didirikan", description: "Platform lahir dari keresahan sulitnya koordinasi komunitas konservasi laut di Indonesia.", impact_stat: "Misi dimulai", icon: "Waves", order_index: 1, is_published: true, created_at: "", updated_at: "" },
+  { id: "1", year: 2020, title: "SinergiLaut Didirikan", description: "Platform lahir dari keresahan sulitnya koordinasi komunitas konservasi laut di Indonesia.", impact_stat: "Misi dimulai", icon: "Globe", order_index: 1, is_published: true, created_at: "", updated_at: "" },
   { id: "2", year: 2021, title: "Komunitas Pertama Bergabung", description: "10 komunitas dari Jawa, Bali, Sulawesi bergabung. 500 relawan aktif terdaftar.", impact_stat: "10 komunitas, 500+ relawan", icon: "Users", order_index: 2, is_published: true, created_at: "", updated_at: "" },
   { id: "3", year: 2022, title: "Sistem Donasi & Transparansi", description: "Meluncurkan sistem donasi terintegrasi dengan verifikasi penggunaan dana yang transparan.", impact_stat: "Rp 1M+ dana terhimpun", icon: "Banknote", order_index: 3, is_published: true, created_at: "", updated_at: "" },
   { id: "4", year: 2023, title: "Ekspansi ke 50+ Komunitas", description: "Jaringan komunitas berkembang ke 50+ komunitas di 15 provinsi, dari Sabang hingga Papua.", impact_stat: "50+ komunitas, 15 provinsi", icon: "Globe", order_index: 4, is_published: true, created_at: "", updated_at: "" },
@@ -598,7 +598,7 @@ export default async function AboutPage() {
       `}</style>
 
       <Navigation />
-      <main style={{ flex: 1, paddingTop: '4rem' }}>
+      <main style={{ flex: 1 }}>
 
         {/* ── HERO ── */}
         <section className="about-hero">
@@ -606,10 +606,7 @@ export default async function AboutPage() {
           <div className="about-hero-overlay" />
           <div className="about-hero-particles" />
 
-          {/* Floating decoration */}
-          <Fish style={{ position: 'absolute', top: '20%', right: '8%', width: 80, height: 80, color: 'rgba(103,232,249,0.08)', zIndex: 2 }} />
-          <Anchor style={{ position: 'absolute', bottom: '30%', left: '6%', width: 60, height: 60, color: 'rgba(165,243,252,0.07)', zIndex: 2 }} />
-          <Waves style={{ position: 'absolute', top: '35%', left: '12%', width: 70, height: 70, color: 'rgba(103,232,249,0.06)', zIndex: 2 }} />
+          {/* Floating decoration - removed */}
 
           <div className="about-hero-content">
             <div className="about-hero-badge">

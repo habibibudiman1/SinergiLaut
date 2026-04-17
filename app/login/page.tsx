@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { createClient } from "@/lib/supabase/client"
-import { Mail, Lock, AlertCircle, Loader2, Eye, EyeOff, ArrowLeft, Fish, Waves, Shell } from "lucide-react"
+import { Mail, Lock, AlertCircle, Loader2, Eye, EyeOff, ArrowLeft } from "lucide-react"
 import Image from "next/image"
 import { toast } from "sonner"
 import { Suspense } from "react"
@@ -497,10 +497,7 @@ function LoginContent() {
         <div className="login-left-bg" />
         <div className="login-left-overlay" />
 
-        {/* Floating decorative icons */}
-        <Fish className="float-icon" style={{ width: 80, height: 80, top: '15%', left: '10%' }} />
-        <Waves className="float-icon" style={{ width: 100, height: 100, top: '40%', right: '8%' }} />
-        <Shell className="float-icon" style={{ width: 60, height: 60, top: '65%', left: '18%' }} />
+        {/* Floating decorative icons - removed */}
 
         <svg className="wave-divider" viewBox="0 0 80 900" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M80,0 C60,150 20,200 40,300 C60,400 80,440 60,550 C40,660 10,720 40,800 C60,850 80,880 80,900 L80,0Z" fill="#f0f7ff"/>
