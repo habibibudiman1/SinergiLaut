@@ -92,10 +92,10 @@ export default function CommunityPage() {
 
         /* ── Hero ── */
         .comm-hero {
-          position: relative; min-height: 80vh;
+          position: relative; min-height: 100vh;
           display: flex; flex-direction: column;
           justify-content: center; align-items: center;
-          overflow: hidden; padding: 6rem 1.5rem 5rem;
+          overflow: hidden; padding: 6rem 1.5rem 2rem;
           text-align: center;
         }
         .comm-hero-bg {
@@ -119,7 +119,7 @@ export default function CommunityPage() {
           pointer-events: none;
         }
         @keyframes particleDrift { from{transform:translateY(0)} to{transform:translateY(-60px)} }
-        .comm-hero-content { position: relative; z-index: 10; max-width: 820px; }
+        .comm-hero-content { position: relative; z-index: 10; max-width: 1000px; width: 100%; }
         .comm-hero-badge {
           display: inline-flex; align-items: center; gap: 0.5rem;
           background: rgba(103,232,249,0.12); backdrop-filter: blur(10px);
@@ -164,19 +164,46 @@ export default function CommunityPage() {
         .comm-wave { position:absolute; bottom:-2px; left:0; right:0; z-index:5; line-height:0; }
 
         /* ── Stats Bar ── */
-        .comm-stats-bar { background: linear-gradient(135deg,#0e4d6d,#06958a); padding: 2.5rem 1.5rem; }
+        .comm-stats-wrapper {
+          position: relative; z-index: 20;
+          margin-top: 3.5rem; padding: 0; margin-bottom: 0;
+        }
+        .comm-stats-bar {
+          background: linear-gradient(135deg, #06958a, #0e7268);
+          border-radius: 1.5rem;
+          box-shadow: 0 16px 40px rgba(6, 149, 138, 0.25);
+          padding: 2.5rem 2rem; position: relative; overflow: hidden; max-width: 1000px; margin: 0 auto;
+        }
+        @media (max-width: 640px) {
+          .comm-stats-bar { padding: 1.5rem 1rem; border-radius: 1.25rem; }
+        }
+        .comm-stats-glow { display: none; }
         .comm-stats-inner {
+          position: relative; z-index: 2;
           max-width: 800px; margin: 0 auto;
-          display: grid; grid-template-columns: repeat(3,1fr); gap: 1.5rem;
+          display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;
         }
-        .comm-stat-item { text-align:center; padding-right:1.5rem; border-right:1px solid rgba(255,255,255,0.15); }
+        @media (max-width: 640px) {
+          .comm-stats-inner { grid-template-columns: 1fr; gap: 1.25rem; }
+        }
+        .comm-stat-item { text-align:center; padding: 0 0.5rem; border-right:1px solid rgba(255,255,255,0.15); }
         .comm-stat-item:last-child { border-right:none; }
-        .comm-stat-icon-wrap {
-          width:42px; height:42px; background:rgba(255,255,255,0.12); border-radius:0.75rem;
-          display:flex; align-items:center; justify-content:center; margin:0 auto 0.875rem;
+        @media (max-width: 640px) {
+          .comm-stat-item { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 1.25rem; }
+          .comm-stat-item:last-child { border-bottom: none; padding-bottom: 0; }
         }
-        .comm-stat-val { font-size:1.75rem; font-weight:900; color:white; line-height:1; margin-bottom:0.3rem; letter-spacing:-0.03em; }
-        .comm-stat-lbl { font-size:0.75rem; font-weight:500; color:rgba(255,255,255,0.65); text-transform:uppercase; letter-spacing:0.07em; }
+        .comm-stat-icon-wrap {
+          width:46px; height:46px; background:rgba(255,255,255,0.12); border-radius:0.875rem;
+          display:flex; align-items:center; justify-content:center; margin:0 auto 0.875rem;
+          backdrop-filter: blur(4px);
+        }
+        .comm-stat-val { font-size:1.875rem; font-weight:900; color:white; line-height:1; margin-bottom:0.375rem; letter-spacing:-0.03em; }
+        .comm-stat-lbl { font-size:0.75rem; font-weight:600; color:rgba(255,255,255,0.7); text-transform:uppercase; letter-spacing:0.08em; }
+        @media (max-width: 640px) {
+          .comm-stat-val { font-size: 1.5rem; }
+          .comm-stat-lbl { font-size: 0.7rem; }
+          .comm-stat-icon-wrap { width: 40px; height: 40px; margin-bottom: 0.5rem; }
+        }
 
         /* ── Sections ── */
         .comm-section { padding: 5.5rem 1.5rem; }
@@ -270,8 +297,18 @@ export default function CommunityPage() {
         .comm-benefit-desc { font-size:0.875rem; color:#64748b; line-height:1.65; }
 
         /* ── Search Bar ── */
-        .comm-search-bar { background:linear-gradient(135deg,#0e4d6d,#06958a); padding:2rem 1.5rem; }
-        .comm-search-inner { max-width:900px; margin:0 auto; display:flex; gap:1rem; flex-wrap:wrap; align-items:center; }
+        .comm-search-wrapper { position: relative; z-index: 20; padding: 0 1.5rem; margin-top: 2.5rem; margin-bottom: 2rem; }
+        .comm-search-bar {
+          background: linear-gradient(135deg, #06958a, #0e7268);
+          border-radius: 1.5rem;
+          box-shadow: 0 16px 40px rgba(6, 149, 138, 0.25);
+          padding: 2rem 1.5rem; position: relative; max-width: 1000px; margin: 0 auto;
+        }
+        @media (max-width: 640px) {
+          .comm-search-bar { padding: 1.25rem 1rem; border-radius: 1.25rem; }
+        }
+        .comm-search-glow { display: none; }
+        .comm-search-inner { position: relative; z-index: 2; max-width:900px; margin:0 auto; display:flex; gap:1rem; flex-wrap:wrap; align-items:center; }
         .comm-search-input-wrap { position:relative; flex:1; min-width:240px; }
         .comm-search-icon { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:rgba(255,255,255,0.55); pointer-events:none; }
         .comm-search-input {
@@ -279,6 +316,12 @@ export default function CommunityPage() {
           background:rgba(255,255,255,0.12); border:1.5px solid rgba(255,255,255,0.22);
           border-radius:0.875rem; color:white; font-size:0.9375rem;
           outline:none; font-family:inherit; transition:all 0.2s ease;
+        }
+        @media (max-width: 640px) {
+          .comm-search-inner { flex-direction: column; align-items: stretch; gap: 0.75rem; }
+          .comm-search-input-wrap { min-width: 0; }
+          .comm-dropdown-btn { width: 100%; justify-content: space-between; }
+          .comm-dropdown-menu { width: 100%; right: 0; left: 0; }
         }
         .comm-search-input::placeholder { color:rgba(255,255,255,0.5); }
         .comm-search-input:focus { background:rgba(255,255,255,0.18); border-color:rgba(255,255,255,0.4); }
@@ -463,27 +506,30 @@ export default function CommunityPage() {
                 Jelajahi Komunitas
               </a>
             </div>
+
+            {/* ── STATS BAR ── */}
+            <div className="comm-stats-wrapper">
+              <section className="comm-stats-bar">
+                <div className="comm-stats-glow" />
+                <div className="comm-stats-inner">
+                  {statsDisplay.map((s) => (
+                    <div key={s.label} className="comm-stat-item">
+                      <div className="comm-stat-icon-wrap">
+                        <s.icon style={{ width:22, height:22, color:"rgba(255,255,255,0.95)" }} />
+                      </div>
+                      <div className="comm-stat-val">{s.value}</div>
+                      <div className="comm-stat-lbl">{s.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
           </div>
 
           <div className="comm-wave">
             <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display:"block", width:"100%" }}>
               <path d="M0,40 C360,80 720,0 1080,40 C1260,60 1380,30 1440,40 L1440,80 L0,80 Z" fill="white" />
             </svg>
-          </div>
-        </section>
-
-        {/* ── STATS BAR ── */}
-        <section className="comm-stats-bar">
-          <div className="comm-stats-inner">
-            {statsDisplay.map((s) => (
-              <div key={s.label} className="comm-stat-item">
-                <div className="comm-stat-icon-wrap">
-                  <s.icon style={{ width:19, height:19, color:"rgba(255,255,255,0.9)" }} />
-                </div>
-                <div className="comm-stat-val">{s.value}</div>
-                <div className="comm-stat-lbl">{s.label}</div>
-              </div>
-            ))}
           </div>
         </section>
 
@@ -568,8 +614,10 @@ export default function CommunityPage() {
         </section>
 
         {/* ── SEARCH + COMMUNITIES ── */}
-        <section className="comm-search-bar" id="communities">
-          <div className="comm-search-inner">
+        <div className="comm-search-wrapper" id="communities">
+          <section className="comm-search-bar">
+            <div className="comm-search-glow" />
+            <div className="comm-search-inner">
             <div className="comm-search-input-wrap">
               <Search className="comm-search-icon" style={{ width:18, height:18 }} />
               <input
@@ -598,8 +646,9 @@ export default function CommunityPage() {
               </div>
             )}
             <span className="comm-search-count">{filteredCommunities.length} komunitas ditemukan</span>
-          </div>
-        </section>
+            </div>
+          </section>
+        </div>
 
         <section className="comm-section">
           <div className="comm-container">

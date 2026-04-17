@@ -248,34 +248,64 @@ export default async function HomePage() {
         .home-wave { position: absolute; bottom: -2px; left: 0; right: 0; z-index: 5; line-height: 0; }
 
         /* ── Stats Bar ── */
+        .home-stats-wrapper {
+          position: relative;
+          z-index: 20;
+          margin-top: 3.5rem;
+          margin-bottom: 0;
+          padding: 0;
+        }
         .home-stats-bar {
-          background: linear-gradient(135deg, #0e4d6d, #06958a);
-          padding: 2.5rem 1.5rem;
+          background: linear-gradient(135deg, #06958a, #0e7268);
+          border-radius: 1.5rem;
+          box-shadow: 0 16px 40px rgba(6, 149, 138, 0.25);
+          padding: 2.5rem 2rem;
+          position: relative;
+          overflow: hidden;
+          max-width: 1000px;
+          margin: 0 auto;
         }
+        @media (max-width: 640px) {
+          .home-stats-bar { padding: 1.5rem 1rem; border-radius: 1.25rem; }
+        }
+        .home-stats-glow { display: none; }
         .home-stats-inner {
-          max-width: 900px; margin: 0 auto;
-          display: grid; grid-template-columns: repeat(2,1fr); gap: 1.5rem;
+          position: relative;
+          z-index: 2;
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 1.5rem;
         }
-        @media(min-width:768px){ .home-stats-inner{ grid-template-columns: repeat(4,1fr); } }
+        @media (max-width: 480px) {
+          .home-stats-inner { gap: 1rem 0.5rem; }
+        }
+        @media(min-width:768px){ .home-stats-inner{ grid-template-columns: repeat(4, 1fr); } }
         .home-stat-item {
           text-align: center;
-          padding-right: 1.5rem;
+          padding: 0 0.5rem;
           border-right: 1px solid rgba(255,255,255,0.15);
         }
-        .home-stat-item:nth-child(2){ border-right: none; }
+        .home-stat-item:nth-child(2), .home-stat-item:last-child { border-right: none; }
         @media(min-width:768px){
+          .home-stat-item { padding-right: 1.5rem; }
           .home-stat-item:nth-child(2){ border-right: 1px solid rgba(255,255,255,0.15); }
           .home-stat-item:last-child{ border-right: none; }
         }
         .home-stat-icon-wrap {
-          width: 42px; height: 42px;
+          width: 46px; height: 46px;
           background: rgba(255,255,255,0.12);
-          border-radius: 0.75rem;
+          border-radius: 0.875rem;
           display: flex; align-items: center; justify-content: center;
           margin: 0 auto 0.875rem;
+          backdrop-filter: blur(4px);
         }
-        .home-stat-val { font-size: 1.75rem; font-weight: 900; color: white; line-height: 1; margin-bottom: 0.3rem; letter-spacing: -0.03em; }
-        .home-stat-lbl { font-size: 0.75rem; font-weight: 500; color: rgba(255,255,255,0.65); text-transform: uppercase; letter-spacing: 0.07em; }
+        .home-stat-val { font-size: 1.875rem; font-weight: 900; color: white; line-height: 1; margin-bottom: 0.375rem; letter-spacing: -0.03em; }
+        .home-stat-lbl { font-size: 0.75rem; font-weight: 600; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 0.08em; }
+        @media (max-width: 640px) {
+          .home-stat-val { font-size: 1.375rem; }
+          .home-stat-lbl { font-size: 0.65rem; }
+          .home-stat-icon-wrap { width: 38px; height: 38px; margin-bottom: 0.5rem; }
+        }
 
         /* ── Sections ── */
         .home-section { padding: 5.5rem 1.5rem; }
@@ -626,6 +656,24 @@ export default async function HomePage() {
                 Daftar Gratis
               </Link>
             </div>
+
+            {/* ── STATS BAR ── */}
+            <div className="home-stats-wrapper">
+              <section className="home-stats-bar">
+                <div className="home-stats-glow" />
+                <div className="home-stats-inner">
+                  {stats.map((s) => (
+                    <div key={s.label} className="home-stat-item">
+                      <div className="home-stat-icon-wrap">
+                        <s.icon style={{ width: 22, height: 22, color: "rgba(255,255,255,0.95)" }} />
+                      </div>
+                      <div className="home-stat-val">{s.value}</div>
+                      <div className="home-stat-lbl">{s.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
           </div>
 
           {/* Scroll indicator */}
@@ -638,21 +686,6 @@ export default async function HomePage() {
             <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: "block", width: "100%" }}>
               <path d="M0,40 C360,80 720,0 1080,40 C1260,60 1380,30 1440,40 L1440,80 L0,80 Z" fill="white" />
             </svg>
-          </div>
-        </section>
-
-        {/* ── STATS BAR ── */}
-        <section className="home-stats-bar">
-          <div className="home-stats-inner">
-            {stats.map((s) => (
-              <div key={s.label} className="home-stat-item">
-                <div className="home-stat-icon-wrap">
-                  <s.icon style={{ width: 19, height: 19, color: "rgba(255,255,255,0.9)" }} />
-                </div>
-                <div className="home-stat-val">{s.value}</div>
-                <div className="home-stat-lbl">{s.label}</div>
-              </div>
-            ))}
           </div>
         </section>
 

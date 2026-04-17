@@ -85,11 +85,13 @@ export default async function AboutPage() {
         /* ── Hero ── */
         .about-hero {
           position: relative;
-          min-height: 92vh;
+          min-height: 100vh;
           display: flex;
           flex-direction: column;
-          justify-content: flex-end;
+          justify-content: center;
+          align-items: center;
           overflow: hidden;
+          padding: 6rem 1.5rem 2rem;
         }
         .about-hero-bg {
           position: absolute; inset: 0;
@@ -122,9 +124,8 @@ export default async function AboutPage() {
         }
         .about-hero-content {
           position: relative; z-index: 10;
-          max-width: 900px;
+          max-width: 1000px;
           margin: 0 auto;
-          padding: 0 1.5rem 5rem;
           text-align: center;
           width: 100%;
         }
@@ -207,45 +208,62 @@ export default async function AboutPage() {
         }
 
         /* ── Stats Bar ── */
-        .about-stats-bar {
-          background: linear-gradient(135deg, #0e4d6d, #06958a);
-          padding: 3rem 1.5rem;
+        .about-stats-wrapper {
+          position: relative; z-index: 20;
+          margin-top: 3.5rem; margin-bottom: 0; padding: 0;
         }
+        .about-stats-bar {
+          background: linear-gradient(135deg, #06958a, #0e7268);
+          border-radius: 1.5rem;
+          box-shadow: 0 16px 40px rgba(6, 149, 138, 0.25);
+          padding: 2.5rem 2rem; position: relative; overflow: hidden; max-width: 1000px; margin: 0 auto;
+        }
+        @media (max-width: 640px) {
+          .about-stats-bar { padding: 1.5rem 1rem; border-radius: 1.25rem; }
+        }
+        .about-stats-glow { display: none; }
         .about-stats-grid {
-          max-width: 1000px; margin: 0 auto;
-          display: grid; grid-template-columns: repeat(2, 1fr); gap: 2rem;
+          position: relative; z-index: 2;
+          max-width: 900px; margin: 0 auto;
+          display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;
+        }
+        @media (max-width: 480px) {
+          .about-stats-grid { gap: 1rem 0.5rem; }
         }
         @media (min-width: 768px) {
           .about-stats-grid { grid-template-columns: repeat(4, 1fr); }
         }
         .about-stat-item {
           text-align: center;
-          padding: 1rem;
+          padding: 0 0.5rem;
           border-right: 1px solid rgba(255,255,255,0.15);
         }
         .about-stat-item:last-child, .about-stat-item:nth-child(2) { border-right: none; }
         @media (min-width: 768px) {
-          .about-stat-item:nth-child(2) { border-right: 1px solid rgba(255,255,255,0.15); }
-          .about-stat-item:last-child { border-right: none; }
+          .about-stat-item { padding-right: 1.5rem; }
+          .about-stat-item:nth-child(2) { border-right: 1px solid rgba(255,255,255,0.15); padding-right: 1.5rem; }
+          .about-stat-item:last-child { border-right: none; padding-right: 0; }
         }
         .about-stat-icon {
-          width: 44px; height: 44px;
+          width: 46px; height: 46px;
           background: rgba(255,255,255,0.12);
-          border-radius: 0.75rem;
+          border-radius: 0.875rem;
           display: flex; align-items: center; justify-content: center;
           margin: 0 auto 0.875rem;
           backdrop-filter: blur(4px);
         }
         .about-stat-value {
-          font-size: 2rem; font-weight: 900;
-          color: white; line-height: 1;
-          margin-bottom: 0.375rem;
-          letter-spacing: -0.03em;
+          font-size: 1.875rem; font-weight: 900;
+          color: white; line-height: 1; margin-bottom: 0.375rem; letter-spacing: -0.03em;
         }
         .about-stat-label {
-          font-size: 0.8125rem; font-weight: 500;
-          color: rgba(255,255,255,0.7);
-          text-transform: uppercase; letter-spacing: 0.06em;
+          font-size: 0.75rem; font-weight: 600; color: rgba(255,255,255,0.7);
+          text-transform: uppercase; letter-spacing: 0.08em;
+        }
+        @media (max-width: 640px) {
+          .about-stat-value { font-size: 1.25rem; }
+          .about-stat-label { font-size: 0.6rem; }
+          .about-stat-icon { width: 36px; height: 36px; margin-bottom: 0.5rem; }
         }
 
         /* ── Section generic ── */
@@ -612,6 +630,24 @@ export default async function AboutPage() {
                 Bergabung Gratis
               </Link>
             </div>
+
+            {/* ── STATS BAR ── */}
+            <div className="about-stats-wrapper">
+              <section className="about-stats-bar">
+                <div className="about-stats-glow" />
+                <div className="about-stats-grid">
+                  {stats.map((s) => (
+                    <div key={s.label} className="about-stat-item">
+                      <div className="about-stat-icon">
+                        <s.icon style={{ width: 22, height: 22, color: 'rgba(255,255,255,0.95)' }} />
+                      </div>
+                      <div className="about-stat-value">{s.value}</div>
+                      <div className="about-stat-label">{s.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
           </div>
 
           {/* Wave divider */}
@@ -619,21 +655,6 @@ export default async function AboutPage() {
             <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block', width: '100%' }}>
               <path d="M0,40 C360,80 720,0 1080,40 C1260,60 1380,30 1440,40 L1440,80 L0,80 Z" fill="white"/>
             </svg>
-          </div>
-        </section>
-
-        {/* ── STATS BAR ── */}
-        <section className="about-stats-bar">
-          <div className="about-stats-grid">
-            {stats.map((s) => (
-              <div key={s.label} className="about-stat-item">
-                <div className="about-stat-icon">
-                  <s.icon style={{ width: 20, height: 20, color: 'rgba(255,255,255,0.9)' }} />
-                </div>
-                <div className="about-stat-value">{s.value}</div>
-                <div className="about-stat-label">{s.label}</div>
-              </div>
-            ))}
           </div>
         </section>
 

@@ -56,13 +56,13 @@ export default async function EndowmentPage() {
         /* ── Hero ── */
         .endo-hero {
           position: relative;
-          min-height: 80vh;
+          min-height: 100vh;
           display: flex;
           flex-direction: column;
           justify-content: center;
           align-items: center;
           overflow: hidden;
-          padding: 6rem 1.5rem 5rem;
+          padding: 6rem 1.5rem 2rem;
           text-align: center;
         }
         .endo-hero-bg {
@@ -94,7 +94,7 @@ export default async function EndowmentPage() {
           from { transform: translateY(0); }
           to { transform: translateY(-60px); }
         }
-        .endo-hero-content { position: relative; z-index: 10; max-width: 820px; }
+        .endo-hero-content { position: relative; z-index: 10; max-width: 1000px; width: 100%; }
         .endo-hero-badge {
           display: inline-flex; align-items: center; gap: 0.5rem;
           background: rgba(103,232,249,0.12);
@@ -159,34 +159,55 @@ export default async function EndowmentPage() {
         .endo-wave { position: absolute; bottom: -2px; left: 0; right: 0; z-index: 5; line-height: 0; }
 
         /* ── Stats bar ── */
-        .endo-stats-bar {
-          background: linear-gradient(135deg, #0e4d6d, #06958a);
-          padding: 2.5rem 1.5rem;
+        .endo-stats-wrapper {
+          position: relative; z-index: 20;
+          margin-top: 3.5rem; margin-bottom: 0; padding: 0;
         }
+        .endo-stats-bar {
+          background: linear-gradient(135deg, #06958a, #0e7268);
+          border-radius: 1.5rem;
+          box-shadow: 0 16px 40px rgba(6, 149, 138, 0.25);
+          padding: 2.5rem 2rem; position: relative; overflow: hidden; max-width: 1000px; margin: 0 auto;
+        }
+        @media (max-width: 640px) {
+          .endo-stats-bar { padding: 1.5rem 1rem; border-radius: 1.25rem; }
+        }
+        .endo-stats-glow { display: none; }
         .endo-stats-inner {
+          position: relative; z-index: 2;
           max-width: 900px; margin: 0 auto;
           display: grid; grid-template-columns: repeat(2,1fr); gap: 1.5rem;
+        }
+        @media (max-width: 480px) {
+          .endo-stats-inner { gap: 1rem 0.5rem; }
         }
         @media(min-width:768px){ .endo-stats-inner{ grid-template-columns: repeat(4,1fr); } }
         .endo-stat-item {
           text-align: center;
-          padding-right: 1.5rem;
+          padding: 0 0.5rem;
           border-right: 1px solid rgba(255,255,255,0.15);
         }
-        .endo-stat-item:nth-child(2){ border-right: none; }
+        .endo-stat-item:nth-child(2), .endo-stat-item:last-child { border-right: none; }
         @media(min-width:768px){
+          .endo-stat-item { padding-right: 1.5rem; }
           .endo-stat-item:nth-child(2){ border-right: 1px solid rgba(255,255,255,0.15); }
           .endo-stat-item:last-child{ border-right: none; }
         }
         .endo-stat-icon-wrap {
-          width: 42px; height: 42px;
+          width: 46px; height: 46px;
           background: rgba(255,255,255,0.12);
-          border-radius: 0.75rem;
+          border-radius: 0.875rem;
           display: flex; align-items: center; justify-content: center;
           margin: 0 auto 0.875rem;
+          backdrop-filter: blur(4px);
         }
-        .endo-stat-val { font-size: 1.75rem; font-weight: 900; color: white; line-height: 1; margin-bottom: 0.3rem; letter-spacing: -0.03em; }
-        .endo-stat-lbl { font-size: 0.75rem; font-weight: 500; color: rgba(255,255,255,0.65); text-transform: uppercase; letter-spacing: 0.07em; }
+        .endo-stat-val { font-size: 1.875rem; font-weight: 900; color: white; line-height: 1; margin-bottom: 0.375rem; letter-spacing: -0.03em; }
+        .endo-stat-lbl { font-size: 0.75rem; font-weight: 600; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 0.08em; }
+        @media (max-width: 640px) {
+          .endo-stat-val { font-size: 1.25rem; }
+          .endo-stat-lbl { font-size: 0.6rem; }
+          .endo-stat-icon-wrap { width: 36px; height: 36px; margin-bottom: 0.5rem; }
+        }
 
         /* ── Sections ── */
         .endo-section { padding: 5.5rem 1.5rem; }
@@ -475,32 +496,35 @@ export default async function EndowmentPage() {
                 Status Dana
               </a>
             </div>
+
+            {/* ── STATS BAR ── */}
+            <div className="endo-stats-wrapper">
+              <section className="endo-stats-bar">
+                <div className="endo-stats-glow" />
+                <div className="endo-stats-inner">
+                  {[
+                    { icon: Banknote, val: formatCurrency(stats.totalRaised), lbl: "Total Terkumpul" },
+                    { icon: Heart, val: formatCurrency(stats.disbursed), lbl: "Telah Disalurkan" },
+                    { icon: Globe, val: formatCurrency(availableFunds), lbl: "Dana Tersedia" },
+                    { icon: Users, val: `${disbursements.length}`, lbl: "Komunitas Dibantu" },
+                  ].map((s) => (
+                    <div key={s.lbl} className="endo-stat-item">
+                      <div className="endo-stat-icon-wrap">
+                        <s.icon style={{ width: 22, height: 22, color: 'rgba(255,255,255,0.95)' }} />
+                      </div>
+                      <div className="endo-stat-val">{s.val}</div>
+                      <div className="endo-stat-lbl">{s.lbl}</div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
           </div>
 
           <div className="endo-wave">
             <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block', width: '100%' }}>
               <path d="M0,40 C360,80 720,0 1080,40 C1260,60 1380,30 1440,40 L1440,80 L0,80 Z" fill="white"/>
             </svg>
-          </div>
-        </section>
-
-        {/* ── STATS BAR ── */}
-        <section className="endo-stats-bar">
-          <div className="endo-stats-inner">
-            {[
-              { icon: Banknote, val: formatCurrency(stats.totalRaised), lbl: "Total Terkumpul" },
-              { icon: Heart, val: formatCurrency(stats.disbursed), lbl: "Telah Disalurkan" },
-              { icon: Globe, val: formatCurrency(availableFunds), lbl: "Dana Tersedia" },
-              { icon: Users, val: `${disbursements.length}`, lbl: "Komunitas Dibantu" },
-            ].map((s) => (
-              <div key={s.lbl} className="endo-stat-item">
-                <div className="endo-stat-icon-wrap">
-                  <s.icon style={{ width: 19, height: 19, color: 'rgba(255,255,255,0.9)' }} />
-                </div>
-                <div className="endo-stat-val">{s.val}</div>
-                <div className="endo-stat-lbl">{s.lbl}</div>
-              </div>
-            ))}
           </div>
         </section>
 

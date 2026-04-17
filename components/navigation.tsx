@@ -300,7 +300,7 @@ export function Navigation() {
                 <Button variant="ghost" size="sm" asChild>
                   <Link href="/login">Masuk</Link>
                 </Button>
-                <Button size="sm" asChild>
+                <Button variant="premium" size="sm" asChild>
                   <Link href="/register">Daftar</Link>
                 </Button>
               </>
@@ -369,7 +369,7 @@ export function Navigation() {
                     <Button variant="ghost" asChild onClick={() => setIsMenuOpen(false)}>
                       <Link href="/login">Masuk</Link>
                     </Button>
-                    <Button asChild onClick={() => setIsMenuOpen(false)}>
+                    <Button variant="premium" asChild onClick={() => setIsMenuOpen(false)}>
                       <Link href="/register">Daftar</Link>
                     </Button>
                   </>

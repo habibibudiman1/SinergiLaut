@@ -265,16 +265,33 @@ export default function ActivitiesPage() {
         .act-wave { position: absolute; bottom: -2px; left: 0; right: 0; z-index: 5; line-height: 0; }
 
         /* ── Search Bar ── */
-        .act-search-bar {
-          background: linear-gradient(135deg, #0e4d6d, #06958a);
-          padding: 2rem 1.5rem;
+        .act-search-wrapper {
+          position: relative; z-index: 20;
+          margin-top: 2rem; padding: 0 1.5rem; margin-bottom: 2rem;
         }
+        .act-search-bar {
+          background: linear-gradient(135deg, #06958a, #0e7268);
+          border-radius: 1.5rem;
+          box-shadow: 0 16px 40px rgba(6, 149, 138, 0.25);
+          padding: 2rem 1.5rem; position: relative; max-width: 1000px; margin: 0 auto;
+        }
+        @media (max-width: 640px) {
+          .act-search-bar { padding: 1.25rem 1rem; border-radius: 1.25rem; }
+        }
+        .act-search-glow { display: none; }
         .act-search-inner {
-          max-width: 900px; margin: 0 auto;
+          position: relative; z-index: 2; max-width: 900px; margin: 0 auto;
           display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;
         }
         .act-search-input-wrap {
           position: relative; flex: 1; min-width: 240px;
+        }
+        @media (max-width: 640px) {
+          .act-search-inner { flex-direction: column; align-items: stretch; gap: 0.75rem; }
+          .act-search-input-wrap { min-width: 0; }
+          .act-dropdown-btn { width: 100%; justify-content: space-between; }
+          .act-dropdown-menu { width: 100%; right: 0; left: 0; }
+          .act-search-count { text-align: center; margin-top: 0.25rem; font-size: 0.8rem; }
         }
         .act-search-icon {
           position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
@@ -614,8 +631,10 @@ export default function ActivitiesPage() {
         </section>
 
         {/* ── SEARCH & FILTER BAR ── */}
-        <section className="act-search-bar" id="kegiatan-list">
-          <div className="act-search-inner">
+        <div className="act-search-wrapper" id="kegiatan-list">
+          <section className="act-search-bar">
+            <div className="act-search-glow" />
+            <div className="act-search-inner">
             <div className="act-search-input-wrap">
               <Search className="act-search-icon" style={{ width: 18, height: 18 }} />
               <input
@@ -680,8 +699,9 @@ export default function ActivitiesPage() {
             <span className="act-results-count">
               {filteredActivities.length} kegiatan ditemukan
             </span>
-          </div>
-        </section>
+            </div>
+          </section>
+        </div>
 
         {/* ── ACTIVITY CARDS ── */}
         <section className="act-section">
