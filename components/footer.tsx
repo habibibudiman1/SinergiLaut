@@ -3,15 +3,15 @@ import Image from "next/image"
 
 const footerLinks = {
   resources: [
-    { href: "#", label: "About Us" },
-    { href: "#", label: "Impact Report" },
-    { href: "#", label: "Partners" },
-    { href: "#", label: "Press Kit" },
+    { href: "/tentang", label: "Tentang Kami" },
+    { href: "/activities", label: "Laporan Dampak" },
+    { href: "/community", label: "Komunitas Mitra" },
+    { href: "/contact", label: "Hubungi Kami" },
   ],
   legal: [
-    { href: "#", label: "Privacy Policy" },
-    { href: "#", label: "Terms of Service" },
-    { href: "#", label: "Cookie Policy" },
+    { href: "/privacy-policy", label: "Kebijakan Privasi" },
+    { href: "/terms", label: "Syarat & Ketentuan" },
+    { href: "/cookie-policy", label: "Kebijakan Cookie" },
   ],
 }
 
@@ -26,7 +26,7 @@ export function Footer() {
               <span className="text-xl font-bold">SinergiLaut</span>
             </Link>
             <p className="text-sm text-background/70 leading-relaxed">
-              Connecting marine conservation communities, volunteers, donors, and corporate sponsors to protect our oceans.
+              Menghubungkan komunitas konservasi laut, relawan, donatur, dan sponsor untuk menjaga lautan Indonesia.
             </p>
           </div>
 
@@ -70,13 +70,13 @@ export function Footer() {
             © {new Date().getFullYear()} SinergiLaut. All rights reserved.
           </p>
           <div className="flex items-center gap-6">
-            <a href="#" className="text-background/60 hover:text-background transition-colors text-sm">
+            <a href="https://instagram.com/sinergilaut" target="_blank" rel="noopener noreferrer" className="text-background/60 hover:text-background transition-colors text-sm">
               Instagram
             </a>
-            <a href="#" className="text-background/60 hover:text-background transition-colors text-sm">
+            <a href="https://twitter.com/sinergilaut" target="_blank" rel="noopener noreferrer" className="text-background/60 hover:text-background transition-colors text-sm">
               Twitter
             </a>
-            <a href="#" className="text-background/60 hover:text-background transition-colors text-sm">
+            <a href="https://linkedin.com/company/sinergilaut" target="_blank" rel="noopener noreferrer" className="text-background/60 hover:text-background transition-colors text-sm">
               LinkedIn
             </a>
           </div>

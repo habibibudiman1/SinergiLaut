@@ -56,7 +56,7 @@ async function createMidtransTransaction(payload: {
   itemDetails?: { id: string; price: number; quantity: number; name: string }[]
 }): Promise<{ snapToken: string; redirectUrl: string } | null> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
     const response = await fetch(`${baseUrl}/api/midtrans/create-transaction`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

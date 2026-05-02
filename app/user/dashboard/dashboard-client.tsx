@@ -74,7 +74,7 @@ export function DashboardClient({ volunteers, donations }: DashboardClientProps)
               onClick={() => setActiveTab(tab.id as UserTab)}
               className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ${
                 isActive 
-                  ? "bg-linear-to-br from-[#06958a] to-[#0e7268] text-white shadow-md transform scale-105" 
+                  ? "bg-gradient-to-br from-[#06958a] to-[#0e7268] text-white shadow-md transform scale-105" 
                   : "text-[#475569] hover:bg-white/60 hover:text-[#0e2a3a]"
               }`}
             >

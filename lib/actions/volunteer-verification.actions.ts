@@ -11,7 +11,7 @@ import type { VerificationStatus } from "@/lib/types"
 
 /** Submit/update data diri volunteer untuk diverifikasi admin */
 export async function submitVolunteerVerification(payload: {
-  userId: string
+  // userId DIHAPUS dari payload — diambil dari server session untuk cegah IDOR
   fullName: string
   dateOfBirth: string
   nik: string
@@ -20,7 +20,14 @@ export async function submitVolunteerVerification(payload: {
   phone: string
   ktpUrl?: string
 }) {
-  // Use admin client to bypass RLS – user cannot update volunteer_status themselves
+  // 1. Verifikasi sesi user terlebih dahulu
+  const supabaseAuth = await createClient()
+  const { data: { user }, error: authError } = await supabaseAuth.auth.getUser()
+  if (authError || !user) {
+    return { success: false, error: "Anda harus login untuk mengajukan verifikasi." }
+  }
+
+  // 2. Gunakan admin client (bypass RLS) HANYA setelah auth terverifikasi
   const supabase = await createAdminClient()
 
   const { data, error } = await supabase
@@ -36,7 +43,7 @@ export async function submitVolunteerVerification(payload: {
       volunteer_status: "pending",
       volunteer_reject_note: null,
     })
-    .eq("id", payload.userId)
+    .eq("id", user.id) // ← server-verified user ID, bukan dari client
     .select()
     .single()
 

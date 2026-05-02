@@ -221,10 +221,21 @@ DROP POLICY IF EXISTS "Admin can view all donations" ON donations;
 CREATE POLICY "Admin can view all donations"
   ON donations FOR SELECT USING (is_admin());
 
--- Anyone can create donations
+-- Authenticated or anonymous can donate, but only to published activities with valid data
 DROP POLICY IF EXISTS "Anyone can create donations" ON donations;
-CREATE POLICY "Anyone can create donations"
-  ON donations FOR INSERT WITH CHECK (true);
+CREATE POLICY "Validated donations INSERT"
+  ON donations FOR INSERT WITH CHECK (
+    -- Target activity must be published
+    EXISTS (
+      SELECT 1 FROM activities a
+      WHERE a.id = activity_id
+        AND a.status = 'published'
+    )
+    -- If user_id is set, it must be the authenticated user (prevent spoofing)
+    AND (user_id IS NULL OR user_id = auth.uid())
+    -- Amount must be positive for money donations
+    AND (type = 'item' OR (amount IS NOT NULL AND amount > 0))
+  );
 
 -- Admin can update donations
 DROP POLICY IF EXISTS "Admin can update donations" ON donations;
@@ -249,8 +260,13 @@ CREATE POLICY "View donation items if can view donation"
   ));
 
 DROP POLICY IF EXISTS "Anyone can insert donation items" ON donation_items;
-CREATE POLICY "Anyone can insert donation items"
-  ON donation_items FOR INSERT WITH CHECK (true);
+CREATE POLICY "Validated donation items INSERT"
+  ON donation_items FOR INSERT WITH CHECK (
+    -- Parent donation must exist
+    EXISTS (SELECT 1 FROM donations d WHERE d.id = donation_id)
+    -- Quantity must be positive
+    AND quantity > 0
+  );
 
 -- ============================================
 -- REPORTS policies
@@ -341,6 +357,7 @@ CREATE POLICY "Users can view own feedbacks"
 
 -- Authenticated users (only attended volunteers) can create feedback
 DROP POLICY IF EXISTS "Users can create feedback" ON feedbacks;
+DROP POLICY IF EXISTS "Attended volunteers can create feedback" ON feedbacks;
 CREATE POLICY "Attended volunteers can create feedback"
   ON feedbacks FOR INSERT
   WITH CHECK (
@@ -355,6 +372,7 @@ CREATE POLICY "Attended volunteers can create feedback"
 
 -- Only attended volunteers can update own feedback
 DROP POLICY IF EXISTS "Users can update own feedback" ON feedbacks;
+DROP POLICY IF EXISTS "Attended volunteers can update own feedback" ON feedbacks;
 CREATE POLICY "Attended volunteers can update own feedback"
   ON feedbacks FOR UPDATE
   USING (

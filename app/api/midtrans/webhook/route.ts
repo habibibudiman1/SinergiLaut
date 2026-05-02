@@ -132,8 +132,12 @@ export async function POST(req: NextRequest) {
     console.log(`[Midtrans Webhook] order_id=${order_id} → status=${newStatus}`)
     return NextResponse.json({ success: true })
   } catch (err) {
-    console.error("[Midtrans Webhook] Error:", err)
-    // Return 200 agar Midtrans tidak flood retry
-    return NextResponse.json({ success: true, message: "Internal error, logged." })
+    console.error("[Midtrans Webhook] Unhandled error:", err)
+    // Return 500 so Midtrans retries with exponential backoff.
+    // Only return 200 for deliberate "nothing to do" business decisions above.
+    return NextResponse.json(
+      { success: false, message: "Internal server error." },
+      { status: 500 }
+    )
   }
 }

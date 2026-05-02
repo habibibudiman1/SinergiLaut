@@ -155,9 +155,11 @@ export default function UserProfilePage() {
   // Effect to clear optimistic avatar when real profile avatar matches or changes
   useEffect(() => {
     if (profile?.avatar_url && optimisticAvatar) {
+      // Revoke old object URL to prevent memory leak
+      URL.revokeObjectURL(optimisticAvatar)
       setOptimisticAvatar(null)
     }
-  }, [profile?.avatar_url])
+  }, [profile?.avatar_url, optimisticAvatar])
 
   // Handle KTP upload
   const handleKtpUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

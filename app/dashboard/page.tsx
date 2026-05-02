@@ -148,7 +148,7 @@ export default function AdminDashboardPage() {
       sub: "Menunggu validasi",
       color: "bg-green-50 border-green-200 text-green-800",
       icon: "📄",
-      href: "/admin/activities",
+      href: "/admin/reports",
     },
     {
       label: `${pendingVolunteers} pengguna`,
@@ -178,6 +178,14 @@ export default function AdminDashboardPage() {
               </p>
             </div>
           </div>
+
+          {isLoading ? (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-24 bg-muted rounded-xl animate-pulse" />
+              ))}
+            </div>
+          ) : (<>
 
           {/* Stats */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -368,7 +376,7 @@ export default function AdminDashboardPage() {
                   <CardDescription>Menunggu validasi admin</CardDescription>
                 </div>
                 <Button variant="ghost" size="sm" asChild>
-                  <Link href="/admin/activities">
+                  <Link href="/admin/reports">
                     Lihat Semua <ArrowRight className="h-3.5 w-3.5 ml-1" />
                   </Link>
                 </Button>
@@ -438,6 +446,7 @@ export default function AdminDashboardPage() {
               </CardContent>
             </Card>
           </div>
+          </>)}
         </div>
       </main>
     </div>

@@ -110,13 +110,14 @@ export function Navigation() {
   };
 
   // Check if current page has a dark hero section
-  const isDarkHeroPage = ["/", "/activities", "/community", "/endowment", "/about"].includes(pathname) || 
-                         pathname.startsWith("/activities/") || 
-                         pathname.startsWith("/community/") ||
-                         pathname === "/login" ||
-                         pathname === "/register" ||
-                         pathname === "/dashboard" ||
-                         pathname.startsWith("/dashboard/");
+  const isDashboard = pathname.includes("dashboard");
+  const isDarkHeroPage = !isDashboard && (
+    ["/", "/activities", "/community", "/endowment", "/about"].includes(pathname) || 
+    pathname.startsWith("/activities/") || 
+    pathname.startsWith("/community/") ||
+    pathname === "/login" ||
+    pathname === "/register"
+  );
 
   const showPillNav = isScrolled || !isDarkHeroPage || isMenuOpen;
 
@@ -138,10 +139,11 @@ export function Navigation() {
 
   // Fetch on mount + setiap 30 detik
   useEffect(() => {
+    if (!user) return;
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 30_000);
     return () => clearInterval(interval);
-  }, [fetchNotifications]);
+  }, [fetchNotifications, user]);
 
   // Fetch ulang saat dropdown dibuka
   useEffect(() => {
@@ -465,7 +467,6 @@ export function Navigation() {
           </button>
         </div>
 
-        {/* Mobile Menu */}
         {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="md:hidden py-6 mt-4 border-t border-border/10 animate-in fade-in slide-in-from-top-4 duration-300">
