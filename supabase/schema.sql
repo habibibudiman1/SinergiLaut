@@ -515,28 +515,8 @@ CREATE INDEX IF NOT EXISTS idx_journey_milestones_order ON journey_milestones(or
 
 INSERT INTO journey_milestones (year, title, description, impact_stat, icon, order_index, is_published)
 SELECT * FROM (VALUES
-  (2020, 'SinergiLaut Didirikan',
+  (2026, 'SinergiLaut Didirikan',
    'SinergiLaut lahir dari keresahan akan sulitnya koordinasi antar komunitas konservasi laut di Indonesia. Platform ini hadir sebagai jembatan digital pertama untuk gerakan konservasi kolaboratif.',
-   'Misi dimulai', 'Waves', 1, true),
-
-  (2021, 'Komunitas Pertama Bergabung',
-   'Sebanyak 10 komunitas konservasi dari Jawa, Bali, dan Sulawesi bergabung menjadi mitra perdana. Total 500 relawan aktif telah mendaftar dalam tahun pertama.',
-   '10 komunitas, 500+ relawan', 'Users', 2, true),
-
-  (2022, 'Sistem Donasi & Transparansi',
-   'Meluncurkan sistem donasi terintegrasi dengan verifikasi penggunaan dana secara transparan. Setiap rupiah donasi dapat dilacak penggunaannya oleh publik.',
-   'Rp 1M+ dana terhimpun', 'Banknote', 3, true),
-
-  (2023, 'Ekspansi ke 50+ Komunitas',
-   'Jaringan komunitas mitra SinergiLaut berkembang menjadi 50+ komunitas yang tersebar di 15 provinsi, dari Sabang hingga Papua. Program verifikasi komunitas mulai diimplementasikan.',
-   '50+ komunitas, 15 provinsi', 'Globe', 4, true),
-
-  (2024, 'Milestone 10.000 Relawan',
-   'Mencapai tonggak bersejarah: 10.000+ relawan terdaftar dan lebih dari Rp 5 miliar dana konservasi berhasil terhimpun untuk mendukung ratusan kegiatan di seluruh nusantara.',
-   '10.000+ relawan, Rp 5M+ dana', 'Award', 5, true),
-
-  (2026, 'Platform Generasi Baru',
-   'Peluncuran platform generasi baru dengan fitur realtime, dashboard lengkap untuk komunitas, integrasi pembayaran Midtrans, sistem laporan terverifikasi, dan pencairan dana transparan ke komunitas.',
-   'Fitur lengkap & real-time', 'Zap', 6, true)
+   'Misi dimulai', 'Globe', 1, true)
 ) AS v(year, title, description, impact_stat, icon, order_index, is_published)
 WHERE NOT EXISTS (SELECT 1 FROM journey_milestones LIMIT 1);

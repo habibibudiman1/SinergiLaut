@@ -53,12 +53,7 @@ const stats = [
 ]
 
 const fallbackMilestones: JourneyMilestone[] = [
-  { id: "1", year: 2020, title: "SinergiLaut Didirikan", description: "Platform lahir dari keresahan sulitnya koordinasi komunitas konservasi laut di Indonesia.", impact_stat: "Misi dimulai", icon: "Globe", order_index: 1, is_published: true, created_at: "", updated_at: "" },
-  { id: "2", year: 2021, title: "Komunitas Pertama Bergabung", description: "10 komunitas dari Jawa, Bali, Sulawesi bergabung. 500 relawan aktif terdaftar.", impact_stat: "10 komunitas, 500+ relawan", icon: "Users", order_index: 2, is_published: true, created_at: "", updated_at: "" },
-  { id: "3", year: 2022, title: "Sistem Donasi & Transparansi", description: "Meluncurkan sistem donasi terintegrasi dengan verifikasi penggunaan dana yang transparan.", impact_stat: "Rp 1M+ dana terhimpun", icon: "Banknote", order_index: 3, is_published: true, created_at: "", updated_at: "" },
-  { id: "4", year: 2023, title: "Ekspansi ke 50+ Komunitas", description: "Jaringan komunitas berkembang ke 50+ komunitas di 15 provinsi, dari Sabang hingga Papua.", impact_stat: "50+ komunitas, 15 provinsi", icon: "Globe", order_index: 4, is_published: true, created_at: "", updated_at: "" },
-  { id: "5", year: 2024, title: "Milestone 10.000 Relawan", description: "Mencapai 10.000+ relawan terdaftar dan Rp 5 miliar+ dana konservasi terhimpun.", impact_stat: "10.000+ relawan, Rp 5M+ dana", icon: "Award", order_index: 5, is_published: true, created_at: "", updated_at: "" },
-  { id: "6", year: 2026, title: "Platform Generasi Baru", description: "Peluncuran platform baru: realtime, Midtrans, dashboard lengkap, dan pencairan dana transparan.", impact_stat: "Fitur lengkap & real-time", icon: "Zap", order_index: 6, is_published: true, created_at: "", updated_at: "" },
+  { id: "6", year: 2026, title: "SinergiLaut Didirikan", description: "SinergiLaut lahir dari keresahan akan sulitnya koordinasi antar komunitas konservasi laut di Indonesia. Platform ini hadir sebagai jembatan digital pertama untuk gerakan konservasi kolaboratif.", impact_stat: "Misi dimulai", icon: "Globe", order_index: 6, is_published: true, created_at: "", updated_at: "" },
 ]
 
 async function getMilestones(): Promise<JourneyMilestone[]> {
@@ -784,59 +779,7 @@ export default async function AboutPage() {
               </div>
             </div>
 
-            {/* Data Table */}
-            <div style={{ marginTop: '4rem' }}>
-              <div className="about-table-wrap">
-                <div className="about-table-header">
-                  <div className="about-table-header-icon">
-                    <Table2 style={{ width: 18, height: 18, color: 'white' }} />
-                  </div>
-                  <div>
-                    <p style={{ fontSize: '1rem', fontWeight: 700, color: '#0e2a3a' }}>Data Ringkasan Perjalanan</p>
-                    <p style={{ fontSize: '0.8125rem', color: '#64748b' }}>Seluruh tonggak sejarah dalam format tabel</p>
-                  </div>
-                </div>
-                <div style={{ overflowX: 'auto' }}>
-                  <table className="about-table">
-                    <thead>
-                      <tr>
-                        <th>Tahun</th>
-                        <th>Milestone</th>
-                        <th style={{ display: 'none' }} className="md-show">Deskripsi</th>
-                        <th>Dampak</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {milestones.map((m) => {
-                        const IconComponent = iconMap[m.icon] ?? Award
-                        return (
-                          <tr key={m.id}>
-                            <td><span className="about-table-year">{m.year}</span></td>
-                            <td>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-                                <div className="about-table-icon-wrap">
-                                  <IconComponent style={{ width: 13, height: 13, color: '#06958a' }} />
-                                </div>
-                                <span style={{ fontWeight: 600, color: '#0e2a3a', fontSize: '0.875rem' }}>{m.title}</span>
-                              </div>
-                            </td>
-                            <td style={{ color: '#64748b', maxWidth: 280, lineHeight: 1.55 }}>{m.description}</td>
-                            <td>
-                              {m.impact_stat
-                                ? <span className="about-table-badge">{m.impact_stat}</span>
-                                : <span style={{ color: '#94a3b8' }}>—</span>}
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-                <div style={{ padding: '0.875rem 1.25rem', background: '#f8fafc', borderTop: '1px solid #f1f5f9', fontSize: '0.75rem', color: '#94a3b8', textAlign: 'center' }}>
-                  Total {milestones.length} milestone tercatat · Data diperbarui secara berkala
-                </div>
-              </div>
-            </div>
+            {/* Data Table Removed */}
           </div>
         </section>
 

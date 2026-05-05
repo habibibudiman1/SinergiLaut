@@ -216,7 +216,6 @@ export default function UserProfilePage() {
 
     setIsSubmittingVerification(true)
     const result = await submitVolunteerVerification({
-      userId: user.id,
       fullName: verifyForm.full_name,
       dateOfBirth: verifyForm.date_of_birth,
       nik: verifyForm.nik,

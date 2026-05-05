@@ -243,7 +243,7 @@ export default function EditActivityPage() {
                     lng={form.longitude}
                     onChange={(lat, lng) => setForm({...form, latitude: lat, longitude: lng})}
                   />
-                  {form.latitude && (
+                  {form.latitude && form.longitude && (
                     <p className="text-[10px] text-muted-foreground">
                       Koordinat: {form.latitude.toFixed(6)}, {form.longitude.toFixed(6)}
                     </p>

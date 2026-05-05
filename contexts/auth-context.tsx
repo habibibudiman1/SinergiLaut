@@ -44,11 +44,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
+    supabase.auth.getSession().then(({ data: { session }, error }: { data: { session: Session | null }, error: any }) => {
+      if (!error && session?.user) {
+        setUser(session.user)
         fetchProfile(session.user.id).finally(() => setIsLoading(false))
       } else {
+        setUser(null)
         setIsLoading(false)
       }
     })
