@@ -19,38 +19,20 @@ export default function MapPicker({ lat, lng, onChange, defaultCenter = [106.816
   const mapRef = useRef<maplibregl.Map | null>(null)
   const markerRef = useRef<maplibregl.Marker | null>(null)
 
-  // Use MapTiler's open style as default. User can provide their own key via .env
-  const styleUrl = "https://demotiles.maplibre.org/style.json" // Placeholder for full vector style
-
   useEffect(() => {
     if (!mapContainerRef.current) return
 
-    // Initialize MapLibre
+    // Gunakan MapTiler jika ada API key, fallback ke demotiles MapLibre (tidak ada CORS issue)
+    const mapStyle = process.env.NEXT_PUBLIC_MAPTILER_KEY
+      ? `https://api.maptiler.com/maps/streets-v2/style.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`
+      : "https://demotiles.maplibre.org/style.json"
+
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
-      style: process.env.NEXT_PUBLIC_MAPTILER_KEY
-        ? `https://api.maptiler.com/maps/streets-v2/style.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`
-        : {
-            version: 8 as const,
-            sources: {
-              osm: {
-                type: "raster" as const,
-                tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-                tileSize: 256,
-                attribution: "&copy; OpenStreetMap Contributors",
-                maxzoom: 19,
-              },
-            },
-            layers: [
-              {
-                id: "osm",
-                type: "raster" as const,
-                source: "osm",
-              },
-            ],
-          },
+      style: mapStyle,
       center: lat && lng ? [lng, lat] : [defaultCenter[0], defaultCenter[1]],
       zoom: 13,
+      attributionControl: false,
     })
 
     const geocoder = new MaplibreGeocoder(
@@ -98,6 +80,13 @@ export default function MapPicker({ lat, lng, onChange, defaultCenter = [106.816
 
     map.addControl(geocoder, "top-right")
     map.addControl(new maplibregl.NavigationControl(), "top-right")
+    map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right")
+
+    // Suppress tile loading errors (network issues di localhost)
+    map.on("error", (e) => {
+      if (e.error?.message?.includes("tile") || e.error?.message?.includes("fetch")) return
+      console.error("Map error:", e)
+    })
 
     // Handle map click to place pin
     map.on("click", (e) => {

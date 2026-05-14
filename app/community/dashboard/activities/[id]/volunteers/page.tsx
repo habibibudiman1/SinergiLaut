@@ -9,7 +9,6 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
-import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -111,14 +110,13 @@ export default function VolunteersManagementPage() {
   }
 
   return (
-    <div className="min-h-screen bg-secondary">
-      <Navigation />
-      <main className="pt-16">
+    <div className="flex-1 bg-slate-50">
+      <main>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <div>
-              <Link href="/community/dashboard" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-2">
+              <Link href="/community/dashboard" className="inline-flex items-center gap-2 text-sm font-semibold text-foreground bg-secondary hover:bg-secondary/80 border border-border px-3 py-1.5 rounded-lg mb-2 transition-colors">
                 <ArrowLeft className="h-4 w-4" /> Kembali ke Dashboard
               </Link>
               <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
@@ -179,7 +177,7 @@ export default function VolunteersManagementPage() {
                         {/* Info Relawan */}
                         <div className="flex-1 space-y-2">
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary flex-shrink-0">
+                            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary shrink-0">
                               {v.full_name[0]?.toUpperCase()}
                             </div>
                             <div>

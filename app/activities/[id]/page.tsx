@@ -668,11 +668,9 @@ export default function ActivityDetailPage() {
       <main className="flex-1 pt-16">
         {/* Breadcrumb / Back Button */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-4">
-          <Button variant="outline" size="sm" className="gap-2 text-foreground hover:bg-secondary" asChild>
-            <Link href="/activities">
-              <ArrowLeft className="h-4 w-4" /> Kembali ke Daftar Kegiatan
-            </Link>
-          </Button>
+          <Link href="/activities" className="inline-flex items-center gap-2 text-sm font-semibold text-foreground bg-white border border-border hover:bg-secondary px-4 py-2 rounded-xl shadow-sm transition-colors">
+            <ArrowLeft className="h-4 w-4" /> Kembali ke Daftar Kegiatan
+          </Link>
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">

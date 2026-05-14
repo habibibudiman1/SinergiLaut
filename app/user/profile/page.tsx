@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -238,10 +237,9 @@ export default function UserProfilePage() {
   const hasSubmitted = !!profile?.nik
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-[#f8fafc] to-[#eff6ff] relative overflow-hidden">
+    <div className="flex-1 relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_40%,rgba(103,232,249,0.08)_0%,transparent_40%),radial-gradient(circle_at_80%_60%,rgba(6,149,138,0.06)_0%,transparent_40%)] pointer-events-none" />
-      <Navigation />
-      <main className="pt-24 relative z-10 px-4 pb-16">
+      <main className="pt-8 relative z-10 px-4 pb-16">
         <div className="max-w-2xl mx-auto py-8">
           <div className="mb-8">
             <Link href="/user/dashboard" className="group inline-flex items-center gap-2 text-sm font-bold text-[#64748b] hover:text-[#06958a] transition-colors mb-6">

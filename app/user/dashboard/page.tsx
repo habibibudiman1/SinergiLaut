@@ -1,14 +1,11 @@
 import { redirect } from "next/navigation"
-import Link from "next/link"
-import { Navigation } from "@/components/navigation"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { createClient } from "@/lib/supabase/server"
 import { getUserDashboardStats } from "@/lib/actions/dashboard.actions"
 import { getMyVolunteerRegistrations } from "@/lib/actions/volunteer.actions"
 import { getMyDonations } from "@/lib/actions/donation.actions"
 import { formatCurrency } from "@/lib/utils/helpers"
-import { Calendar, Heart, CheckCircle2, ArrowRight, User } from "lucide-react"
+import { Calendar, Heart, CheckCircle2 } from "lucide-react"
 import { DashboardClient } from "./dashboard-client"
 
 export default async function UserDashboardPage() {
@@ -42,11 +39,9 @@ export default async function UserDashboardPage() {
   const firstName = profile?.full_name?.split(" ")[0] ?? "Pengguna"
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-[#f8fafc] to-[#eff6ff] relative overflow-hidden">
+    <main className="flex-1 relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_35%,rgba(103,232,249,0.08)_0%,transparent_40%),radial-gradient(circle_at_80%_65%,rgba(6,149,138,0.06)_0%,transparent_40%)] pointer-events-none" />
-      <Navigation />
-      <main className="pt-24 relative z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-14 md:pt-8">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 mb-10">
             <div>
@@ -57,11 +52,6 @@ export default async function UserDashboardPage() {
                 Pantau partisipasi dan riwayat Anda di SinergiLaut
               </p>
             </div>
-            <Button variant="premium" size="lg" className="shadow-lg hover:shadow-xl transition-all" asChild>
-              <Link href="/activities" className="flex items-center gap-2">
-                Temukan Kegiatan <ArrowRight className="h-5 w-5" />
-              </Link>
-            </Button>
           </div>
 
           {/* Stats Section with Glassmorphism */}
@@ -124,16 +114,7 @@ export default async function UserDashboardPage() {
           {/* Client Component: Tabs + Lists */}
           <DashboardClient volunteers={volunteers as any} donations={donations as any} />
 
-          {/* Profile Shortcut */}
-          <div className="mt-12 flex justify-end">
-            <Button variant="ghost" className="font-bold text-[#64748b] hover:text-[#0e2a3a] hover:bg-white/50 transition-all rounded-xl px-6" asChild>
-              <Link href="/user/profile">
-                <User className="mr-2 h-5 w-5" /> Edit Profil
-              </Link>
-            </Button>
-          </div>
         </div>
-      </main>
-    </div>
+    </main>
   )
 }

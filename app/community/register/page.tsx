@@ -45,11 +45,10 @@ import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 
 const steps = [
-  { id: 1, title: "Basic Info", icon: Building2 },
-  { id: 2, title: "Contact Info", icon: Mail },
-  { id: 3, title: "Location & Coverage", icon: MapPin },
-  { id: 4, title: "Documents", icon: FileText },
-  { id: 5, title: "Submit", icon: CheckCircle2 },
+  { id: 1, title: "Info Komunitas", icon: Building2 },
+  { id: 2, title: "Lokasi & Kegiatan", icon: MapPin },
+  { id: 3, title: "Dokumen", icon: FileText },
+  { id: 4, title: "Submit", icon: CheckCircle2 },
 ]
 
 const activityTypes = [
@@ -131,7 +130,20 @@ export default function CommunityRegisterPage() {
   }
 
   const nextStep = () => {
-    if (currentStep === 2) {
+    // Validasi step 1 (Info Komunitas — gabungan Basic + Contact)
+    if (currentStep === 1) {
+      if (formData.communityName.trim().length < 3) {
+        toast.error("Nama komunitas minimal 3 karakter.")
+        return
+      }
+      if (formData.shortDescription.trim().length < 20) {
+        toast.error("Deskripsi singkat minimal 20 karakter.")
+        return
+      }
+      if (formData.shortDescription.trim().length > 500) {
+        toast.error("Deskripsi singkat maksimal 500 karakter.")
+        return
+      }
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
       if (!emailRegex.test(formData.email)) {
         toast.error("Format email tidak valid. Pastikan menggunakan @.")
@@ -151,7 +163,7 @@ export default function CommunityRegisterPage() {
         return
       }
     }
-    if (currentStep < 5) setCurrentStep(currentStep + 1)
+    if (currentStep < 4) setCurrentStep(currentStep + 1)
   }
 
   const prevStep = () => {
@@ -261,15 +273,15 @@ export default function CommunityRegisterPage() {
 
   const canProceed = () => {
     switch (currentStep) {
-      case 1:
-        return formData.communityName && formData.shortDescription
-      case 2:
-        return formData.adminName && formData.email && formData.phone && formData.password && formData.confirmPassword
-      case 3:
+      case 1: // Info Komunitas (Basic + Contact gabung)
+        return formData.communityName && formData.shortDescription &&
+               formData.adminName && formData.email && formData.phone &&
+               formData.password && formData.confirmPassword
+      case 2: // Lokasi & Kegiatan
         return formData.region && formData.selectedActivities.length > 0
-      case 4:
+      case 3: // Dokumen
         return true
-      case 5:
+      case 4: // Submit
         return formData.agreedToTerms
       default:
         return false
@@ -348,10 +360,10 @@ export default function CommunityRegisterPage() {
 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Button asChild>
-                    <Link href="/">Return to Home</Link>
+                    <Link href="/community/dashboard">Ke Dashboard Komunitas</Link>
                   </Button>
                   <Button variant="outline" asChild>
-                    <Link href="/activities">Browse Activities</Link>
+                    <Link href="/activities">Lihat Kegiatan</Link>
                   </Button>
                 </div>
 
@@ -457,42 +469,46 @@ export default function CommunityRegisterPage() {
           {/* Form Card */}
           <Card className="border-0 shadow-xl">
             <CardContent className="p-6 md:p-8">
-              {/* Step 1: Basic Info */}
+              {/* Step 1: Info Komunitas (Basic + Contact gabung) */}
               {currentStep === 1 && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-2xl font-bold text-foreground mb-2">Basic Information</h2>
+                    <h2 className="text-2xl font-bold text-foreground mb-2">Informasi Komunitas</h2>
                     <p className="text-muted-foreground">
-                      Tell us about your conservation community or organization
+                      Isi informasi dasar dan kontak administrator komunitas Anda
                     </p>
                   </div>
 
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-foreground mb-2">
-                        Community Name <span className="text-destructive">*</span>
+                        Nama Komunitas <span className="text-destructive">*</span>
                       </label>
                       <Input
-                        placeholder="e.g., Ocean Guardians Indonesia"
+                        placeholder="contoh: Ocean Guardians Indonesia"
                         value={formData.communityName}
                         onChange={(e) => handleInputChange("communityName", e.target.value)}
                         className="h-12"
+                        maxLength={100}
                       />
+                      <p className={`text-xs mt-1 ${formData.communityName.length < 3 && formData.communityName.length > 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                        {formData.communityName.length}/100 karakter (min. 3)
+                      </p>
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-foreground mb-2">
-                        Short Description <span className="text-destructive">*</span>
+                        Deskripsi Singkat <span className="text-destructive">*</span>
                       </label>
                       <Textarea
-                        placeholder="Describe your community's mission and activities (max 500 characters)"
+                        placeholder="Deskripsikan misi dan kegiatan komunitas Anda (20–500 karakter)"
                         value={formData.shortDescription}
                         onChange={(e) => handleInputChange("shortDescription", e.target.value)}
                         rows={4}
                         maxLength={500}
                       />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {formData.shortDescription.length}/500 characters
+                      <p className={`text-xs mt-1 ${formData.shortDescription.length < 20 && formData.shortDescription.length > 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                        {formData.shortDescription.length}/500 karakter (min. 20)
                       </p>
                     </div>
 
@@ -532,13 +548,13 @@ export default function CommunityRegisterPage() {
                 </div>
               )}
 
-              {/* Step 2: Contact Info */}
-              {currentStep === 2 && (
-                <div className="space-y-6">
+              {/* Step 1 bagian 2: Contact Info (masih di step 1) */}
+              {currentStep === 1 && (
+                <div className="space-y-6 border-t border-border pt-6">
                   <div>
-                    <h2 className="text-2xl font-bold text-foreground mb-2">Contact Information</h2>
-                    <p className="text-muted-foreground">
-                      Provide contact details for your community administrator
+                    <h3 className="text-lg font-bold text-foreground mb-1">Informasi Kontak Admin</h3>
+                    <p className="text-muted-foreground text-sm">
+                      Data akun administrator komunitas Anda
                     </p>
                   </div>
 
@@ -673,8 +689,8 @@ export default function CommunityRegisterPage() {
                 </div>
               )}
 
-              {/* Step 3: Location & Coverage */}
-              {currentStep === 3 && (
+              {/* Step 2: Lokasi & Kegiatan */}
+              {currentStep === 2 && (
                 <div className="space-y-6">
                   <div>
                     <h2 className="text-2xl font-bold text-foreground mb-2">Location & Coverage</h2>
@@ -752,8 +768,8 @@ export default function CommunityRegisterPage() {
                 </div>
               )}
 
-              {/* Step 4: Documents */}
-              {currentStep === 4 && (
+              {/* Step 3: Dokumen */}
+              {currentStep === 3 && (
                 <div className="space-y-6">
                   <div>
                     <h2 className="text-2xl font-bold text-foreground mb-2">Legal Documents</h2>
@@ -828,8 +844,8 @@ export default function CommunityRegisterPage() {
                 </div>
               )}
 
-              {/* Step 5: Submit */}
-              {currentStep === 5 && (
+              {/* Step 4: Submit */}
+              {currentStep === 4 && (
                 <div className="space-y-6">
                   <div>
                     <h2 className="text-2xl font-bold text-foreground mb-2">Review & Submit</h2>
@@ -926,7 +942,7 @@ export default function CommunityRegisterPage() {
                   <div />
                 )}
 
-                {currentStep < 5 ? (
+                {currentStep < 4 ? (
                   <Button onClick={nextStep} disabled={!canProceed()} className="gap-2">
                     Next
                     <ArrowRight className="w-4 h-4" />

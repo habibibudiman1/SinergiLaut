@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from "react"
 import dynamic from "next/dynamic"
 import { useRouter, useParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
-import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -139,24 +138,20 @@ export default function EditActivityPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <Navigation />
-        <main className="flex-1 flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </main>
+      <div className="flex-1 flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-secondary/30">
-      <Navigation />
-      <main className="pt-20 pb-16">
+    <div className="flex-1 bg-slate-50">
+      <main className="pb-16">
         <div className="max-w-3xl mx-auto px-4 sm:px-6">
           <div className="mb-6 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Button variant="outline" size="icon" asChild className="rounded-full">
-                <Link href="/community/dashboard"><ArrowLeft className="h-4 w-4" /></Link>
+              <Button variant="outline" asChild className="gap-2">
+                <Link href="/community/dashboard"><ArrowLeft className="h-4 w-4" /> Kembali</Link>
               </Button>
               <div>
                 <h1 className="text-2xl font-bold text-foreground">Edit Kegiatan</h1>

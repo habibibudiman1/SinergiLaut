@@ -402,7 +402,7 @@ export function Navigation() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
                     <DropdownMenuItem asChild>
-                      <Link href="/user/profile">
+                      <Link href={role === "community" ? "/community/dashboard/profile" : "/user/profile"}>
                         <User className="h-4 w-4 mr-2" /> Profil
                       </Link>
                     </DropdownMenuItem>
