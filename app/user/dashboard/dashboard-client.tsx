@@ -94,7 +94,7 @@ export function DashboardClient({ volunteers, donations }: DashboardClientProps)
                 <CardTitle className="text-xl font-extrabold text-[#0e2a3a]">Kegiatan Relawan</CardTitle>
                 <CardDescription className="text-sm font-medium text-[#64748b]">Kegiatan yang Anda ikuti</CardDescription>
               </div>
-              <Button variant="ghost" size="sm" className="font-bold text-[#06958a] hover:bg-[#06958a]/10" onClick={() => setActiveTab("volunteer")}>
+              <Button variant="ghost" size="sm" className="font-bold text-[#06958a] bg-[#06958a]/8 hover:bg-[#06958a]/20 border border-[#06958a]/20 hover:border-[#06958a]/40" onClick={() => setActiveTab("volunteer")}>
                 Lihat Semua
               </Button>
             </CardHeader>
@@ -141,7 +141,7 @@ export function DashboardClient({ volunteers, donations }: DashboardClientProps)
                 <CardTitle className="text-xl font-extrabold text-[#0e2a3a]">Riwayat Donasi</CardTitle>
                 <CardDescription className="text-sm font-medium text-[#64748b]">Donasi uang dan barang Anda</CardDescription>
               </div>
-              <Button variant="ghost" size="sm" className="font-bold text-[#06958a] hover:bg-[#06958a]/10" onClick={() => setActiveTab("donations")}>
+              <Button variant="ghost" size="sm" className="font-bold text-[#06958a] bg-[#06958a]/8 hover:bg-[#06958a]/20 border border-[#06958a]/20 hover:border-[#06958a]/40" onClick={() => setActiveTab("donations")}>
                 Lihat Semua
               </Button>
             </CardHeader>

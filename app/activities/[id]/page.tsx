@@ -42,7 +42,7 @@ const MapView = dynamic(() => import("@/components/map/map-view"), {
   loading: () => <div className="h-[300px] w-full bg-secondary animate-pulse rounded-xl flex items-center justify-center text-muted-foreground">Memuat peta...</div>
 })
 
-type TabType = "detail" | "volunteer" | "donate" | "items" | "reports" | "feedback"
+type TabType = "detail" | "volunteer" | "donate" | "items" | "reports" | "feedback" | "info_community"
 
 const MARKUP_PERCENT = 10 // 10% markup on item prices
 /** Calculate marked-up price using integer math to avoid floating point errors */
@@ -668,8 +668,8 @@ export default function ActivityDetailPage() {
       <main className="flex-1 pt-16">
         {/* Breadcrumb / Back Button */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-4">
-          <Link href="/activities" className="inline-flex items-center gap-2 text-sm font-semibold text-foreground bg-white border border-border hover:bg-secondary px-4 py-2 rounded-xl shadow-sm transition-colors">
-            <ArrowLeft className="h-4 w-4" /> Kembali ke Daftar Kegiatan
+          <Link href="/activities" className="inline-flex items-center gap-2 text-sm font-bold text-foreground bg-white border-2 border-slate-200 hover:border-teal-400 hover:text-teal-700 hover:bg-teal-50 px-4 py-2.5 rounded-xl shadow-sm transition-all">
+            <ArrowLeft className="h-4 w-4" /> ← Kembali ke Daftar Kegiatan
           </Link>
         </div>
 
@@ -721,7 +721,9 @@ export default function ActivityDetailPage() {
                   { id: "detail", label: "Detail" } as const,
                   { id: "volunteer", label: profile?.role === "community" ? "Kelola Relawan" : "Daftar Relawan" } as const,
                   ...(profile?.role === "community" && activity.items_needed && activity.items_needed.length > 0 ? [{ id: "items", label: "Kelola Barang" } as const] : []),
-                  ...(profile?.role !== "community" ? [{ id: "donate", label: "Donasi" } as const] : []),
+                  ...(profile?.role !== "community"
+                    ? [{ id: "donate", label: "Donasi" } as const]
+                    : [{ id: "info_community", label: "ℹ️ Donasi" } as const]),
                   { id: "reports", label: "Laporan" } as const,
                   { id: "feedback", label: "Ulasan" } as const,
                 ].map((tab) => (
@@ -920,6 +922,21 @@ export default function ActivityDetailPage() {
                 </Card>
               )}
 
+              {/* ── Tab: Info Donasi untuk Komunitas ─── */}
+              {activeTab === "info_community" && (
+                <Card>
+                  <CardContent className="p-8 text-center">
+                    <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Heart className="h-7 w-7 text-amber-400" />
+                    </div>
+                    <h3 className="text-lg font-bold text-foreground mb-2">Akun Komunitas Tidak Dapat Berdonasi</h3>
+                    <p className="text-muted-foreground text-sm max-w-sm mx-auto">
+                      Fitur donasi hanya tersedia untuk akun relawan/pengguna individual. Akun komunitas digunakan untuk mengorganisir kegiatan, bukan berdonasi.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* ── Tab: Donate Form ─────────────────────────── */}
               {activeTab === "donate" && (
                 <Card>
@@ -945,17 +962,18 @@ export default function ActivityDetailPage() {
                     </div>
 
                     <form onSubmit={handleDonateSubmit} className="space-y-5">
-                      {/* Identitas Donatur */}
-                      <div className="grid sm:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label>Nama Donatur {donateForm.isAnonymous ? "(anonim)" : "*"}</Label>
-                          <Input value={donateForm.donorName} onChange={e => setDonateForm({ ...donateForm, donorName: e.target.value })}
-                            required={!donateForm.isAnonymous} disabled={donateForm.isAnonymous} placeholder="Nama Anda" />
+                      {/* Identitas Donatur — auto dari akun */}
+                      <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary shrink-0">
+                          {donateForm.isAnonymous ? "?" : (donateForm.donorName?.[0]?.toUpperCase() ?? "A")}
                         </div>
-                        <div className="space-y-2">
-                          <Label>Email *</Label>
-                          <Input type="email" value={donateForm.donorEmail} onChange={e => setDonateForm({ ...donateForm, donorEmail: e.target.value })} required placeholder="email@example.com" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-slate-800 truncate">
+                            {donateForm.isAnonymous ? "Donatur Anonim" : (donateForm.donorName || "Pengguna")}
+                          </p>
+                          <p className="text-xs text-slate-400 truncate">{donateForm.donorEmail}</p>
                         </div>
+                        <span className="text-xs text-slate-400 shrink-0">Dari akun Anda</span>
                       </div>
 
                       {/* ─── Form Donasi Uang ─── */}

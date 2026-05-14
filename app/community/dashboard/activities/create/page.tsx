@@ -27,6 +27,8 @@ interface NeededItem {
   donated: number
 }
 
+const DRAFT_KEY = "sl_create_activity_draft"
+
 export default function CreateActivityPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
@@ -48,7 +50,7 @@ export default function CreateActivityPage() {
     { item_name: "", target: 1, unit_price: 0, donated: 0 },
   ])
 
-  const [form, setForm] = useState({
+  const defaultForm = {
     title: "",
     description: "",
     category: "cleanup",
@@ -61,7 +63,51 @@ export default function CreateActivityPage() {
     volunteerQuota: "",
     fundingGoal: "",
     allowItemDonation: false,
-  })
+  }
+
+  const [form, setForm] = useState(defaultForm)
+  const [hasDraft, setHasDraft] = useState(false)
+
+  // ── Restore draft dari localStorage ───────────────────────
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(DRAFT_KEY)
+      if (saved) {
+        const draft = JSON.parse(saved)
+        setForm(draft.form ?? defaultForm)
+        if (draft.neededItems?.length) setNeededItems(draft.neededItems)
+        setHasDraft(true)
+        toast.info("Draft tersimpan ditemukan. Data sebelumnya telah dipulihkan.", { duration: 4000 })
+      }
+    } catch { /* ignore */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // ── Auto-save draft ke localStorage setiap perubahan ──────
+  useEffect(() => {
+    if (isLoading) return
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, neededItems }))
+    } catch { /* ignore */ }
+  }, [form, neededItems, isLoading])
+
+  // ── Warn before leaving with unsaved data ─────────────────
+  useEffect(() => {
+    const hasData = form.title || form.description || form.location
+    const handler = (e: BeforeUnloadEvent) => {
+      if (hasData && !isLoading) {
+        e.preventDefault()
+        e.returnValue = "Data form belum tersimpan. Yakin ingin meninggalkan halaman?"
+      }
+    }
+    window.addEventListener("beforeunload", handler)
+    return () => window.removeEventListener("beforeunload", handler)
+  }, [form, isLoading])
+
+  const clearDraft = () => {
+    try { localStorage.removeItem(DRAFT_KEY) } catch { /* ignore */ }
+    setHasDraft(false)
+  }
 
   // ── Validasi Min Date ─────────────────────────────────────
   const [minStartDateTime, setMinStartDateTime] = useState("")
@@ -156,6 +202,17 @@ export default function CreateActivityPage() {
     setIsLoading(true)
 
     try {
+      // ── Validasi Konten ───────────────────────────────────────
+      if (form.title.trim().length < 5) {
+        throw new Error("Judul kegiatan minimal 5 karakter.")
+      }
+      if (!isDraft && form.description.trim().length < 20) {
+        throw new Error("Deskripsi kegiatan minimal 20 karakter.")
+      }
+      if (!isDraft && !form.location.trim()) {
+        throw new Error("Lokasi kegiatan harus diisi.")
+      }
+
       // ── Validasi Waktu Kegiatan ────────────────────────────────
       const minExecution = new Date()
       minExecution.setMonth(minExecution.getMonth() + 6)
@@ -274,6 +331,7 @@ export default function CreateActivityPage() {
 
       if (insertError) throw insertError
 
+      clearDraft()
       if (isDraft) {
         toast.success("Kegiatan disimpan sebagai draft.")
       } else {
@@ -300,14 +358,32 @@ export default function CreateActivityPage() {
             <p className="text-muted-foreground mt-1">Kegiatan akan direview admin sebelum dipublikasikan</p>
           </div>
 
+          {/* Banner draft auto-save */}
+          {hasDraft && (
+            <div className="mb-4 flex items-center justify-between gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-sm">
+              <span className="text-amber-800 font-medium">📝 Draft tersimpan — data Anda dipulihkan otomatis dari sesi sebelumnya.</span>
+              <button type="button" onClick={() => { clearDraft(); setForm(defaultForm); setNeededItems([{ item_name: "", target: 1, unit_price: 0, donated: 0 }]) }}
+                className="text-xs text-amber-600 hover:text-amber-800 font-semibold underline whitespace-nowrap">
+                Hapus draft
+              </button>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Basic Info */}
             <Card>
               <CardHeader><CardTitle className="text-lg">Informasi Dasar</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="title">Judul Kegiatan *</Label>
-                  <Input id="title" name="title" value={form.title} onChange={handleChange} required placeholder="Contoh: Bersih-bersih Pantai Ancol" />
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="title">Judul Kegiatan *</Label>
+                    <span className={`text-xs ${form.title.length < 5 && form.title.length > 0 ? "text-red-500" : "text-muted-foreground"}`}>
+                      {form.title.length}/100 karakter (min. 5)
+                    </span>
+                  </div>
+                  <Input id="title" name="title" value={form.title} onChange={handleChange}
+                    required minLength={5} maxLength={100}
+                    placeholder="Contoh: Bersih-bersih Pantai Ancol" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="category">Kategori *</Label>
@@ -319,8 +395,14 @@ export default function CreateActivityPage() {
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="description">Deskripsi Kegiatan *</Label>
-                  <Textarea id="description" name="description" value={form.description} onChange={handleChange} required
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="description">Deskripsi Kegiatan *</Label>
+                    <span className={`text-xs ${form.description.length < 20 && form.description.length > 0 ? "text-red-500" : "text-muted-foreground"}`}>
+                      {form.description.length}/2000 karakter (min. 20)
+                    </span>
+                  </div>
+                  <Textarea id="description" name="description" value={form.description} onChange={handleChange}
+                    required minLength={20} maxLength={2000}
                     placeholder="Jelaskan tujuan, rencana kegiatan, dan apa yang akan dilakukan..." rows={6} />
                 </div>
               </CardContent>

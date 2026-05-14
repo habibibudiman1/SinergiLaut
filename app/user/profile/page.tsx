@@ -242,12 +242,6 @@ export default function UserProfilePage() {
       <main className="pt-8 relative z-10 px-4 pb-16">
         <div className="max-w-2xl mx-auto py-8">
           <div className="mb-8">
-            <Link href="/user/dashboard" className="group inline-flex items-center gap-2 text-sm font-bold text-[#64748b] hover:text-[#06958a] transition-colors mb-6">
-              <div className="p-2 bg-white/50 backdrop-blur-md border border-white/80 rounded-xl group-hover:bg-white transition-all shadow-sm">
-                <ArrowLeft className="h-4 w-4" />
-              </div>
-              Kembali ke Dashboard
-            </Link>
             <h1 className="text-3xl sm:text-4xl font-extrabold text-[#0e2a3a] tracking-tight">Edit Profil</h1>
           </div>
 
@@ -367,11 +361,15 @@ export default function UserProfilePage() {
                 </CardHeader>
                 <CardContent className="p-8 space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="full_name" className="text-sm font-bold text-[#475569] ml-1">Nama Lengkap</Label>
+                    <div className="flex justify-between items-center ml-1">
+                      <Label htmlFor="full_name" className="text-sm font-bold text-[#475569]">Nama Lengkap</Label>
+                      <span className={`text-xs ${form.full_name.length > 90 ? "text-red-500" : "text-[#94a3b8]"}`}>{form.full_name.length}/100</span>
+                    </div>
                     <div className="relative group">
                       <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#94a3b8] group-focus-within:text-[#06958a] transition-colors" />
-                      <Input id="full_name" name="full_name" value={form.full_name} onChange={handleChange} 
-                        className="pl-11 h-12 bg-white/50 border-white/60 focus:bg-white focus:border-[#06958a] focus:ring-[#06958a]/20 transition-all rounded-xl font-medium" 
+                      <Input id="full_name" name="full_name" value={form.full_name} onChange={handleChange}
+                        maxLength={100}
+                        className="pl-11 h-12 bg-white/50 border-white/60 focus:bg-white focus:border-[#06958a] focus:ring-[#06958a]/20 transition-all rounded-xl font-medium"
                         placeholder="Nama lengkap" />
                     </div>
                   </div>
@@ -388,18 +386,23 @@ export default function UserProfilePage() {
                     <Label htmlFor="phone" className="text-sm font-bold text-[#475569] ml-1">Nomor Telepon</Label>
                     <div className="relative group">
                       <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#94a3b8] group-focus-within:text-[#06958a] transition-colors" />
-                      <Input id="phone" name="phone" type="tel" value={form.phone} onChange={handleChange} 
-                        className="pl-11 h-12 bg-white/50 border-white/60 focus:bg-white focus:border-[#06958a] focus:ring-[#06958a]/20 transition-all rounded-xl font-medium" 
+                      <Input id="phone" name="phone" type="tel" value={form.phone} onChange={handleChange}
+                        maxLength={20}
+                        className="pl-11 h-12 bg-white/50 border-white/60 focus:bg-white focus:border-[#06958a] focus:ring-[#06958a]/20 transition-all rounded-xl font-medium"
                         placeholder="+62 8xx xxxx xxxx" />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="bio" className="text-sm font-bold text-[#475569] ml-1">Bio / Tentang Saya</Label>
+                    <div className="flex justify-between items-center ml-1">
+                      <Label htmlFor="bio" className="text-sm font-bold text-[#475569]">Bio / Tentang Saya</Label>
+                      <span className={`text-xs ${form.bio.length > 270 ? "text-red-500" : "text-[#94a3b8]"}`}>{form.bio.length}/300</span>
+                    </div>
                     <div className="relative group">
                       <FileText className="absolute left-3.5 top-4 h-5 w-5 text-[#94a3b8] group-focus-within:text-[#06958a] transition-colors" />
-                      <Textarea id="bio" name="bio" value={form.bio} onChange={handleChange} 
-                        className="pl-11 py-3 bg-white/50 border-white/60 focus:bg-white focus:border-[#06958a] focus:ring-[#06958a]/20 transition-all rounded-xl font-medium" 
-                        rows={4} placeholder="Ceritakan sedikit tentang diri..." />
+                      <Textarea id="bio" name="bio" value={form.bio} onChange={handleChange}
+                        maxLength={300}
+                        className="pl-11 py-3 bg-white/50 border-white/60 focus:bg-white focus:border-[#06958a] focus:ring-[#06958a]/20 transition-all rounded-xl font-medium"
+                        rows={4} placeholder="Ceritakan sedikit tentang diri... (maks. 300 karakter)" />
                     </div>
                   </div>
                   <Button type="submit" variant="premium" className="w-full h-12 shadow-md hover:shadow-xl transition-all font-bold text-base" disabled={isLoading}>

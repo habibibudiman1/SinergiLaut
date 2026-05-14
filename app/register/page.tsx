@@ -59,6 +59,14 @@ function RegisterContent() {
     setIsLoading(true)
     setError("")
 
+    // Validasi nama: hanya huruf, spasi, dan tanda hubung
+    const nameRegex = /^[a-zA-ZÀ-ÿ\s'-]{2,100}$/
+    if (!nameRegex.test(formData.fullName.trim())) {
+      setError("Nama lengkap hanya boleh menggunakan huruf dan spasi (minimal 2 karakter).")
+      setIsLoading(false)
+      return
+    }
+
     const { data, error: signUpError } = await supabase.auth.signUp({
       email: formData.email,
       password: formData.password,
@@ -782,7 +790,8 @@ function RegisterContent() {
                     <User className="reg-input-icon" />
                     <input name="fullName" type="text" placeholder="Nama lengkap Anda"
                       value={formData.fullName} onChange={handleChange}
-                      className="reg-input" required />
+                      className="reg-input" required maxLength={100}
+                      pattern="[a-zA-ZÀ-ÿ\s'\-]+" title="Nama hanya boleh menggunakan huruf dan spasi" />
                   </div>
                 </div>
 

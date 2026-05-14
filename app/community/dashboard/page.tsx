@@ -43,9 +43,17 @@ export default function CommunityDashboardPage() {
     }
   }, [profile?.id])
 
-  const filtered = activities.filter(a =>
-    a.title.toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = activities
+    .filter(a => a.title.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => {
+      if (!search) return 0
+      const q = search.toLowerCase()
+      const aStarts = a.title.toLowerCase().startsWith(q)
+      const bStarts = b.title.toLowerCase().startsWith(q)
+      if (aStarts && !bStarts) return -1
+      if (!aStarts && bStarts) return 1
+      return 0
+    })
 
   const communityStats = [
     { label: "Total Kegiatan", value: stats.totalActivities, icon: Calendar, change: "Live" },

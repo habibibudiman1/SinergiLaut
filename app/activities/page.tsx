@@ -683,7 +683,7 @@ export default function ActivitiesPage() {
               )}
             </div>
 
-            {(selectedLocation !== "All Locations" || selectedType !== "All Types" || searchQuery !== "") && (
+            {(selectedLocation !== "All Locations" || selectedType !== "All Types" || searchQuery !== "") && filteredActivities.length > 0 && (
               <span className="act-results-count">
                 {filteredActivities.length} kegiatan ditemukan
               </span>

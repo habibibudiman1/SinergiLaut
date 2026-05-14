@@ -27,6 +27,7 @@ export default function CommunityProfilePage() {
   const [isSaving, setIsSaving] = useState(false)
   const [isUploadingLogo, setIsUploadingLogo] = useState(false)
   const [isUploadingCover, setIsUploadingCover] = useState(false)
+  const [isDirty, setIsDirty] = useState(false)
 
   const [form, setForm] = useState({
     name: "",
@@ -38,6 +39,18 @@ export default function CommunityProfilePage() {
     twitter: "",
     focus_areas: [] as string[],
   })
+
+  // Warn before leaving with unsaved changes
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (isDirty && !isSaving) {
+        e.preventDefault()
+        e.returnValue = "Perubahan belum disimpan. Yakin ingin meninggalkan halaman?"
+      }
+    }
+    window.addEventListener("beforeunload", handler)
+    return () => window.removeEventListener("beforeunload", handler)
+  }, [isDirty, isSaving])
 
   // Fetch community data
   useEffect(() => {
@@ -93,6 +106,7 @@ export default function CommunityProfilePage() {
     else {
       toast.success("Profil komunitas berhasil diperbarui!")
       setCommunity((prev: any) => ({ ...prev, ...form }))
+      setIsDirty(false)
     }
     setIsSaving(false)
   }
@@ -129,6 +143,11 @@ export default function CommunityProfilePage() {
     setIsUploadingCover(false)
   }
 
+  const updateForm = (updates: Partial<typeof form>) => {
+    setForm(prev => ({ ...prev, ...updates }))
+    setIsDirty(true)
+  }
+
   const toggleFocus = (area: string) => {
     setForm(prev => ({
       ...prev,
@@ -136,6 +155,7 @@ export default function CommunityProfilePage() {
         ? prev.focus_areas.filter(a => a !== area)
         : [...prev.focus_areas, area],
     }))
+    setIsDirty(true)
   }
 
   if (isLoading) return (
@@ -261,7 +281,7 @@ export default function CommunityProfilePage() {
                 </label>
                 <input
                   value={form.name}
-                  onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+                  onChange={e => updateForm({ name: e.target.value })}
                   maxLength={100}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
                   placeholder="Nama komunitas Anda"
@@ -273,7 +293,7 @@ export default function CommunityProfilePage() {
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Deskripsi Singkat</label>
                 <textarea
                   value={form.description}
-                  onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+                  onChange={e => updateForm({ description: e.target.value })}
                   rows={4}
                   maxLength={500}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all resize-none"
@@ -288,7 +308,7 @@ export default function CommunityProfilePage() {
                 </label>
                 <input
                   value={form.location}
-                  onChange={e => setForm(p => ({ ...p, location: e.target.value }))}
+                  onChange={e => updateForm({ location: e.target.value })}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
                   placeholder="contoh: Bali & Nusa Tenggara"
                 />
@@ -342,7 +362,7 @@ export default function CommunityProfilePage() {
                   </div>
                   <input
                     value={(form as any)[key]}
-                    onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
+                    onChange={e => updateForm({ [key]: e.target.value })}
                     placeholder={placeholder}
                     className="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
                   />
@@ -352,10 +372,17 @@ export default function CommunityProfilePage() {
           </div>
 
           {/* ── Save Button ── */}
+          {isDirty && !isSaving && (
+            <p className="text-center text-xs text-amber-600 font-semibold mb-2">
+              ⚠️ Ada perubahan yang belum disimpan
+            </p>
+          )}
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="w-full flex items-center justify-center gap-2 py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-2xl shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            className={`w-full flex items-center justify-center gap-2 py-3 font-bold rounded-2xl shadow-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed text-white ${
+              isDirty ? "bg-teal-600 hover:bg-teal-700 ring-2 ring-teal-400 ring-offset-2" : "bg-teal-600 hover:bg-teal-700"
+            }`}
           >
             {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
             {isSaving ? "Menyimpan..." : "Simpan Perubahan"}
