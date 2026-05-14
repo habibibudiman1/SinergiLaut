@@ -131,6 +131,26 @@ export default function CommunityRegisterPage() {
   }
 
   const nextStep = () => {
+    if (currentStep === 2) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(formData.email)) {
+        toast.error("Format email tidak valid. Pastikan menggunakan @.")
+        return
+      }
+      const phoneRegex = /^[+\d\s()-]{6,20}$/
+      if (!phoneRegex.test(formData.phone)) {
+        toast.error("Nomor telepon tidak valid. Gunakan angka saja.")
+        return
+      }
+      if (formData.password.length < 8) {
+        toast.error("Password minimal 8 karakter.")
+        return
+      }
+      if (formData.password !== formData.confirmPassword) {
+        toast.error("Password dan konfirmasi password tidak cocok.")
+        return
+      }
+    }
     if (currentStep < 5) setCurrentStep(currentStep + 1)
   }
 
@@ -335,36 +355,6 @@ export default function CommunityRegisterPage() {
                   </Button>
                 </div>
 
-                {/* Demo buttons to show different states */}
-                <div className="mt-8 pt-8 border-t border-border">
-                  <p className="text-xs text-muted-foreground mb-3">Demo: View different status states</p>
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setVerificationStatus("pending")}
-                      className={verificationStatus === "pending" ? "ring-2 ring-primary" : ""}
-                    >
-                      Pending
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setVerificationStatus("verified")}
-                      className={verificationStatus === "verified" ? "ring-2 ring-primary" : ""}
-                    >
-                      Verified
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setVerificationStatus("rejected")}
-                      className={verificationStatus === "rejected" ? "ring-2 ring-primary" : ""}
-                    >
-                      Rejected
-                    </Button>
-                  </div>
-                </div>
               </CardContent>
             </Card>
           </div>
@@ -927,15 +917,14 @@ export default function CommunityRegisterPage() {
 
               {/* Navigation Buttons */}
               <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
-                <Button
-                  variant="outline"
-                  onClick={prevStep}
-                  disabled={currentStep === 1}
-                  className="gap-2"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  Previous
-                </Button>
+                {currentStep > 1 ? (
+                  <Button variant="outline" onClick={prevStep} className="gap-2">
+                    <ArrowLeft className="w-4 h-4" />
+                    Previous
+                  </Button>
+                ) : (
+                  <div />
+                )}
 
                 {currentStep < 5 ? (
                   <Button onClick={nextStep} disabled={!canProceed()} className="gap-2">

@@ -8,10 +8,11 @@ import { Footer } from "@/components/footer"
 import {
   ArrowRight, Users, MapPin, Globe, Award, Building,
   Search, CheckCircle, FileText, Shield, Heart,
-  Star, Activity, Sparkles, Zap,
-  ChevronDown, CheckCircle2, MessageCircle
+  Star, Activity, Sparkles,
+  ChevronDown, CheckCircle2
 } from "lucide-react"
 import { getRegisteredCommunities, getAdminDashboardStats } from "@/lib/actions/dashboard.actions"
+import { createClient } from "@/lib/supabase/client"
 
 const requirements = [
   { icon: Building, title: "Organisasi Legal", description: "Harus merupakan organisasi, LSM, atau kelompok komunitas terdaftar dengan dokumentasi resmi." },
@@ -29,29 +30,6 @@ const benefits = [
   { icon: Award, title: "Lencana Terverifikasi", description: "Dapatkan lencana terverifikasi untuk membangun kepercayaan relawan dan donatur.", color: "#10b981", bg: "rgba(16,185,129,0.08)" },
 ]
 
-const testimonials = [
-  {
-    quote: "Bergabung dengan SinergiLaut mengubah kelompok bersih pantai kami menjadi komunitas konservasi yang diakui. Kami tumbuh dari 20 menjadi 400+ anggota!",
-    name: "Sarah Chen",
-    role: "Pendiri, Ocean Guardians Bali",
-    initial: "S",
-    color: "#06958a",
-  },
-  {
-    quote: "Platform ini memudahkan kami mengelola relawan dan mengumpulkan donasi. Proyek restorasi terumbu karang kami belum pernah sepopuler ini.",
-    name: "Dr. Budi Hartanto",
-    role: "Direktur, Coral Triangle Foundation",
-    initial: "B",
-    color: "#0e4d6d",
-  },
-  {
-    quote: "Sebagai komunitas nelayan tradisional, kami menemukan suara melalui SinergiLaut. Kini kami mengedukasi orang lain tentang praktik penangkapan ikan berkelanjutan.",
-    name: "Pak Made",
-    role: "Pemimpin Komunitas, Fishermen United",
-    initial: "M",
-    color: "#f59e0b",
-  },
-]
 
 export default function CommunityPage() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -61,10 +39,17 @@ export default function CommunityPage() {
   const [registeredCommunities, setRegisteredCommunities] = useState<any[]>([])
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [globalStats, setGlobalStats] = useState<any>(null)
+  const [completedCount, setCompletedCount] = useState<number | null>(null)
 
   useEffect(() => {
     getRegisteredCommunities().then(setRegisteredCommunities)
     getAdminDashboardStats().then(setGlobalStats)
+    const supabase = createClient()
+    supabase
+      .from("activities")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "completed")
+      .then(({ count }) => setCompletedCount(count ?? 0))
   }, [])
 
   const focusAreas = Array.from(
@@ -82,7 +67,7 @@ export default function CommunityPage() {
   const statsDisplay = [
     { icon: Users, value: globalStats ? `${globalStats.totalUsers}+` : "...", label: "Anggota Aktif" },
     { icon: MapPin, value: globalStats ? `${globalStats.totalCommunities}+` : "...", label: "Komunitas Pesisir" },
-    { icon: Globe, value: "50+", label: "Area Terlindungi" },
+    { icon: Globe, value: completedCount !== null ? `${completedCount}+` : "...", label: "Kegiatan Selesai" },
   ]
 
   return (
@@ -496,15 +481,6 @@ export default function CommunityPage() {
             <p className="comm-hero-desc">
               Temukan dan bergabunglah dengan komunitas konservasi terdaftar, atau daftarkan organisasi Anda dan mulai memberikan dampak nyata bagi laut Indonesia.
             </p>
-            <div className="comm-hero-btns">
-              <Link href="/community/register" className="comm-btn-primary">
-                Daftarkan Komunitas <ArrowRight style={{ width:16, height:16 }} />
-              </Link>
-              <a href="#communities" className="comm-btn-ghost">
-                Jelajahi Komunitas
-              </a>
-            </div>
-
             {/* ── STATS BAR ── */}
             <div className="comm-stats-wrapper">
               <section className="comm-stats-bar">
@@ -643,7 +619,9 @@ export default function CommunityPage() {
                 )}
               </div>
             )}
-            <span className="comm-search-count">{filteredCommunities.length} komunitas ditemukan</span>
+            {(selectedFocus || searchQuery !== "") && (
+              <span className="comm-search-count">{filteredCommunities.length} komunitas ditemukan</span>
+            )}
             </div>
           </section>
         </div>
@@ -719,71 +697,6 @@ export default function CommunityPage() {
         </section>
 
         {/* ── TESTIMONIALS ── */}
-        <section className="comm-section-alt">
-          <div className="comm-container">
-            <div className="text-center" style={{ marginBottom:"3rem" }}>
-              <div className="comm-eyebrow mx-auto" style={{ justifyContent:"center" }}>
-                <span className="comm-eyebrow-dot" />
-                Kisah Sukses
-              </div>
-              <h2 className="comm-section-title">Komunitas yang Menginspirasi</h2>
-              <p className="comm-section-desc mx-auto">
-                Dengar dari para pemimpin komunitas yang telah menumbuhkan dampak mereka bersama SinergiLaut.
-              </p>
-            </div>
-            <div className="comm-testimonials-grid">
-              {testimonials.map((t, i) => (
-                <div key={i} className="comm-testimonial-card">
-                  <div style={{ display:"flex", alignItems:"center", gap:"0.75rem", marginBottom:"1.25rem" }}>
-                    <MessageCircle style={{ width:18, height:18, color:"#06958a" }} />
-                    <div style={{ flex:1, height:1, background:"#f1f5f9" }} />
-                    {[1,2,3,4,5].map(s => <Star key={s} style={{ width:13, height:13, color:"#f59e0b", fill:"#f59e0b" }} />)}
-                  </div>
-                  <p className="comm-testimonial-quote">&ldquo;{t.quote}&rdquo;</p>
-                  <div className="comm-testimonial-author">
-                    <div className="comm-testimonial-avatar" style={{ background:t.color }}>{t.initial}</div>
-                    <div>
-                      <p className="comm-testimonial-name">{t.name}</p>
-                      <p className="comm-testimonial-role">{t.role}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ── CTA ── */}
-        <section className="comm-cta">
-          <div className="comm-cta-bg" />
-          <div className="comm-cta-glow" />
-          <div className="comm-cta-inner">
-            <div className="comm-cta-badge">
-              <Zap style={{ width:12, height:12 }} />
-              Bergabung Sekarang
-            </div>
-            <h2 className="comm-cta-title">Siap Menumbuhkan<br />Dampak Anda?</h2>
-            <p className="comm-cta-desc">
-              Bergabunglah dengan jaringan komunitas konservasi kami dan buka akses ke alat untuk menjangkau lebih banyak relawan, mengumpulkan donasi, dan meningkatkan upaya pelestarian laut.
-            </p>
-            <div className="comm-cta-btns">
-              <Link href="/community/register" className="comm-cta-btn-primary">
-                Daftarkan Komunitas <ArrowRight style={{ width:16, height:16 }} />
-              </Link>
-              <Link href="/activities" className="comm-cta-btn-ghost">
-                Lihat Semua Kegiatan
-              </Link>
-            </div>
-            <div className="comm-trust">
-              {["Gratis Mendaftar", "Terverifikasi Admin", "Dukungan Penuh", "Dampak Nyata"].map(t => (
-                <div key={t} className="comm-trust-item">
-                  <CheckCircle style={{ width:14, height:14, color:"#67e8f9" }} />
-                  {t}
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
 
       </main>
       <Footer />

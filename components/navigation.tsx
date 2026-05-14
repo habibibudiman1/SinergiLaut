@@ -36,26 +36,22 @@ import {
 const publicNavLinks = [
   { href: "/activities", label: "Kegiatan" },
   { href: "/community", label: "Komunitas" },
-  { href: "/endowment", label: "Dana Abadi" },
   { href: "/about", label: "Tentang" },
 ];
 
 const userNavLinks = [
   { href: "/activities", label: "Kegiatan" },
   { href: "/community", label: "Komunitas" },
-  { href: "/endowment", label: "Dana Abadi" },
   { href: "/user/dashboard", label: "Dashboard" },
 ];
 
 const communityNavLinks = [
   { href: "/activities", label: "Kegiatan" },
-  { href: "/endowment", label: "Dana Abadi" },
   { href: "/community/dashboard", label: "Dashboard Komunitas" },
 ];
 
 const adminNavLinks = [
   { href: "/admin/dashboard", label: "Dashboard Admin" },
-  { href: "/endowment", label: "Dana Abadi" },
 ];
 
 // Tipe data notifikasi
@@ -112,8 +108,8 @@ export function Navigation() {
   // Check if current page has a dark hero section
   const isDashboard = pathname.includes("dashboard");
   const isDarkHeroPage = !isDashboard && (
-    ["/", "/activities", "/community", "/endowment", "/about"].includes(pathname) || 
-    pathname.startsWith("/activities/") || 
+    ["/", "/activities", "/community", "/about"].includes(pathname) ||
+    pathname.startsWith("/activities/") ||
     pathname.startsWith("/community/") ||
     pathname === "/login" ||
     pathname === "/register"
@@ -125,6 +121,7 @@ export function Navigation() {
     await signOut();
     toast.success("Berhasil keluar.");
     router.push("/");
+    router.refresh();
   };
 
   // ─── Notifications ────────────────────────────────────────────────────────

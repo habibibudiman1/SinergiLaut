@@ -2,38 +2,32 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { createNotification } from "@/lib/actions/notification.actions"
-import { getEndowmentStats } from "@/lib/actions/endowment.actions"
 
 // --- ADMIN DASHBOARD ---
 
 export async function getAdminDashboardStats() {
   const supabase = await createClient()
 
-  // Total communities
-  const { count: totalCommunities } = await supabase
-    .from("communities")
-    .select("*", { count: "exact", head: true })
+  const [
+    { count: totalCommunities },
+    { count: totalUsers },
+    { count: totalActivities },
+    { data: fundingData },
+  ] = await Promise.all([
+    supabase.from("communities").select("*", { count: "exact", head: true }),
+    supabase.from("profiles").select("*", { count: "exact", head: true }),
+    supabase.from("activities").select("*", { count: "exact", head: true }).in("status", ["published", "completed"]),
+    supabase.from("activities").select("funding_raised"),
+  ])
 
-  // Active users
-  const { count: totalUsers } = await supabase
-    .from("profiles")
-    .select("*", { count: "exact", head: true })
-
-  // Active activities
-  const { count: totalActivities } = await supabase
-    .from("activities")
-    .select("*", { count: "exact", head: true })
-    .in("status", ["published", "completed"])
-
-  // Endowment stats
-  const { totalRaised } = await getEndowmentStats()
-  const totalEndowment = totalRaised
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const totalFundingRaised = (fundingData as any[])?.reduce((sum: number, a: any) => sum + (a.funding_raised || 0), 0) ?? 0
 
   return {
     totalCommunities: totalCommunities || 0,
     totalUsers: totalUsers || 0,
     totalActivities: totalActivities || 0,
-    totalEndowment
+    totalEndowment: totalFundingRaised,
   }
 }
 

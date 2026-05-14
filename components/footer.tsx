@@ -3,15 +3,14 @@ import Image from "next/image"
 
 const footerLinks = {
   resources: [
-    { href: "/tentang", label: "Tentang Kami" },
-    { href: "/activities", label: "Laporan Dampak" },
+    { href: "/about", label: "Tentang Kami" },
+    { href: "/activities", label: "Kegiatan Konservasi" },
     { href: "/community", label: "Komunitas Mitra" },
-    { href: "/contact", label: "Hubungi Kami" },
   ],
-  legal: [
-    { href: "/privacy-policy", label: "Kebijakan Privasi" },
-    { href: "/terms", label: "Syarat & Ketentuan" },
-    { href: "/cookie-policy", label: "Kebijakan Cookie" },
+  platform: [
+    { href: "/register", label: "Daftar Relawan" },
+    { href: "/community/register", label: "Daftarkan Komunitas" },
+    { href: "/login", label: "Masuk" },
   ],
 }
 
@@ -33,14 +32,11 @@ export function Footer() {
 
 
           <div>
-            <h3 className="font-semibold mb-4">Resources</h3>
+            <h3 className="font-semibold mb-4">Jelajahi</h3>
             <ul className="space-y-3">
               {footerLinks.resources.map((link) => (
                 <li key={link.label}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-background/70 hover:text-background transition-colors"
-                  >
+                  <Link href={link.href} className="text-sm text-background/70 hover:text-background transition-colors">
                     {link.label}
                   </Link>
                 </li>
@@ -49,14 +45,11 @@ export function Footer() {
           </div>
 
           <div>
-            <h3 className="font-semibold mb-4">Legal</h3>
+            <h3 className="font-semibold mb-4">Platform</h3>
             <ul className="space-y-3">
-              {footerLinks.legal.map((link) => (
+              {footerLinks.platform.map((link) => (
                 <li key={link.label}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-background/70 hover:text-background transition-colors"
-                  >
+                  <Link href={link.href} className="text-sm text-background/70 hover:text-background transition-colors">
                     {link.label}
                   </Link>
                 </li>

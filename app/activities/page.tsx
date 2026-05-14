@@ -608,14 +608,6 @@ export default function ActivitiesPage() {
             <p className="act-hero-desc">
               Temukan peluang menjadi relawan atau dukung kegiatan konservasi laut dengan donasi dan barang yang mereka butuhkan untuk sukses.
             </p>
-            <div className="act-hero-btns">
-              <a href="#kegiatan-list" className="act-btn-primary">
-                Lihat Kegiatan <ArrowRight style={{ width: 16, height: 16 }} />
-              </a>
-              <Link href="/community" className="act-btn-ghost">
-                Jelajahi Komunitas
-              </Link>
-            </div>
           </div>
 
           <div className="act-wave">
@@ -691,9 +683,11 @@ export default function ActivitiesPage() {
               )}
             </div>
 
-            <span className="act-results-count">
-              {filteredActivities.length} kegiatan ditemukan
-            </span>
+            {(selectedLocation !== "All Locations" || selectedType !== "All Types" || searchQuery !== "") && (
+              <span className="act-results-count">
+                {filteredActivities.length} kegiatan ditemukan
+              </span>
+            )}
             </div>
           </section>
         </div>
@@ -714,7 +708,7 @@ export default function ActivitiesPage() {
                         )
                       : 0;
                   return (
-                    <div key={activity.id} className="act-card">
+                    <Link key={activity.id} href={`/activities/${activity.id}`} className="act-card" style={{ textDecoration: "none", cursor: "pointer" }}>
                       <div className="act-card-img-wrap">
                         <Image
                           src={activity.image}
@@ -765,15 +759,11 @@ export default function ActivitiesPage() {
                         </div>
 
                         <div className="act-card-btns">
-                          <Link href={`/activities/${activity.id}`} className="act-card-btn-primary">
-                            Relawan
-                          </Link>
-                          <Link href={`/activities/${activity.id}`} className="act-card-btn-ghost">
-                            Donasi
-                          </Link>
+                          <span className="act-card-btn-primary">Relawan</span>
+                          <span className="act-card-btn-ghost">Donasi</span>
                         </div>
                       </div>
-                    </div>
+                    </Link>
                   );
                 })}
               </div>
@@ -866,37 +856,6 @@ export default function ActivitiesPage() {
           </div>
         </section>
 
-        {/* ── CTA ── */}
-        <section className="act-cta">
-          <div className="act-cta-bg" />
-          <div className="act-cta-glow" />
-          <div className="act-cta-inner">
-            <div className="act-cta-badge">
-              <Zap style={{ width: 12, height: 12 }} />
-              Bergabung Sekarang
-            </div>
-            <h2 className="act-cta-title">Ingin Mengorganisir<br />Kegiatan Sendiri?</h2>
-            <p className="act-cta-desc">
-              Daftarkan komunitasmu dan ajukan kegiatan konservasi yang membutuhkan dukungan pendanaan dan relawan.
-            </p>
-            <div className="act-cta-btns">
-              <Link href="/community/register" className="act-cta-btn-primary">
-                Daftarkan Komunitas <ArrowRight style={{ width: 16, height: 16 }} />
-              </Link>
-              <Link href="/community" className="act-cta-btn-ghost">
-                Lihat Komunitas
-              </Link>
-            </div>
-            <div className="act-trust">
-              {["Gratis Mendaftar", "Komunitas Terverifikasi", "Dukungan Penuh"].map(t => (
-                <div key={t} className="act-trust-item">
-                  <CheckCircle style={{ width: 14, height: 14, color: "#67e8f9" }} />
-                  {t}
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
 
       </main>
       <Footer />
