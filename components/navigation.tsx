@@ -41,8 +41,6 @@ const publicNavLinks = [
 
 const userNavLinks = [
   { href: "/activities", label: "Kegiatan" },
-  { href: "/community", label: "Komunitas" },
-  { href: "/user/dashboard", label: "Dashboard" },
 ];
 
 const communityNavLinks = [
@@ -205,7 +203,8 @@ export function Navigation() {
                   alt="SinergiLaut Logo"
                   width={36}
                   height={36}
-                  className="h-9 w-auto relative transform transition-transform group-hover:scale-110"
+                  className="relative transform transition-transform group-hover:scale-110"
+                  style={{ width: 36, height: 36 }}
                 />
               </div>
               <span

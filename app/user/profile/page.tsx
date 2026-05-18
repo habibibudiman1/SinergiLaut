@@ -9,11 +9,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/contexts/auth-context"
 import {
-  User, Camera, Save, Loader2, Phone, Mail, FileText, ArrowLeft, X,
+  User, Camera, Save, Loader2, Phone, Mail, FileText, X,
   ShieldCheck, ShieldAlert, ShieldX, Upload, Calendar, CreditCard,
   MapPin, UserCheck, AlertCircle, ImageIcon
 } from "lucide-react"
-import Link from "next/link"
 import { getInitials } from "@/lib/utils/helpers"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
@@ -77,7 +76,7 @@ export default function UserProfilePage() {
   }
 
   // Handle basic profile update
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault()
     if (!profile) return
     setIsLoading(true)
@@ -198,7 +197,7 @@ export default function UserProfilePage() {
   }
 
   // Handle verification submission
-  const handleVerificationSubmit = async (e: React.FormEvent) => {
+  const handleVerificationSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault()
     if (!user) return
 
@@ -237,35 +236,31 @@ export default function UserProfilePage() {
   const hasSubmitted = !!profile?.nik
 
   return (
-    <div className="flex-1 relative overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_40%,rgba(103,232,249,0.08)_0%,transparent_40%),radial-gradient(circle_at_80%_60%,rgba(6,149,138,0.06)_0%,transparent_40%)] pointer-events-none" />
-      <main className="pt-8 relative z-10 px-4 pb-16">
+    <div className="flex-1 bg-slate-50">
+      <main className="pt-8 px-4 pb-16">
         <div className="max-w-2xl mx-auto py-8">
           <div className="mb-8">
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-[#0e2a3a] tracking-tight">Edit Profil</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Edit Profil</h1>
+            <p className="text-muted-foreground mt-1 text-sm">Perbarui informasi pribadi dan data verifikasi Anda</p>
           </div>
 
-          {/* ── Premium Verification Banner ── */}
+          {/* ── Verification Banner ── */}
           {profile?.role === "user" && (
-            <div className={`mb-8 p-5 rounded-2xl border backdrop-blur-md flex items-start gap-4 shadow-sm ${
-              volunteerStatus === "approved" ? "bg-emerald-50/70 border-emerald-100 text-emerald-800" :
-              volunteerStatus === "rejected" ? "bg-rose-50/70 border-rose-100 text-rose-800" :
-              hasSubmitted ? "bg-amber-50/70 border-amber-100 text-amber-800" :
-              "bg-blue-50/70 border-blue-100 text-blue-800"
-            }`}>
-              <div className={`p-2 rounded-xl border ${
-                volunteerStatus === "approved" ? "bg-emerald-100/50 border-emerald-200 text-emerald-600" :
-                volunteerStatus === "rejected" ? "bg-rose-100/50 border-rose-200 text-rose-600" :
-                hasSubmitted ? "bg-amber-100/50 border-amber-200 text-amber-600" :
-                "bg-blue-100/50 border-blue-200 text-blue-600"
-              }`}>
+            <div className="mb-6 p-4 rounded-2xl flex items-start gap-3" style={{
+              background: volunteerStatus === "approved" ? "rgba(16,185,129,0.1)" : volunteerStatus === "rejected" ? "rgba(239,68,68,0.1)" : hasSubmitted ? "rgba(245,158,11,0.1)" : "rgba(59,130,246,0.1)",
+              border: `1px solid ${volunteerStatus === "approved" ? "rgba(16,185,129,0.25)" : volunteerStatus === "rejected" ? "rgba(239,68,68,0.25)" : hasSubmitted ? "rgba(245,158,11,0.25)" : "rgba(59,130,246,0.25)"}`,
+            }}>
+              <div className="p-2 rounded-xl shrink-0" style={{
+                background: volunteerStatus === "approved" ? "rgba(16,185,129,0.2)" : volunteerStatus === "rejected" ? "rgba(239,68,68,0.2)" : hasSubmitted ? "rgba(245,158,11,0.2)" : "rgba(59,130,246,0.2)",
+                color: volunteerStatus === "approved" ? "#34d399" : volunteerStatus === "rejected" ? "#f87171" : hasSubmitted ? "#fbbf24" : "#60a5fa",
+              }}>
                 {volunteerStatus === "approved" ? <ShieldCheck className="h-6 w-6" /> :
                  volunteerStatus === "rejected" ? <ShieldX className="h-6 w-6" /> :
                  hasSubmitted ? <ShieldAlert className="h-6 w-6" /> :
                  <AlertCircle className="h-6 w-6" />}
               </div>
               <div>
-                <p className="font-extrabold text-sm mb-1 uppercase tracking-wider opacity-80">
+                <p className="font-extrabold text-xs mb-1 uppercase tracking-widest opacity-80">
                   Status Verifikasi
                 </p>
                 <p className="font-bold text-[15px] leading-tight mb-1">
@@ -284,10 +279,10 @@ export default function UserProfilePage() {
             </div>
           )}
 
-          <div className="space-y-6">
-            {/* ── Avatar Card Glassmorphism ── */}
+          <div className="space-y-4">
+            {/* ── Avatar Card ── */}
             <Card className="bg-white/70 backdrop-blur-xl border-white/80 shadow-sm rounded-2xl overflow-hidden group">
-              <CardContent className="p-8">
+              <CardContent className="p-6">
                 <div className="flex flex-col sm:flex-row items-center gap-8 text-center sm:text-left">
                   <div className="relative group/avatar">
                     <div className="absolute inset-0 bg-teal-400/20 blur-2xl rounded-full opacity-0 group-hover/avatar:opacity-100 transition-opacity duration-700" />
@@ -304,7 +299,7 @@ export default function UserProfilePage() {
                     {optimisticAvatar || profile?.avatar_url ? (
                       <div 
                         onClick={() => setIsPreviewOpen(true)}
-                        className="relative w-24 h-24 rounded-full border-4 border-white shadow-xl overflow-hidden group-hover/avatar:scale-105 transition-transform duration-500 cursor-zoom-in">
+                        className="relative w-24 h-24 rounded-full overflow-hidden group-hover/avatar:scale-105 transition-transform duration-500 cursor-zoom-in" className="border-4 border-white shadow-xl">
                         {isUploadingAvatar ? (
                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10 transition-opacity">
                             <Loader2 className="h-8 w-8 text-white animate-spin" />
@@ -313,7 +308,7 @@ export default function UserProfilePage() {
                         <img src={optimisticAvatar || profile?.avatar_url || ""} alt="Avatar" className="w-full h-full object-cover" />
                       </div>
                     ) : (
-                      <div className="relative w-24 h-24 bg-linear-to-br from-[#06958a] to-[#04756c] rounded-full flex items-center justify-center text-white text-3xl font-black shadow-xl border-4 border-white group-hover/avatar:scale-105 transition-transform duration-500">
+                      <div className="relative w-24 h-24 bg-linear-to-br from-[#06958a] to-[#04756c] rounded-full flex items-center justify-center text-white text-3xl font-black group-hover/avatar:scale-105 transition-transform duration-500" className="border-4 border-white shadow-xl">
                         {isUploadingAvatar ? (
                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10 rounded-full">
                             <Loader2 className="h-8 w-8 text-white animate-spin" />
@@ -353,8 +348,8 @@ export default function UserProfilePage() {
 
             {/* ── Basic Profile Form ── */}
             <form onSubmit={handleSubmit}>
-              <Card className="bg-white/70 backdrop-blur-xl border-white/80 shadow-sm rounded-2xl overflow-hidden">
-                <CardHeader className="border-b border-white/40 pb-4">
+              <Card className="rounded-2xl overflow-hidden bg-white/70 backdrop-blur-xl border-white/80 shadow-sm">
+                <CardHeader className="pb-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                   <CardTitle className="text-xl font-extrabold text-[#0e2a3a] flex items-center gap-2">
                     <User className="h-6 w-6 text-[#06958a]" /> Informasi Pribadi
                   </CardTitle>
@@ -369,7 +364,7 @@ export default function UserProfilePage() {
                       <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#94a3b8] group-focus-within:text-[#06958a] transition-colors" />
                       <Input id="full_name" name="full_name" value={form.full_name} onChange={handleChange}
                         maxLength={100}
-                        className="pl-11 h-12 bg-white/50 border-white/60 focus:bg-white focus:border-[#06958a] focus:ring-[#06958a]/20 transition-all rounded-xl font-medium"
+                        className="pl-11 h-12 rounded-xl font-medium transition-all bg-white/50 border-white/60 focus:bg-white focus:border-[#06958a] focus:ring-[#06958a]/20"
                         placeholder="Nama lengkap" />
                     </div>
                   </div>
@@ -378,7 +373,7 @@ export default function UserProfilePage() {
                     <div className="relative">
                       <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#94a3b8]" />
                       <Input value={profile?.email ?? ""} disabled 
-                        className="pl-11 h-12 bg-gray-100/50 border-transparent text-[#94a3b8] cursor-not-allowed rounded-xl font-medium" />
+                        className="pl-11 h-12 rounded-xl font-medium cursor-not-allowed bg-gray-100/50 border-transparent text-[#94a3b8]" />
                     </div>
                     <p className="text-[11px] font-bold text-[#94a3b8] uppercase tracking-wider ml-1">Email tidak dapat diubah</p>
                   </div>
@@ -388,7 +383,7 @@ export default function UserProfilePage() {
                       <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#94a3b8] group-focus-within:text-[#06958a] transition-colors" />
                       <Input id="phone" name="phone" type="tel" value={form.phone} onChange={handleChange}
                         maxLength={20}
-                        className="pl-11 h-12 bg-white/50 border-white/60 focus:bg-white focus:border-[#06958a] focus:ring-[#06958a]/20 transition-all rounded-xl font-medium"
+                        className="pl-11 h-12 rounded-xl font-medium transition-all bg-white/50 border-white/60 focus:bg-white focus:border-[#06958a] focus:ring-[#06958a]/20"
                         placeholder="+62 8xx xxxx xxxx" />
                     </div>
                   </div>
@@ -401,7 +396,7 @@ export default function UserProfilePage() {
                       <FileText className="absolute left-3.5 top-4 h-5 w-5 text-[#94a3b8] group-focus-within:text-[#06958a] transition-colors" />
                       <Textarea id="bio" name="bio" value={form.bio} onChange={handleChange}
                         maxLength={300}
-                        className="pl-11 py-3 bg-white/50 border-white/60 focus:bg-white focus:border-[#06958a] focus:ring-[#06958a]/20 transition-all rounded-xl font-medium"
+                        className="pl-11 py-3 rounded-xl font-medium transition-all bg-white/50 border-white/60 focus:bg-white focus:border-[#06958a] focus:ring-[#06958a]/20"
                         rows={4} placeholder="Ceritakan sedikit tentang diri... (maks. 300 karakter)" />
                     </div>
                   </div>
@@ -416,10 +411,10 @@ export default function UserProfilePage() {
             {profile?.role === "user" && (
               <form onSubmit={handleVerificationSubmit}>
                 <Card className={`bg-white/70 backdrop-blur-xl border-2 shadow-lg rounded-2xl overflow-hidden transition-all duration-500 ${
-                  volunteerStatus === "approved" ? "border-emerald-200/60" :
-                  volunteerStatus === "rejected" ? "border-rose-200/60" :
-                  hasSubmitted ? "border-amber-200/60" : "border-white/80"
-                }`}>
+                    volunteerStatus === "approved" ? "border-emerald-200/60" :
+                    volunteerStatus === "rejected" ? "border-rose-200/60" :
+                    hasSubmitted ? "border-amber-200/60" : "border-white/80"
+                  }`}>
                   <CardHeader className="border-b border-white/40 pb-6">
                     <CardTitle className="text-xl font-extrabold text-[#0e2a3a] flex items-center gap-2">
                       <ShieldCheck className="h-6 w-6 text-[#06958a]" /> Verifikasi Data Diri Volunteer
@@ -435,7 +430,7 @@ export default function UserProfilePage() {
                         <div className="relative group">
                           <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#94a3b8] group-focus-within:text-[#06958a] transition-colors" />
                           <Input id="v_full_name" name="full_name" value={verifyForm.full_name} onChange={handleVerifyChange}
-                            className="pl-11 h-12 bg-white/50 border-white/60 focus:bg-white focus:border-[#06958a] focus:ring-[#06958a]/20 transition-all rounded-xl font-medium" 
+                            className="pl-11 h-12 rounded-xl font-medium transition-all bg-white/50 border-white/60 focus:bg-white focus:border-[#06958a] focus:ring-[#06958a]/20" 
                             placeholder="Nama sesuai KTP" required
                             disabled={volunteerStatus === "approved" || (volunteerStatus === "pending" && hasSubmitted)} />
                         </div>
@@ -445,7 +440,7 @@ export default function UserProfilePage() {
                         <div className="relative group">
                           <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#94a3b8] group-focus-within:text-[#06958a] transition-colors" />
                           <Input id="date_of_birth" name="date_of_birth" type="date" value={verifyForm.date_of_birth} onChange={handleVerifyChange}
-                            className="pl-11 h-12 bg-white/50 border-white/60 focus:bg-white focus:border-[#06958a] focus:ring-[#06958a]/20 transition-all rounded-xl font-medium" 
+                            className="pl-11 h-12 rounded-xl font-medium transition-all bg-white/50 border-white/60 focus:bg-white focus:border-[#06958a] focus:ring-[#06958a]/20" 
                             required disabled={volunteerStatus === "approved" || (volunteerStatus === "pending" && hasSubmitted)} />
                         </div>
                       </div>
@@ -457,7 +452,7 @@ export default function UserProfilePage() {
                         <div className="relative group">
                           <CreditCard className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#94a3b8] group-focus-within:text-[#06958a] transition-colors" />
                           <Input id="nik" name="nik" value={verifyForm.nik} onChange={handleVerifyChange}
-                            className="pl-11 h-12 bg-white/50 border-white/60 focus:bg-white focus:border-[#06958a] focus:ring-[#06958a]/20 transition-all rounded-xl font-medium" 
+                            className="pl-11 h-12 rounded-xl font-medium transition-all bg-white/50 border-white/60 focus:bg-white focus:border-[#06958a] focus:ring-[#06958a]/20" 
                             placeholder="16 digit angka" maxLength={16} required
                             disabled={volunteerStatus === "approved" || (volunteerStatus === "pending" && hasSubmitted)} />
                         </div>
@@ -480,7 +475,7 @@ export default function UserProfilePage() {
                         <div className="relative group">
                           <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#94a3b8] group-focus-within:text-[#06958a] transition-colors" />
                           <Input id="v_phone" name="phone" type="tel" value={verifyForm.phone} onChange={handleVerifyChange}
-                            className="pl-11 h-12 bg-white/50 border-white/60 focus:bg-white focus:border-[#06958a] focus:ring-[#06958a]/20 transition-all rounded-xl font-medium" 
+                            className="pl-11 h-12 rounded-xl font-medium transition-all bg-white/50 border-white/60 focus:bg-white focus:border-[#06958a] focus:ring-[#06958a]/20" 
                             placeholder="+62 8xx xxxx xxxx" required
                             disabled={volunteerStatus === "approved" || (volunteerStatus === "pending" && hasSubmitted)} />
                         </div>
@@ -488,11 +483,12 @@ export default function UserProfilePage() {
                       <div className="space-y-2">
                         <Label className="text-sm font-bold text-[#475569] ml-1">Upload Foto KTP</Label>
                         <div className="flex gap-3 items-center">
-                          <label className={`flex-1 flex items-center justify-center gap-3 h-12 px-4 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
-                            volunteerStatus === "approved" || (volunteerStatus === "pending" && hasSubmitted) 
-                              ? "opacity-50 border-gray-200 cursor-not-allowed" 
-                              : "border-[#06958a]/30 hover:border-[#06958a] hover:bg-[#06958a]/5 text-[#64748b] hover:text-[#06958a]"
-                          }`}>
+                          <label className="flex-1 flex items-center justify-center gap-3 h-12 px-4 border-dashed rounded-xl cursor-pointer transition-all"
+            className={`flex-1 flex items-center justify-center gap-3 h-12 px-4 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
+                              volunteerStatus === "approved" || (volunteerStatus === "pending" && hasSubmitted)
+                                ? "opacity-50 border-gray-200 cursor-not-allowed"
+                                : "border-[#06958a]/30 hover:border-[#06958a] hover:bg-[#06958a]/5 text-[#64748b] hover:text-[#06958a]"
+                            }`}>
                             {isUploadingKtp ? (
                               <Loader2 className="h-5 w-5 animate-spin" />
                             ) : (
@@ -520,7 +516,7 @@ export default function UserProfilePage() {
                       <div className="relative group">
                         <MapPin className="absolute left-3.5 top-4 h-5 w-5 text-[#94a3b8] group-focus-within:text-[#06958a] transition-colors" />
                         <Textarea id="address" name="address" value={verifyForm.address} onChange={handleVerifyChange}
-                          className="pl-11 py-3 bg-white/50 border-white/60 focus:bg-white focus:border-[#06958a] focus:ring-[#06958a]/20 transition-all rounded-xl font-medium" 
+                          className="pl-11 py-3 rounded-xl font-medium transition-all bg-white/50 border-white/60 focus:bg-white focus:border-[#06958a] focus:ring-[#06958a]/20" 
                           rows={3} placeholder="Alamat sesuai KTP" required
                           disabled={volunteerStatus === "approved" || (volunteerStatus === "pending" && hasSubmitted)} />
                       </div>

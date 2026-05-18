@@ -41,14 +41,14 @@ export function UserSidebar() {
           </div>
           <div>
             <p className="text-sm font-black text-slate-800 tracking-tight leading-none">SinergiLaut</p>
-            <p className="text-[10px] font-semibold text-teal-600 uppercase tracking-widest mt-0.5">Dashboard</p>
+            <p className="text-[10px] font-semibold text-teal-600 uppercase tracking-widest mt-0.5">DASHBOARD</p>
           </div>
         </Link>
       </div>
 
-      {/* Nav Items */}
+      {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        <p className="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Menu</p>
+        <p className="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">MENU</p>
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
           return (
@@ -123,7 +123,6 @@ export function UserSidebar() {
         {mobileOpen ? <X className="h-5 w-5 text-slate-700" /> : <Menu className="h-5 w-5 text-slate-700" />}
       </button>
 
-      {/* Mobile overlay */}
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 bg-black/40 z-40" onClick={() => setMobileOpen(false)} />
       )}

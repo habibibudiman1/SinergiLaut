@@ -15,32 +15,14 @@ import {
   Leaf,
   Banknote,
   Sparkles,
-  ArrowRight,
   CheckCircle,
-  Zap,
   Target,
   Heart,
   Globe,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatDate } from "@/lib/utils/helpers";
-
-const locations = [
-  "All Locations",
-  "Jakarta",
-  "Raja Ampat",
-  "Bali",
-  "Surabaya",
-  "Makassar",
-  "Online",
-];
-const activityTypes = [
-  "All Types",
-  "Cleanup",
-  "Restoration",
-  "Education",
-  "Event",
-];
+import { ACTIVITY_CATEGORIES } from "@/lib/constants";
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("id-ID", {
@@ -96,6 +78,12 @@ const howItWorks = [
   },
 ];
 
+// Bangun daftar tipe dari ACTIVITY_CATEGORIES (konsisten dengan konstanta)
+const activityTypeOptions = [
+  { value: "All Types", label: "All Types" },
+  ...ACTIVITY_CATEGORIES.map((c) => ({ value: c.value, label: c.label })),
+];
+
 export default function ActivitiesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("All Locations");
@@ -104,6 +92,8 @@ export default function ActivitiesPage() {
   const [typeOpen, setTypeOpen] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [supabaseActivities, setSupabaseActivities] = useState<any[]>([]);
+  // Lokasi unik yang diambil dinamis dari data kegiatan
+  const [dynamicLocations, setDynamicLocations] = useState<string[]>([]);
 
   useEffect(() => {
     async function fetchActivities() {
@@ -131,10 +121,18 @@ export default function ActivitiesPage() {
           itemsNeeded: [],
         }));
         setSupabaseActivities(mapped);
+
+        // Bangun daftar lokasi unik dari data nyata
+        const uniqueLocations = Array.from(
+          new Set(data.map((d: any) => d.location).filter(Boolean))
+        ).sort() as string[];
+        setDynamicLocations(uniqueLocations);
       }
     }
     fetchActivities();
   }, []);
+
+  const locations = ["All Locations", ...dynamicLocations];
 
   const allActivities = supabaseActivities;
 
@@ -147,7 +145,7 @@ export default function ActivitiesPage() {
       activity.location.toLowerCase().includes(selectedLocation.toLowerCase());
     const matchesType =
       selectedType === "All Types" ||
-      activity.type === selectedType.toLowerCase();
+      activity.type === selectedType;
     return matchesSearch && matchesLocation && matchesType;
   });
 
@@ -665,18 +663,18 @@ export default function ActivitiesPage() {
                 onClick={() => { setTypeOpen(!typeOpen); setLocationOpen(false); }}
               >
                 <Filter style={{ width: 15, height: 15 }} />
-                {selectedType}
+                {activityTypeOptions.find(o => o.value === selectedType)?.label ?? selectedType}
                 <ChevronDown style={{ width: 14, height: 14, opacity: 0.7 }} />
               </button>
               {typeOpen && (
                 <div className="act-dropdown-menu">
-                  {activityTypes.map((type) => (
+                  {activityTypeOptions.map((opt) => (
                     <button
-                      key={type}
+                      key={opt.value}
                       className="act-dropdown-item"
-                      onClick={() => { setSelectedType(type); setTypeOpen(false); }}
+                      onClick={() => { setSelectedType(opt.value); setTypeOpen(false); }}
                     >
-                      {type}
+                      {opt.label}
                     </button>
                   ))}
                 </div>

@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { Navigation } from "@/components/navigation"
@@ -31,6 +32,15 @@ const missionFeatures = [
 
 export default async function HomePage() {
   const supabase = await createClient()
+
+  // Redirect user yang sudah login ke dashboard masing-masing
+  const { data: { session } } = await supabase.auth.getSession()
+  if (session?.user) {
+    const role = session.user.user_metadata?.role
+    if (role === "admin")     redirect("/admin/dashboard")
+    if (role === "community") redirect("/community/dashboard")
+    redirect("/user/dashboard")
+  }
 
   const [
     { count: userCount },

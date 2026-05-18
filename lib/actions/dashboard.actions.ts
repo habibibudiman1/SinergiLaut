@@ -162,11 +162,13 @@ export async function approveActivityAction(id: string) {
   return { success: true }
 }
 
-export async function rejectActivityAction(id: string) {
+export async function rejectActivityAction(id: string, note?: string) {
   const supabase = await createClient()
+  const adminNote = note?.trim()
+  if (!adminNote) return { success: false, error: "Catatan penolakan wajib diisi." }
   const { data: activity, error } = await supabase
     .from("activities")
-    .update({ status: "draft", admin_note: "Ditolak oleh admin" })
+    .update({ status: "draft", admin_note: adminNote })
     .eq("id", id)
     .select("title, community_id, community:communities(owner_id)")
     .single()
@@ -177,7 +179,7 @@ export async function rejectActivityAction(id: string) {
     await createNotification(
       ownerId,
       "Kegiatan Ditolak ❌",
-      `Kegiatan "${activity.title}" ditolak oleh admin. Silakan periksa catatan admin dan perbaiki sebelum submit ulang.`,
+      `Kegiatan "${activity.title}" ditolak. Catatan admin: ${adminNote}`,
       "error",
       "/community/dashboard"
     )

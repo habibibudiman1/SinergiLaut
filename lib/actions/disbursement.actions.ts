@@ -44,18 +44,22 @@ export async function createDisbursement(payload: Omit<CreateDisbursementPayload
     (sum: number, d) => sum + (d.amount ?? 0), 0
   )
 
-  // Ambil total disbursement sebelumnya untuk activity ini
+  // Ambil total disbursement sebelumnya untuk activity ini (termasuk platform_fee)
   const { data: prevDisbursements } = await supabase
     .from("disbursements")
-    .select("amount")
+    .select("amount, platform_fee")
     .eq("activity_id", payload.activityId)
     .in("status", ["processing", "completed"])
 
   const totalDisbursed = (prevDisbursements ?? []).reduce(
     (sum: number, d) => sum + (d.amount ?? 0), 0
   )
+  const totalPlatformFee = (prevDisbursements ?? []).reduce(
+    (sum: number, d) => sum + (d.platform_fee ?? 0), 0
+  )
 
-  const availableBalance = totalCollected - totalDisbursed
+  // availableBalance konsisten dengan getActivityFinanceSummary
+  const availableBalance = totalCollected - totalDisbursed - totalPlatformFee
 
   if (payload.amount > availableBalance) {
     return {

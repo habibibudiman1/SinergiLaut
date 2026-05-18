@@ -22,9 +22,11 @@ export default function MapPicker({ lat, lng, onChange, defaultCenter = [106.816
   useEffect(() => {
     if (!mapContainerRef.current) return
 
-    // Gunakan MapTiler jika ada API key, fallback ke demotiles MapLibre (tidak ada CORS issue)
-    const mapStyle = process.env.NEXT_PUBLIC_MAPTILER_KEY
-      ? `https://api.maptiler.com/maps/streets-v2/style.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`
+    // Gunakan MapTiler hanya jika key valid (bukan placeholder), fallback ke demotiles
+    const maptilerKey = process.env.NEXT_PUBLIC_MAPTILER_KEY
+    const isValidKey = maptilerKey && maptilerKey !== "get_your_own_free_key_at_maptiler" && maptilerKey.length > 10
+    const mapStyle = isValidKey
+      ? `https://api.maptiler.com/maps/streets-v2/style.json?key=${maptilerKey}`
       : "https://demotiles.maplibre.org/style.json"
 
     const map = new maplibregl.Map({

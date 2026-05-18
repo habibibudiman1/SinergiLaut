@@ -63,6 +63,9 @@ CREATE TABLE IF NOT EXISTS communities (
   logo_url TEXT,
   banner_url TEXT,
   website TEXT,
+  instagram TEXT,                     -- URL profil Instagram komunitas
+  facebook TEXT,                      -- URL halaman Facebook komunitas
+  twitter TEXT,                       -- URL profil Twitter/X komunitas
   location TEXT,
   focus_areas TEXT[] DEFAULT '{}',
   member_count INTEGER NOT NULL DEFAULT 0,
@@ -81,6 +84,9 @@ CREATE TABLE IF NOT EXISTS communities (
 DO $$ BEGIN ALTER TABLE communities ADD COLUMN bank_name TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 DO $$ BEGIN ALTER TABLE communities ADD COLUMN bank_account_number TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 DO $$ BEGIN ALTER TABLE communities ADD COLUMN bank_account_name TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE communities ADD COLUMN instagram TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE communities ADD COLUMN facebook TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE communities ADD COLUMN twitter TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 
 -- ============================================
 -- COMMUNITY VERIFICATIONS
@@ -117,6 +123,7 @@ CREATE TABLE IF NOT EXISTS activities (
   status activity_status NOT NULL DEFAULT 'draft',
   start_date TIMESTAMPTZ NOT NULL,
   end_date TIMESTAMPTZ,
+  execution_date TIMESTAMPTZ,         -- Tanggal pelaksanaan fisik kegiatan (min. 6 bulan dari sekarang)
   location TEXT NOT NULL,
   latitude DECIMAL(9,6),
   longitude DECIMAL(9,6),
@@ -140,6 +147,7 @@ CREATE TABLE IF NOT EXISTS activities (
 -- Safe add columns if upgrading from old schema
 DO $$ BEGIN ALTER TABLE activities ADD COLUMN items_needed JSONB DEFAULT NULL; EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 DO $$ BEGIN ALTER TABLE activities ADD COLUMN receipt_urls TEXT[] DEFAULT '{}'; EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE activities ADD COLUMN execution_date TIMESTAMPTZ; EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 
 -- ============================================
 -- VOLUNTEER REGISTRATIONS

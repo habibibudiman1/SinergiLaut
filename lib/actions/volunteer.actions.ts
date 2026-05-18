@@ -137,6 +137,14 @@ export async function updateVolunteerStatus(
 ) {
   const supabase = await createClient()
 
+  // Guard: hanya community atau admin yang boleh update
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "Unauthorized" }
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+  if (!profile || (profile.role !== "community" && profile.role !== "admin")) {
+    return { success: false, error: "Forbidden: hanya komunitas atau admin yang dapat mengubah status relawan." }
+  }
+
   const { data, error } = await supabase
     .from("volunteer_registrations")
     .update({ status })

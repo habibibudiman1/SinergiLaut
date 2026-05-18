@@ -12,19 +12,19 @@ function checkRateLimit(ip: string, maxAttempts = 10, windowMs = 15 * 60 * 1000)
 
   if (!record || record.resetAt < now) {
     loginAttempts.set(ip, { count: 1, resetAt: now + windowMs })
-    return true // allowed
+    return true
   }
 
-  if (record.count >= maxAttempts) return false // blocked
+  if (record.count >= maxAttempts) return false
 
   record.count++
   return true
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Middleware
+// Proxy (replaces deprecated "middleware" convention)
 // ──────────────────────────────────────────────────────────────────────────────
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // 1. Rate limit: endpoint login
@@ -47,7 +47,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // 2. Supabase session refresh (required for SSR auth)
+  // 2. Supabase session refresh
   let response = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -67,15 +67,24 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Refresh session — keeps user signed in across tab navigations
-  const { data: { user } } = await supabase.auth.getUser()
+  // Refresh session — handle invalid/expired refresh tokens gracefully
+  let user = null
+  try {
+    const { data } = await supabase.auth.getUser()
+    user = data.user
+  } catch {
+    // Invalid refresh token — clear cookies and continue as unauthenticated
+    response = NextResponse.next({ request })
+    ;['sb-access-token', 'sb-refresh-token'].forEach(name => {
+      response.cookies.delete(name)
+    })
+  }
 
   // 3. Protect admin routes
   if (pathname.startsWith('/admin') || pathname === '/dashboard') {
     if (!user) {
       return NextResponse.redirect(new URL('/login?redirectedFrom=' + pathname, request.url))
     }
-    // Role check via user_metadata (set during signup)
     const role = user.user_metadata?.role
     if (role !== 'admin') {
       return NextResponse.redirect(new URL('/user/dashboard', request.url))
@@ -105,7 +114,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Apply to all routes except static files, images, and _next internals
     '/((?!_next/static|_next/image|favicon.ico|images/|icons/).*)',
   ],
 }

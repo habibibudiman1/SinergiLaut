@@ -1,11 +1,10 @@
 import { redirect } from "next/navigation"
-import { Card, CardContent } from "@/components/ui/card"
 import { createClient } from "@/lib/supabase/server"
 import { getUserDashboardStats } from "@/lib/actions/dashboard.actions"
 import { getMyVolunteerRegistrations } from "@/lib/actions/volunteer.actions"
 import { getMyDonations } from "@/lib/actions/donation.actions"
 import { formatCurrency } from "@/lib/utils/helpers"
-import { Calendar, Heart, CheckCircle2 } from "lucide-react"
+import { Calendar, Heart, CheckCircle2, TrendingUp } from "lucide-react"
 import { DashboardClient } from "./dashboard-client"
 
 export default async function UserDashboardPage() {
@@ -26,7 +25,7 @@ export default async function UserDashboardPage() {
     .eq("id", userId)
     .single()
 
-  // Fetch semua data paralel
+  // Fetch data user paralel (cepat — tidak termasuk activities)
   const [stats, volunteersResult, donationsResult] = await Promise.all([
     getUserDashboardStats(userId),
     getMyVolunteerRegistrations(userId),
@@ -39,82 +38,47 @@ export default async function UserDashboardPage() {
   const firstName = profile?.full_name?.split(" ")[0] ?? "Pengguna"
 
   return (
-    <main className="flex-1 relative overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_35%,rgba(103,232,249,0.08)_0%,transparent_40%),radial-gradient(circle_at_80%_65%,rgba(6,149,138,0.06)_0%,transparent_40%)] pointer-events-none" />
-      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-14 md:pt-8">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 mb-10">
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-extrabold text-[#0e2a3a] tracking-tight">
-                Selamat datang, {firstName}! 👋
-              </h1>
-              <p className="text-[#475569] mt-2 font-medium">
-                Pantau partisipasi dan riwayat Anda di SinergiLaut
-              </p>
-            </div>
-          </div>
+    <main className="flex-1 bg-slate-50">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-14 md:pt-8">
 
-          {/* Stats Section with Glassmorphism */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-            {/* Card 1: Kegiatan Diikuti */}
-            <div className="group relative bg-white/70 backdrop-blur-xl border border-white/80 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-bold text-[#64748b] uppercase tracking-wider mb-1">Kegiatan Diikuti</p>
-                  <p className="text-4xl font-black text-[#0e2a3a] tracking-tighter">
-                    {stats.totalActivities}
-                  </p>
-                </div>
-                <div className="relative">
-                  <div className="absolute inset-0 bg-blue-400/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  <div className="w-14 h-14 bg-blue-50/80 border border-blue-100/50 rounded-2xl flex items-center justify-center relative z-10 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6">
-                    <Calendar className="h-7 w-7 text-blue-500" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 2: Total Donasi */}
-            <div className="group relative bg-white/70 backdrop-blur-xl border border-white/80 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-bold text-[#64748b] uppercase tracking-wider mb-1">Total Donasi</p>
-                  <p className="text-4xl font-black text-[#0e2a3a] tracking-tighter">
-                    {formatCurrency(stats.totalDonations)}
-                  </p>
-                </div>
-                <div className="relative">
-                  <div className="absolute inset-0 bg-rose-400/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  <div className="w-14 h-14 bg-rose-50/80 border border-rose-100/50 rounded-2xl flex items-center justify-center relative z-10 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6">
-                    <Heart className="h-7 w-7 text-rose-500" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 3: Status Aktif */}
-            <div className="group relative bg-white/70 backdrop-blur-xl border border-white/80 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-bold text-[#64748b] uppercase tracking-wider mb-1">Status Aktif</p>
-                  <p className="text-4xl font-black text-[#0e2a3a] tracking-tighter">
-                    {stats.activeActivities}
-                  </p>
-                </div>
-                <div className="relative">
-                  <div className="absolute inset-0 bg-emerald-400/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  <div className="w-14 h-14 bg-emerald-50/80 border border-emerald-100/50 rounded-2xl flex items-center justify-center relative z-10 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6">
-                    <CheckCircle2 className="h-7 w-7 text-emerald-500" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Client Component: Tabs + Lists */}
-          <DashboardClient volunteers={volunteers as any} donations={donations as any} />
-
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+            Selamat datang, {firstName}! 👋
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Pantau partisipasi dan riwayat Anda di SinergiLaut
+          </p>
         </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          {[
+            { label: "Kegiatan Diikuti", value: stats.totalActivities,            icon: Calendar,     color: "text-teal-600",  bg: "bg-teal-50",   tag: stats.totalActivities > 0 ? "Aktif" : null },
+            { label: "Total Donasi",     value: formatCurrency(stats.totalDonations), icon: Heart,    color: "text-teal-600",  bg: "bg-teal-50",   tag: null },
+            { label: "Status Aktif",     value: stats.activeActivities,            icon: CheckCircle2, color: "text-teal-600",  bg: "bg-teal-50",   tag: stats.activeActivities > 0 ? "Berjalan" : "Kosong" },
+          ].map((s) => (
+            <div key={s.label} className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">{s.label}</p>
+                  <p className="text-2xl font-bold text-foreground">{s.value}</p>
+                  <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                    <TrendingUp className="h-3 w-3 text-green-500" /> Live
+                  </p>
+                </div>
+                <div className={`w-10 h-10 ${s.bg} rounded-lg flex items-center justify-center`}>
+                  <s.icon className={`h-5 w-5 ${s.color}`} />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Client Component */}
+        <DashboardClient volunteers={volunteers as any} donations={donations as any} />
+
+      </div>
     </main>
   )
 }

@@ -85,7 +85,7 @@ export default function AdminActivityReviewPage() {
       return
     }
     setIsSubmitting(true)
-    const result = await rejectActivityAction(activity.id)
+    const result = await rejectActivityAction(activity.id, rejectNote.trim())
     if (result.success) {
       toast.info("Kegiatan telah ditolak.")
       router.push("/admin/dashboard?tab=activities")
@@ -186,7 +186,7 @@ export default function AdminActivityReviewPage() {
               <CardContent className="space-y-4">
                 <div className="grid sm:grid-cols-2 gap-4 text-sm">
                   <div className="flex items-center gap-3">
-                    <Calendar className="h-4 w-4 text-primary flex-shrink-0" />
+                    <Calendar className="h-4 w-4 text-primary shrink-0" />
                     <div>
                       <p className="text-xs text-muted-foreground">Tanggal Mulai</p>
                       <p className="font-medium">{formatDate(activity.start_date)}</p>
@@ -194,7 +194,7 @@ export default function AdminActivityReviewPage() {
                   </div>
                   {activity.end_date && (
                     <div className="flex items-center gap-3">
-                      <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
                       <div>
                         <p className="text-xs text-muted-foreground">Tanggal Selesai</p>
                         <p className="font-medium">{formatDate(activity.end_date)}</p>
@@ -202,28 +202,28 @@ export default function AdminActivityReviewPage() {
                     </div>
                   )}
                   <div className="flex items-center gap-3">
-                    <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
+                    <MapPin className="h-4 w-4 text-primary shrink-0" />
                     <div>
                       <p className="text-xs text-muted-foreground">Lokasi</p>
                       <p className="font-medium">{activity.location}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Users className="h-4 w-4 text-primary flex-shrink-0" />
+                    <Users className="h-4 w-4 text-primary shrink-0" />
                     <div>
                       <p className="text-xs text-muted-foreground">Kuota Relawan</p>
                       <p className="font-medium">{activity.volunteer_quota || "Tidak terbatas"}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Banknote className="h-4 w-4 text-primary flex-shrink-0" />
+                    <Banknote className="h-4 w-4 text-primary shrink-0" />
                     <div>
                       <p className="text-xs text-muted-foreground">Target Dana</p>
                       <p className="font-medium">{formatCurrency(activity.funding_goal || 0)}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Package className="h-4 w-4 text-primary flex-shrink-0" />
+                    <Package className="h-4 w-4 text-primary shrink-0" />
                     <div>
                       <p className="text-xs text-muted-foreground">Donasi Barang</p>
                       <p className="font-medium">{activity.allow_item_donation ? "Diizinkan" : "Tidak"}</p>
@@ -277,7 +277,7 @@ export default function AdminActivityReviewPage() {
                     <Package className="h-4 w-4" /> Daftar Barang yang Diperlukan
                   </CardTitle>
                   <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg mt-2">
-                    <Info className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <Info className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
                     <p className="text-xs text-blue-700 dark:text-blue-300">
                       Harga yang ditampilkan adalah harga asli dari komunitas. Donatur akan dikenakan harga dengan markup <strong>{MARKUP_PERCENT}% untuk biaya operasional SinergiLaut</strong>.
                     </p>
@@ -294,7 +294,7 @@ export default function AdminActivityReviewPage() {
                               Jumlah dibutuhkan: <strong>{item.target} unit</strong>
                             </p>
                           </div>
-                          <div className="text-right flex-shrink-0">
+                          <div className="text-right shrink-0">
                             <p className="text-xs text-muted-foreground">Harga asli / unit</p>
                             <p className="font-medium text-sm">{formatCurrency(item.unit_price)}</p>
                             <p className="text-xs text-muted-foreground mt-0.5">
@@ -337,7 +337,7 @@ export default function AdminActivityReviewPage() {
                   </CardTitle>
                   {receipt_urls.length === 0 && (
                     <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-950/20 rounded-lg mt-2 border border-red-100 dark:border-red-900">
-                      <AlertTriangle className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" />
+                      <AlertTriangle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
                       <p className="text-xs text-red-700 dark:text-red-300">
                         <strong>Tidak ada foto nota diunggah.</strong> Komunitas ini mengaktifkan donasi barang tetapi tidak melampirkan bukti nota. Pertimbangkan untuk menolak dan meminta komunitas untuk mengunggah nota.
                       </p>
@@ -359,7 +359,7 @@ export default function AdminActivityReviewPage() {
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                               <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                             </div>
-                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+                            <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/60 to-transparent p-2">
                               <span className="text-white text-xs font-medium">Nota {idx + 1}</span>
                             </div>
                           </div>

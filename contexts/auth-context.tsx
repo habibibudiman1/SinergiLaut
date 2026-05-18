@@ -43,25 +43,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user, fetchProfile])
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session }, error }: { data: { session: Session | null }, error: any }) => {
-      if (!error && session?.user) {
-        setUser(session.user)
-        fetchProfile(session.user.id).finally(() => setIsLoading(false))
-      } else {
+    // Get initial session — handle invalid refresh tokens gracefully
+    supabase.auth.getSession()
+      .then(({ data, error }: { data: { session: Session | null }, error: { message: string } | null }) => {
+        const session = data?.session
+        if (error) {
+          // Invalid/expired refresh token — sign out silently
+          supabase.auth.signOut().catch(() => null)
+          setUser(null)
+          setIsLoading(false)
+          return
+        }
+        if (session?.user) {
+          setUser(session.user)
+          fetchProfile(session.user.id).finally(() => setIsLoading(false))
+        } else {
+          setUser(null)
+          setIsLoading(false)
+        }
+      })
+      .catch(() => {
         setUser(null)
         setIsLoading(false)
-      }
-    })
+      })
 
     // Listen to auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event: AuthChangeEvent, session: Session | null) => {
-        setUser(session?.user ?? null)
-        if (session?.user) {
-          await fetchProfile(session.user.id)
-        } else {
+        if (_event === "TOKEN_REFRESHED" || _event === "SIGNED_IN") {
+          setUser(session?.user ?? null)
+          if (session?.user) await fetchProfile(session.user.id)
+        } else if (_event === "SIGNED_OUT") {
+          setUser(null)
           setProfile(null)
+        } else {
+          setUser(session?.user ?? null)
+          if (session?.user) await fetchProfile(session.user.id)
+          else setProfile(null)
         }
       }
     )

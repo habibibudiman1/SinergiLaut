@@ -25,14 +25,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import {
   Calendar, MapPin, Users, Heart, Package, ArrowLeft,
   CheckCircle2, Banknote, Star, Shield, FileText, Loader2,
-  AlertCircle, Phone, QrCode, CreditCard, ChevronRight, Clock,
+  AlertCircle, QrCode, CreditCard, ChevronRight, Clock,
   ShieldAlert
 } from "lucide-react"
 import { formatCurrency, calcPercentage, formatDate } from "@/lib/utils/helpers"
 import { toast } from "sonner"
 import { useAuth } from "@/contexts/auth-context"
 import { createClient } from "@/lib/supabase/client"
-import { registerVolunteer } from "@/lib/actions/volunteer.actions"
+import { registerVolunteer, updateVolunteerStatus } from "@/lib/actions/volunteer.actions"
 import { createMoneyDonation, createItemDonation } from "@/lib/actions/donation.actions"
 import { submitFeedback, getMyFeedback } from "@/lib/actions/feedback.actions"
 import type { Activity, VolunteerRegistration, Donation } from "@/lib/types"
@@ -49,8 +49,6 @@ const MARKUP_PERCENT = 10 // 10% markup on item prices
 function calcMarkup(basePrice: number): number {
   return Math.round(basePrice * (100 + MARKUP_PERCENT) / 100)
 }
-const SKILLS_OPTIONS = ["Fotografi / Videografi", "Medis / P3K", "Logistik", "Navigasi Laut", "Menyelam (PADI)", "Bahasa Asing", "Memasak", "Pendidikan / Mengajar"]
-const T_SHIRT_SIZES = ["S", "M", "L", "XL", "XXL"]
 
 /* ── Volunteer Management Component (Community View) ── */
 function VolunteerManagement({ activity, volunteerPercent, setActivity }: {
@@ -81,34 +79,27 @@ function VolunteerManagement({ activity, volunteerPercent, setActivity }: {
   const pendingCount = volunteers.filter(v => v.status === "pending").length;
 
   const handleAction = async (id: string, action: "approved" | "rejected" | "attended") => {
-    // NOTE: This updates the local list for immediate visual feedback
+    // Optimistic update untuk feedback visual langsung
     setVolunteers(prev => prev.map(v => v.id === id ? { ...v, status: action } : v));
-    
-    const supabase = createClient()
-    
-    // Update the registration status in DB
-    const { error: regError } = await supabase.from('volunteer_registrations').update({ status: action }).eq('id', id)
-    
-    if (regError) {
-      toast.error("Gagal mengupdate status relawan di database.")
+
+    // Gunakan server action agar notifikasi ke relawan terkirim
+    const result = await updateVolunteerStatus(id, action)
+
+    if (!result.success) {
+      toast.error(result.error ?? "Gagal mengupdate status relawan.")
+      // Rollback optimistic update
+      setVolunteers(prev => prev.map(v => v.id === id ? { ...v, status: "pending" } : v));
       return
     }
 
     if (action === "approved") {
-      // Actually save the count increment to the database!
-      const newCount = activity.volunteer_count + 1
-      const { error } = await supabase.from('activities').update({ volunteer_count: newCount }).eq('id', activity.id)
-      
-      if (!error) {
-        toast.success("Relawan berhasil disetujui! ✅")
-        setActivity((prev: any) => prev ? { ...prev, volunteer_count: newCount } : prev)
-      } else {
-        toast.error("Gagal mengupdate total count database.")
-      }
+      // Update volunteer_count di activity (trigger DB seharusnya handle ini, tapi update lokal juga)
+      setActivity((prev: any) => prev ? { ...prev, volunteer_count: (prev.volunteer_count ?? 0) + 1 } : prev)
+      toast.success("Relawan berhasil disetujui! Notifikasi telah dikirim. ✅")
     } else if (action === "attended") {
-      toast.success("Relawan berhasil ditandai hadir! ✅ Mereka kini dapat memberikan ulasan.")
+      toast.success("Relawan berhasil ditandai hadir! Mereka kini dapat memberikan ulasan. ✅")
     } else {
-      toast.info("Pendaftaran relawan ditolak.");
+      toast.info("Pendaftaran relawan ditolak. Notifikasi telah dikirim.")
     }
   };
 
@@ -230,7 +221,6 @@ export default function ActivityDetailPage() {
   const [activeTab, setActiveTab] = useState<TabType>("detail")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [alreadyRegistered, setAlreadyRegistered] = useState<VolunteerRegistration | null>(null)
-  const [myDonations, setMyDonations] = useState<Donation[]>([])
 
   // Feedback state
   const [feedbackRating, setFeedbackRating] = useState(0)
@@ -663,60 +653,83 @@ export default function ActivityDetailPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col relative">
+      {/* Ocean background */}
+      <div className="fixed inset-0 z-0" style={{ backgroundImage: "url('/images/hero-ocean.jpg')", backgroundSize: "cover", backgroundPosition: "center 40%", backgroundAttachment: "fixed" }} />
+      <div className="fixed inset-0 z-0" style={{ background: "linear-gradient(135deg, rgba(4,16,30,0.92) 0%, rgba(6,25,45,0.88) 50%, rgba(5,20,38,0.92) 100%)" }} />
+
+      <div className="relative z-10 flex flex-col flex-1">
       <Navigation />
       <main className="flex-1 pt-16">
-        {/* Breadcrumb / Back Button */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-4">
-          <Link href="/activities" className="inline-flex items-center gap-2 text-sm font-bold text-foreground bg-white border-2 border-slate-200 hover:border-teal-400 hover:text-teal-700 hover:bg-teal-50 px-4 py-2.5 rounded-xl shadow-sm transition-all">
-            <ArrowLeft className="h-4 w-4" /> ← Kembali ke Daftar Kegiatan
-          </Link>
+        {/* Back Button — role-aware */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
+          {profile?.role === "user" ? (
+            <Link href="/user/dashboard" className="inline-flex items-center gap-2 text-sm font-bold px-4 py-2 rounded-xl transition-all" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "#e2f8f6", backdropFilter: "blur(8px)" }}>
+              <ArrowLeft className="h-4 w-4" /> Kembali ke Dashboard
+            </Link>
+          ) : (
+            <Link href="/activities" className="inline-flex items-center gap-2 text-sm font-bold px-4 py-2 rounded-xl transition-all" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "#e2f8f6", backdropFilter: "blur(8px)" }}>
+              <ArrowLeft className="h-4 w-4" /> Kembali ke Daftar Kegiatan
+            </Link>
+          )}
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-          <div className="grid lg:grid-cols-3 gap-8">
+          <div className="grid lg:grid-cols-3 gap-6">
             {/* ── Main Content ─────────────────────────────── */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Cover */}
-              <div className="relative h-72 sm:h-96 rounded-2xl overflow-hidden bg-secondary">
+            <div className="lg:col-span-2 space-y-5">
+              {/* Cover Image */}
+              <div className="relative h-64 sm:h-80 rounded-2xl overflow-hidden bg-slate-100 shadow-sm">
                 {activity.cover_image_url ? (
                   <Image src={activity.cover_image_url} alt={activity.title} fill className="object-cover" priority />
                 ) : (
-                  <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-                    <FileText className="h-16 w-16 opacity-20" />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 gap-2">
+                    <FileText className="h-14 w-14 opacity-20" />
+                    <p className="text-sm font-medium opacity-40">Belum ada foto kegiatan</p>
                   </div>
                 )}
-                <div className="absolute top-4 left-4 flex gap-2">
-                  <Badge className="bg-accent text-accent-foreground capitalize">{activity.category}</Badge>
-                  <Badge className={activity.status === "published" ? "bg-green-100 text-green-700" : "bg-secondary text-muted-foreground"}>
+                {/* Gradient overlay bawah */}
+                <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent" />
+                {/* Badges */}
+                <div className="absolute top-3 left-3 flex gap-2">
+                  <span className="text-xs font-bold uppercase tracking-wide bg-[#0e4d6d]/80 text-white px-3 py-1 rounded-full backdrop-blur-sm">
+                    {activity.category}
+                  </span>
+                  <span className={`text-xs font-bold uppercase tracking-wide px-3 py-1 rounded-full backdrop-blur-sm ${
+                    activity.status === "published" ? "bg-green-500/80 text-white" : "bg-slate-500/80 text-white"
+                  }`}>
                     {activity.status === "published" ? "Aktif" : activity.status}
-                  </Badge>
+                  </span>
                 </div>
               </div>
 
               {/* Community + Title */}
-              <div>
+              <div className="rounded-2xl p-5" style={{ background: "rgba(4,16,30,0.6)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(12px)" }}>
                 <div className="flex items-center gap-3 mb-3">
-                  {activity.community?.logo_url && (
-                    <div className="relative w-10 h-10 rounded-full overflow-hidden">
+                  {activity.community?.logo_url ? (
+                    <div className="relative w-10 h-10 rounded-xl overflow-hidden shrink-0" style={{ border: "1px solid rgba(6,149,138,0.3)" }}>
                       <Image src={activity.community.logo_url} alt={activity.community.name} fill className="object-cover" />
+                    </div>
+                  ) : (
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black shrink-0" style={{ background: "rgba(6,149,138,0.2)", color: "#5eead4", border: "1px solid rgba(6,149,138,0.3)" }}>
+                      {activity.community?.name?.[0] ?? "K"}
                     </div>
                   )}
                   <div>
-                    <p className="text-sm text-muted-foreground">Diselenggarakan oleh</p>
+                    <p className="text-xs font-medium" style={{ color: "rgba(148,200,220,0.5)" }}>Diselenggarakan oleh</p>
                     <div className="flex items-center gap-1">
-                      <Link href={`/community/${activity.community?.id}`} className="text-sm font-medium hover:text-primary">
+                      <Link href={`/community/${activity.community?.id}`} className="text-sm font-bold text-[#06958a] hover:underline">
                         {activity.community?.name}
                       </Link>
-                      {activity.community?.is_verified && <CheckCircle2 className="h-4 w-4 text-primary" />}
+                      {activity.community?.is_verified && <CheckCircle2 className="h-4 w-4 text-[#06958a]" />}
                     </div>
                   </div>
                 </div>
-                <h1 className="text-3xl font-bold text-foreground">{activity.title}</h1>
+                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-tight" style={{ color: "#e2f8f6" }}>{activity.title}</h1>
               </div>
 
               {/* Tabs */}
-              <div className="flex gap-2 overflow-x-auto pb-1">
+              <div className="flex p-1 gap-1 rounded-2xl w-fit overflow-x-auto max-w-full" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
                 {[
                   { id: "detail", label: "Detail" } as const,
                   { id: "volunteer", label: profile?.role === "community" ? "Kelola Relawan" : "Daftar Relawan" } as const,
@@ -727,63 +740,63 @@ export default function ActivityDetailPage() {
                   { id: "reports", label: "Laporan" } as const,
                   { id: "feedback", label: "Ulasan" } as const,
                 ].map((tab) => (
-                  <Button key={tab.id} variant={activeTab === tab.id ? "default" : "outline"} size="sm"
-                    onClick={() => setActiveTab(tab.id as TabType)}>
+                  <button key={tab.id}
+                    onClick={() => setActiveTab(tab.id as TabType)}
+                    className="px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all duration-200"
+                    style={{
+                      background: activeTab === tab.id ? "rgba(6,149,138,0.3)" : "transparent",
+                      color: activeTab === tab.id ? "#5eead4" : "rgba(148,200,220,0.5)",
+                      border: activeTab === tab.id ? "1px solid rgba(6,149,138,0.4)" : "1px solid transparent",
+                    }}>
                     {tab.label}
-                  </Button>
+                  </button>
                 ))}
               </div>
 
               {/* ── Tab: Detail ──────────────────────────────── */}
               {activeTab === "detail" && (
-                <div className="space-y-6">
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="grid sm:grid-cols-2 gap-4 mb-6">
-                        <div className="flex items-center gap-3">
-                          <Calendar className="h-5 w-5 text-primary flex-shrink-0" />
+                <div className="space-y-5">
+                  {/* Info Grid */}
+                  <div className="rounded-2xl overflow-hidden" style={{ background: "rgba(4,16,30,0.6)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(12px)" }}>
+                    <div className="grid grid-cols-2" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                      {[
+                        { icon: Calendar, label: "Tanggal Mulai",  value: formatDate(activity.start_date), iconColor: "#60a5fa",  iconBg: "rgba(96,165,250,0.15)"  },
+                        { icon: MapPin,   label: "Lokasi",          value: activity.location,               iconColor: "#f87171", iconBg: "rgba(248,113,113,0.15)" },
+                        { icon: Users,    label: "Slot Relawan",    value: `${activity.volunteer_count} / ${activity.volunteer_quota} terisi`, iconColor: "#5eead4", iconBg: "rgba(94,234,212,0.15)" },
+                        { icon: Shield,   label: "Status",          value: activity.volunteer_count < activity.volunteer_quota ? "Pendaftaran Terbuka" : "Slot Penuh", iconColor: "#34d399", iconBg: "rgba(52,211,153,0.15)" },
+                      ].map(({ icon: Icon, label, value, iconColor, iconBg }, i) => (
+                        <div key={label} className="flex items-center gap-3 p-4" style={{ borderRight: i % 2 === 0 ? "1px solid rgba(255,255,255,0.06)" : "none", borderBottom: i < 2 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
+                          <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: iconBg }}>
+                            <Icon className="h-4 w-4" style={{ color: iconColor }} />
+                          </div>
                           <div>
-                            <p className="text-xs text-muted-foreground">Tanggal Mulai</p>
-                            <p className="font-medium text-sm">{formatDate(activity.start_date)}</p>
+                            <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "rgba(148,200,220,0.5)" }}>{label}</p>
+                            <p className="text-sm font-bold" style={{ color: "#e2f8f6" }}>{value}</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <MapPin className="h-5 w-5 text-primary flex-shrink-0" />
-                          <div>
-                            <p className="text-xs text-muted-foreground">Lokasi</p>
-                            <p className="font-medium text-sm">{activity.location}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Users className="h-5 w-5 text-primary flex-shrink-0" />
-                          <div>
-                            <p className="text-xs text-muted-foreground">Relawan</p>
-                            <p className="font-medium text-sm">{activity.volunteer_count} / {activity.volunteer_quota} slot</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Shield className="h-5 w-5 text-primary flex-shrink-0" />
-                          <div>
-                            <p className="text-xs text-muted-foreground">Status</p>
-                            <p className="font-medium text-sm text-green-600">
-                              {activity.volunteer_count < activity.volunteer_quota ? "Pendaftaran Terbuka" : "Slot Penuh"}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      <h3 className="font-semibold text-foreground mb-3">Deskripsi Kegiatan</h3>
-                      <div className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line mb-6">{activity.description}</div>
+                      ))}
+                    </div>
+                  </div>
 
-                      {activity.latitude && activity.longitude && (
-                        <div className="space-y-3">
-                          <h3 className="font-semibold text-foreground flex items-center gap-2">
-                            <MapPin className="h-5 w-5 text-primary" /> Peta Lokasi
-                          </h3>
-                          <MapView lat={Number(activity.latitude)} lng={Number(activity.longitude)} label={activity.title} />
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
+                  {/* Description */}
+                  <div className="rounded-2xl p-5" style={{ background: "rgba(4,16,30,0.6)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(12px)" }}>
+                    <h3 className="font-extrabold mb-3 flex items-center gap-2" style={{ color: "#e2f8f6" }}>
+                      <span className="w-1 h-5 rounded-full" style={{ background: "#06958a" }} />
+                      Deskripsi Kegiatan
+                    </h3>
+                    <div className="text-sm leading-relaxed whitespace-pre-line" style={{ color: "rgba(148,200,220,0.7)" }}>{activity.description}</div>
+                  </div>
+
+                  {/* Peta Lokasi */}
+                  {activity.latitude && activity.longitude && (
+                    <div className="rounded-2xl p-5" style={{ background: "rgba(4,16,30,0.6)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(12px)" }}>
+                      <h3 className="font-extrabold mb-3 flex items-center gap-2" style={{ color: "#e2f8f6" }}>
+                        <span className="w-1 h-5 rounded-full" style={{ background: "#06958a" }} />
+                        <MapPin className="h-4 w-4" style={{ color: "#5eead4" }} /> Peta Lokasi
+                      </h3>
+                      <MapView lat={Number(activity.latitude)} lng={Number(activity.longitude)} label={activity.title} />
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1291,13 +1304,13 @@ export default function ActivityDetailPage() {
                         <Card key={f.id}>
                           <CardContent className="p-5">
                             <div className="flex items-start gap-3">
-                              <div className="w-9 h-9 bg-primary/10 rounded-full flex items-center justify-center text-sm font-bold text-primary flex-shrink-0">
+                              <div className="w-9 h-9 bg-primary/10 rounded-full flex items-center justify-center text-sm font-bold text-primary shrink-0">
                                 {(f.user?.full_name ?? "U")[0].toUpperCase()}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between gap-2 mb-1">
                                   <span className="font-medium text-sm text-foreground truncate">{f.user?.full_name ?? "Pengguna"}</span>
-                                  <div className="flex gap-0.5 flex-shrink-0">
+                                  <div className="flex gap-0.5 shrink-0">
                                     {[1,2,3,4,5].map(s => (
                                       <Star key={s} className={`h-3.5 w-3.5 ${s <= f.rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/20"}`} />
                                     ))}
@@ -1317,87 +1330,106 @@ export default function ActivityDetailPage() {
             </div>
 
             {/* ── Sidebar ──────────────────────────────────── */}
-            <div className="space-y-6">
-              <Card className="sticky top-20">
-                <CardHeader>
-                  <CardTitle className="text-lg">Progres Kegiatan</CardTitle>
-                  <div className="flex items-center gap-1.5 mt-1 text-sm bg-orange-50 dark:bg-orange-950/30 p-2 rounded-md border border-orange-100 dark:border-orange-900/50">
-                    <Clock className={`h-4 w-4 ${daysLeft > 0 ? "text-orange-500" : "text-red-500"}`} />
-                    {daysLeft > 0 ? (
-                      <span className="text-orange-600 dark:text-orange-400 font-medium tracking-tight">Sisa waktu pengumpulan: {daysLeft} hari lagi</span>
-                    ) : (
-                      <span className="text-red-600 dark:text-red-400 font-medium tracking-tight">Batas waktu pengumpulan habis</span>
-                    )}
+            <div className="space-y-4">
+              <div className="sticky top-20 bg-white/80 backdrop-blur-xl border border-white/80 rounded-2xl shadow-sm overflow-hidden">
+                {/* Header Progres */}
+                <div className="px-5 pt-5 pb-3">
+                  <h3 className="text-base font-extrabold text-[#0e2a3a] mb-2">Progres Kegiatan</h3>
+                  <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold ${
+                    daysLeft > 0 ? "bg-orange-50 border border-orange-100 text-orange-700" : "bg-red-50 border border-red-100 text-red-700"
+                  }`}>
+                    <Clock className="h-3.5 w-3.5 shrink-0" />
+                    {daysLeft > 0 ? `Sisa waktu pengumpulan: ${daysLeft} hari lagi` : "Batas waktu pengumpulan habis"}
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-5">
+                </div>
+
+                {/* Progress Bars */}
+                <div className="px-5 pb-4 space-y-4 border-t border-slate-50 pt-4">
+                  {/* Dana */}
                   <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-muted-foreground flex items-center gap-1"><Banknote className="h-4 w-4" /> Dana Terkumpul</span>
-                      <span className="font-semibold text-foreground">{fundingPercent}%</span>
+                    <div className="flex justify-between items-center mb-1.5">
+                      <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                        <Banknote className="h-3.5 w-3.5 text-teal-600" /> Dana Terkumpul
+                      </span>
+                      <span className="text-xs font-black text-[#06958a]">{fundingPercent}%</span>
                     </div>
-                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                      <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${fundingPercent}%` }} />
+                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-linear-to-r from-[#06958a] to-[#0e7268] rounded-full transition-all" style={{ width: `${fundingPercent}%` }} />
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-[11px] text-slate-400 mt-1">
                       {formatCurrency(activity.funding_raised)} dari {formatCurrency(activity.funding_goal)}
                     </p>
                   </div>
 
+                  {/* Relawan */}
                   <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-muted-foreground flex items-center gap-1"><Users className="h-4 w-4" /> Relawan</span>
-                      <span className="font-semibold text-foreground">{volunteerPercent}%</span>
+                    <div className="flex justify-between items-center mb-1.5">
+                      <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                        <Users className="h-3.5 w-3.5 text-blue-500" /> Relawan
+                      </span>
+                      <span className="text-xs font-black text-blue-600">{volunteerPercent}%</span>
                     </div>
-                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                      <div className="h-full bg-accent rounded-full" style={{ width: `${volunteerPercent}%` }} />
+                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-linear-to-r from-blue-400 to-blue-600 rounded-full" style={{ width: `${volunteerPercent}%` }} />
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-[11px] text-slate-400 mt-1">
                       {activity.volunteer_count} dari {activity.volunteer_quota} slot terisi
                     </p>
                   </div>
 
+                  {/* Barang */}
                   {totalItemNeeded > 0 && (
                     <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-muted-foreground flex items-center gap-1"><Package className="h-4 w-4" /> Barang</span>
-                        <span className="font-semibold text-foreground">{itemPercent}%</span>
+                      <div className="flex justify-between items-center mb-1.5">
+                        <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                          <Package className="h-3.5 w-3.5 text-purple-500" /> Barang
+                        </span>
+                        <span className="text-xs font-black text-purple-600">{itemPercent}%</span>
                       </div>
-                      <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                        <div className="h-full bg-blue-500 rounded-full" style={{ width: `${itemPercent}%` }} />
+                      <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-linear-to-r from-purple-400 to-purple-600 rounded-full" style={{ width: `${itemPercent}%` }} />
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-[11px] text-slate-400 mt-1">
                         {totalItemDonated} dari {totalItemNeeded} barang terkumpul
                       </p>
                     </div>
                   )}
+                </div>
 
-                  {profile?.role !== "community" && (
-                  <div className="space-y-3 pt-2">
-                    {/* Gated volunteer button */}
+                {/* Action Buttons */}
+                {profile?.role !== "community" && (
+                  <div className="px-5 pb-5 space-y-2.5 border-t border-slate-50 pt-4">
                     {!isVolunteerVerified && profile?.role === "user" ? (
                       <div>
-                        <Button className="w-full" variant="outline" disabled>
-                          <Users className="mr-2 h-4 w-4" /> Daftar Relawan
-                        </Button>
-                        <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1.5 flex items-center gap-1">
-                          <ShieldAlert className="h-3 w-3 flex-shrink-0" />
+                        <button className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-bold text-slate-400 bg-slate-100 rounded-xl cursor-not-allowed" disabled>
+                          <Users className="h-4 w-4" /> Daftar Relawan
+                        </button>
+                        <p className="text-[11px] text-amber-600 mt-1.5 flex items-center gap-1">
+                          <ShieldAlert className="h-3 w-3 shrink-0" />
                           <Link href="/user/profile" className="hover:underline">Silahkan lengkapi data diri di profil</Link>
                         </p>
                       </div>
                     ) : (
-                      <Button className="w-full" onClick={() => setActiveTab("volunteer")} disabled={alreadyRegistered != null}>
-                        <Users className="mr-2 h-4 w-4" />
+                      <button
+                        onClick={() => !alreadyRegistered && setActiveTab("volunteer")}
+                        disabled={alreadyRegistered != null}
+                        className={`w-full flex items-center justify-center gap-2 py-2.5 text-sm font-bold rounded-xl transition-all ${
+                          alreadyRegistered
+                            ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                            : "bg-linear-to-r from-[#06958a] to-[#0e7268] text-white hover:shadow-md hover:-translate-y-0.5"
+                        }`}>
+                        <Users className="h-4 w-4" />
                         {alreadyRegistered ? `Terdaftar (${alreadyRegistered.status})` : "Daftar Relawan"}
-                      </Button>
+                      </button>
                     )}
-                    <Button variant="outline" className="w-full" onClick={() => setActiveTab("donate")}>
-                      <Heart className="mr-2 h-4 w-4" /> Donasi Sekarang
-                    </Button>
+                    <button
+                      onClick={() => setActiveTab("donate")}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-bold text-[#06958a] bg-[#06958a]/8 hover:bg-[#06958a]/15 border border-[#06958a]/20 rounded-xl transition-all">
+                      <Heart className="h-4 w-4" /> Donasi Sekarang
+                    </button>
                   </div>
-                  )}
-                </CardContent>
-              </Card>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -1469,6 +1501,7 @@ export default function ActivityDetailPage() {
       </Dialog>
 
       <Footer />
+      </div>
     </div>
   )
 }

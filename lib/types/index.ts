@@ -94,8 +94,12 @@ export interface Activity {
   funding_goal: number
   funding_raised: number
   allow_item_donation: boolean
+  items_needed: { item_name: string; target: number; donated: number; unit_price?: number }[] | null
+  receipt_urls: string[]
   cover_image_url: string | null
   images: string[]
+  admin_note: string | null
+  execution_date: string | null
   created_at: string
   updated_at: string
   published_at: string | null
@@ -104,6 +108,7 @@ export interface Activity {
   volunteers?: VolunteerRegistration[]
   donations?: Donation[]
   reports?: Report[]
+  feedbacks?: { id: string; rating: number; comment: string | null; created_at: string; user: { full_name: string | null } }[]
 }
 
 export type ActivityCategory =
@@ -125,6 +130,10 @@ export interface VolunteerRegistration {
   email: string
   phone: string
   reason: string | null
+  emergency_contact_name: string | null
+  emergency_contact_phone: string | null
+  skills: string[]
+  t_shirt_size: string | null
   status: VolunteerStatus
   agreed_to_terms: boolean
   created_at: string

@@ -77,8 +77,8 @@ export default function EditActivityPage() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        toast.error("Ukuran file maksimal 2MB")
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Ukuran file maksimal 5MB")
         return
       }
       setNewCoverFile(file)
@@ -95,17 +95,18 @@ export default function EditActivityPage() {
 
       // Upload new image if selected
       if (newCoverFile) {
+        const bucketName = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET?.replace(" ", "") || "sinergilaut-assets"
         const fileExt = newCoverFile.name.split('.').pop()
-        const fileName = `${params.id}/cover-${Date.now()}.${fileExt}`
-        
+        const fileName = `activities/${params.id}/cover-${Date.now()}.${fileExt}`
+
         const { error: uploadError } = await supabase.storage
-          .from('activity-images')
+          .from(bucketName)
           .upload(fileName, newCoverFile, { upsert: true })
 
         if (uploadError) throw uploadError
 
         const { data: { publicUrl } } = supabase.storage
-          .from('activity-images')
+          .from(bucketName)
           .getPublicUrl(fileName)
         
         currentCoverUrl = publicUrl

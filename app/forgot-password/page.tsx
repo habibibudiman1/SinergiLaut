@@ -38,7 +38,7 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-8">
           <Link href="/" className="flex items-center gap-2">
-            <Image src="/images/SinergiLautLogo-transparent.png" alt="SinergiLaut Logo" width={40} height={40} className="h-10 w-auto" />
+            <Image src="/images/SinergiLautLogo-transparent.png" alt="SinergiLaut Logo" width={40} height={40} />
             <span className="text-2xl font-bold text-foreground">SinergiLaut</span>
           </Link>
         </div>
