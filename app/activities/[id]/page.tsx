@@ -761,22 +761,17 @@ export default function ActivityDetailPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col relative">
-      {/* Ocean background */}
-      <div className="fixed inset-0 z-0" style={{ backgroundImage: "url('/images/hero-ocean.jpg')", backgroundSize: "cover", backgroundPosition: "center 40%", backgroundAttachment: "fixed" }} />
-      <div className="fixed inset-0 z-0" style={{ background: "linear-gradient(135deg, rgba(4,16,30,0.92) 0%, rgba(6,25,45,0.88) 50%, rgba(5,20,38,0.92) 100%)" }} />
-
-      <div className="relative z-10 flex flex-col flex-1">
+    <div className="min-h-screen flex flex-col bg-[#f0f7ff]">
       <Navigation />
       <main className="flex-1 pt-16">
         {/* Back Button — role-aware */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
           {profile?.role === "user" ? (
-            <Link href="/user/dashboard" className="inline-flex items-center gap-2 text-sm font-bold px-4 py-2 rounded-xl transition-all" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "#e2f8f6", backdropFilter: "blur(8px)" }}>
+            <Link href="/user/dashboard" className="inline-flex items-center gap-2 text-sm font-bold px-4 py-2 rounded-xl transition-all bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm">
               <ArrowLeft className="h-4 w-4" /> Kembali ke Dashboard
             </Link>
           ) : (
-            <Link href="/activities" className="inline-flex items-center gap-2 text-sm font-bold px-4 py-2 rounded-xl transition-all" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "#e2f8f6", backdropFilter: "blur(8px)" }}>
+            <Link href="/activities" className="inline-flex items-center gap-2 text-sm font-bold px-4 py-2 rounded-xl transition-all bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm">
               <ArrowLeft className="h-4 w-4" /> Kembali ke Daftar Kegiatan
             </Link>
           )}
@@ -787,7 +782,7 @@ export default function ActivityDetailPage() {
             {/* ── Main Content ─────────────────────────────── */}
             <div className="lg:col-span-2 space-y-5">
               {/* Cover Image */}
-              <div className="relative h-64 sm:h-80 rounded-2xl overflow-hidden bg-slate-100 shadow-sm">
+              <div className="relative h-64 sm:h-80 rounded-2xl overflow-hidden bg-slate-100 shadow-sm border border-slate-200">
                 {activity.cover_image_url ? (
                   <Image src={activity.cover_image_url} alt={activity.title} fill className="object-cover" priority />
                 ) : (
@@ -797,7 +792,7 @@ export default function ActivityDetailPage() {
                   </div>
                 )}
                 {/* Gradient overlay bawah */}
-                <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-t from-black/30 via-transparent to-transparent" />
                 {/* Badges */}
                 <div className="absolute top-3 left-3 flex gap-2">
                   <span className="text-xs font-bold uppercase tracking-wide bg-[#0e4d6d]/80 text-white px-3 py-1 rounded-full backdrop-blur-sm">
@@ -812,19 +807,19 @@ export default function ActivityDetailPage() {
               </div>
 
               {/* Community + Title */}
-              <div className="rounded-2xl p-5" style={{ background: "rgba(4,16,30,0.6)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(12px)" }}>
+              <div className="rounded-2xl p-5 bg-white border border-slate-200 shadow-sm">
                 <div className="flex items-center gap-3 mb-3">
                   {activity.community?.logo_url ? (
-                    <div className="relative w-10 h-10 rounded-xl overflow-hidden shrink-0" style={{ border: "1px solid rgba(6,149,138,0.3)" }}>
+                    <div className="relative w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-slate-200">
                       <Image src={activity.community.logo_url} alt={activity.community.name} fill className="object-cover" />
                     </div>
                   ) : (
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black shrink-0" style={{ background: "rgba(6,149,138,0.2)", color: "#5eead4", border: "1px solid rgba(6,149,138,0.3)" }}>
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black shrink-0 bg-[#06958a]/10 text-[#06958a] border border-[#06958a]/20">
                       {activity.community?.name?.[0] ?? "K"}
                     </div>
                   )}
                   <div>
-                    <p className="text-xs font-medium" style={{ color: "rgba(148,200,220,0.5)" }}>Diselenggarakan oleh</p>
+                    <p className="text-xs font-medium text-slate-400">Diselenggarakan oleh</p>
                     <div className="flex items-center gap-1">
                       <Link href={`/community/${activity.community?.id}`} className="text-sm font-bold text-[#06958a] hover:underline">
                         {activity.community?.name}
@@ -833,11 +828,11 @@ export default function ActivityDetailPage() {
                     </div>
                   </div>
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-tight" style={{ color: "#e2f8f6" }}>{activity.title}</h1>
+                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-tight text-[#0e2a3a]">{activity.title}</h1>
               </div>
 
               {/* Tabs */}
-              <div className="flex p-1 gap-1 rounded-2xl w-fit overflow-x-auto max-w-full" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
+              <div className="flex p-1 gap-1 rounded-2xl w-fit overflow-x-auto max-w-full bg-white border border-slate-200 shadow-sm">
                 {[
                   { id: "detail", label: "Detail" } as const,
                   { id: "volunteer", label: profile?.role === "community" ? "Kelola Relawan" : "Daftar Relawan" } as const,
@@ -850,12 +845,11 @@ export default function ActivityDetailPage() {
                 ].map((tab) => (
                   <button key={tab.id}
                     onClick={() => setActiveTab(tab.id as TabType)}
-                    className="px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all duration-200"
-                    style={{
-                      background: activeTab === tab.id ? "rgba(6,149,138,0.3)" : "transparent",
-                      color: activeTab === tab.id ? "#5eead4" : "rgba(148,200,220,0.5)",
-                      border: activeTab === tab.id ? "1px solid rgba(6,149,138,0.4)" : "1px solid transparent",
-                    }}>
+                    className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all duration-200 ${
+                      activeTab === tab.id
+                        ? "bg-[#06958a]/10 text-[#06958a] border border-[#06958a]/30"
+                        : "text-slate-400 border border-transparent hover:text-slate-600"
+                    }`}>
                     {tab.label}
                   </button>
                 ))}
@@ -865,21 +859,21 @@ export default function ActivityDetailPage() {
               {activeTab === "detail" && (
                 <div className="space-y-5">
                   {/* Info Grid */}
-                  <div className="rounded-2xl overflow-hidden" style={{ background: "rgba(4,16,30,0.6)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(12px)" }}>
-                    <div className="grid grid-cols-2" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div className="rounded-2xl overflow-hidden bg-white border border-slate-200 shadow-sm">
+                    <div className="grid grid-cols-2">
                       {[
-                        { icon: Calendar, label: "Tanggal Mulai",  value: formatDate(activity.start_date), iconColor: "#60a5fa",  iconBg: "rgba(96,165,250,0.15)"  },
-                        { icon: MapPin,   label: "Lokasi",          value: activity.location,               iconColor: "#f87171", iconBg: "rgba(248,113,113,0.15)" },
-                        { icon: Users,    label: "Slot Relawan",    value: `${activity.volunteer_count} / ${activity.volunteer_quota} terisi`, iconColor: "#5eead4", iconBg: "rgba(94,234,212,0.15)" },
-                        { icon: Shield,   label: "Status",          value: activity.volunteer_count < activity.volunteer_quota ? "Pendaftaran Terbuka" : "Slot Penuh", iconColor: "#34d399", iconBg: "rgba(52,211,153,0.15)" },
+                        { icon: Calendar, label: "Tanggal Mulai",  value: formatDate(activity.start_date), iconColor: "#3b82f6",  iconBg: "rgba(59,130,246,0.1)"  },
+                        { icon: MapPin,   label: "Lokasi",          value: activity.location,               iconColor: "#ef4444", iconBg: "rgba(239,68,68,0.1)" },
+                        { icon: Users,    label: "Slot Relawan",    value: `${activity.volunteer_count} / ${activity.volunteer_quota} terisi`, iconColor: "#06958a", iconBg: "rgba(6,149,138,0.1)" },
+                        { icon: Shield,   label: "Status",          value: activity.volunteer_count < activity.volunteer_quota ? "Pendaftaran Terbuka" : "Slot Penuh", iconColor: "#16a34a", iconBg: "rgba(22,163,74,0.1)" },
                       ].map(({ icon: Icon, label, value, iconColor, iconBg }, i) => (
-                        <div key={label} className="flex items-center gap-3 p-4" style={{ borderRight: i % 2 === 0 ? "1px solid rgba(255,255,255,0.06)" : "none", borderBottom: i < 2 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
+                        <div key={label} className="flex items-center gap-3 p-4" style={{ borderRight: i % 2 === 0 ? "1px solid #f1f5f9" : "none", borderBottom: i < 2 ? "1px solid #f1f5f9" : "none" }}>
                           <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: iconBg }}>
                             <Icon className="h-4 w-4" style={{ color: iconColor }} />
                           </div>
                           <div>
-                            <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "rgba(148,200,220,0.5)" }}>{label}</p>
-                            <p className="text-sm font-bold" style={{ color: "#e2f8f6" }}>{value}</p>
+                            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{label}</p>
+                            <p className="text-sm font-bold text-[#0e2a3a]">{value}</p>
                           </div>
                         </div>
                       ))}
@@ -887,20 +881,20 @@ export default function ActivityDetailPage() {
                   </div>
 
                   {/* Description */}
-                  <div className="rounded-2xl p-5" style={{ background: "rgba(4,16,30,0.6)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(12px)" }}>
-                    <h3 className="font-extrabold mb-3 flex items-center gap-2" style={{ color: "#e2f8f6" }}>
-                      <span className="w-1 h-5 rounded-full" style={{ background: "#06958a" }} />
+                  <div className="rounded-2xl p-5 bg-white border border-slate-200 shadow-sm">
+                    <h3 className="font-extrabold mb-3 flex items-center gap-2 text-[#0e2a3a]">
+                      <span className="w-1 h-5 rounded-full bg-[#06958a]" />
                       Deskripsi Kegiatan
                     </h3>
-                    <div className="text-sm leading-relaxed whitespace-pre-line" style={{ color: "rgba(148,200,220,0.7)" }}>{activity.description}</div>
+                    <div className="text-sm leading-relaxed whitespace-pre-line text-slate-600">{activity.description}</div>
                   </div>
 
                   {/* Peta Lokasi */}
                   {activity.latitude && activity.longitude && (
-                    <div className="rounded-2xl p-5" style={{ background: "rgba(4,16,30,0.6)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(12px)" }}>
-                      <h3 className="font-extrabold mb-3 flex items-center gap-2" style={{ color: "#e2f8f6" }}>
-                        <span className="w-1 h-5 rounded-full" style={{ background: "#06958a" }} />
-                        <MapPin className="h-4 w-4" style={{ color: "#5eead4" }} /> Peta Lokasi
+                    <div className="rounded-2xl p-5 bg-white border border-slate-200 shadow-sm">
+                      <h3 className="font-extrabold mb-3 flex items-center gap-2 text-[#0e2a3a]">
+                        <span className="w-1 h-5 rounded-full bg-[#06958a]" />
+                        <MapPin className="h-4 w-4 text-[#06958a]" /> Peta Lokasi
                       </h3>
                       <MapView lat={Number(activity.latitude)} lng={Number(activity.longitude)} label={activity.title} />
                     </div>
@@ -1597,6 +1591,7 @@ export default function ActivityDetailPage() {
           </div>
         </div>
       </main>
+      <Footer />
 
       {/* Payment Gateway Simulation Dialog */}
       <Dialog open={paymentSim.isOpen} onOpenChange={(open) => !open && setPaymentSim(prev => ({ ...prev, isOpen: false }))}>
@@ -1663,8 +1658,6 @@ export default function ActivityDetailPage() {
         </DialogContent>
       </Dialog>
 
-      <Footer />
-      </div>
     </div>
   )
 }
