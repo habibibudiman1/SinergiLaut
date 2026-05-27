@@ -13,6 +13,7 @@ import { ArrowLeft, Loader2, Calendar, MapPin, Users, Banknote, Image as ImageIc
 import Link from "next/link"
 import { ACTIVITY_CATEGORIES } from "@/lib/constants"
 import { toast } from "sonner"
+import { useAuth } from "@/contexts/auth-context"
 
 // Import MapPicker dynamically to avoid SSR issues
 const MapPicker = dynamic(() => import("@/components/map/map-picker"), { 
@@ -31,6 +32,7 @@ const DRAFT_KEY = "sl_create_activity_draft"
 
 export default function CreateActivityPage() {
   const router = useRouter()
+  const { user } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
 
   // --- Cover Image ---
@@ -242,10 +244,7 @@ export default function CreateActivityPage() {
       }
 
       const supabase = createClient()
-      const { data: userData, error: authError } = await supabase.auth.getUser()
-      if (authError || !userData.user) throw new Error("Gagal mengambil sesi pengguna. Pastikan Anda sudah login.")
-
-      const user = userData.user
+      if (!user) throw new Error("Gagal mengambil sesi pengguna. Pastikan Anda sudah login.")
 
       // Check community
       const { data: community, error: commError } = await supabase

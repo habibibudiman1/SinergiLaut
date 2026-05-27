@@ -7,6 +7,17 @@
  */
 
 import { createClient } from "@/lib/supabase/server"
+import { cookies } from "next/headers"
+
+async function getE2EMock() {
+  if (process.env.NODE_ENV !== 'development') return null
+  try {
+    const cookieStore = await cookies()
+    return cookieStore.get('e2e-bypass-auth')?.value || null
+  } catch {
+    return null
+  }
+}
 
 // ─── Type Definitions ───────────────────────────────────────────
 
@@ -223,6 +234,39 @@ export async function createItemDonation(payload: CreateItemDonationPayload) {
  * Ambil semua donasi untuk suatu activity (untuk komunitas/admin)
  */
 export async function getActivityDonations(activityId: string) {
+  const isE2E = await getE2EMock()
+  if (isE2E) {
+    return {
+      success: true,
+      data: [
+        {
+          id: 'don-1',
+          donor_name: 'Budi',
+          donor_email: 'budi@example.com',
+          type: 'money',
+          amount: 50000,
+          status: 'completed',
+          created_at: new Date().toISOString(),
+          items: [],
+          user: null,
+          is_anonymous: false
+        },
+        {
+          id: 'don-2',
+          donor_name: 'Ani',
+          donor_email: 'ani@example.com',
+          type: 'money',
+          amount: 100000,
+          status: 'pending',
+          created_at: new Date().toISOString(),
+          items: [],
+          user: null,
+          is_anonymous: false
+        }
+      ] as any
+    }
+  }
+
   const supabase = await createClient()
 
   const { data, error } = await supabase

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -10,12 +10,13 @@ import { Label } from "@/components/ui/label"
 import {
   Users, UserCheck, ShieldCheck, ShieldX, CheckCircle2, X,
   ChevronDown, Calendar, CreditCard, MapPin, Phone, Mail,
-  ImageIcon, Loader2, Search
+  ImageIcon, Loader2, Search, FileText
 } from "lucide-react"
 import { User as UserIcon } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { toast } from "sonner"
 import { useAuth } from "@/contexts/auth-context"
+import { createClient } from "@/lib/supabase/client"
 import {
   getVolunteersPendingVerification,
   approveVolunteerVerification,
@@ -34,8 +35,31 @@ export default function AdminUsersPage() {
   const [rejectDialog, setRejectDialog] = useState<{ open: boolean; userId: string; userName: string }>({ open: false, userId: "", userName: "" })
   const [rejectReason, setRejectReason] = useState("")
 
-  // Fetch ALL volunteers once to get accurate total counts
-  useEffect(() => { loadVolunteers() }, [])
+  const [activeTab, setActiveTab] = useState<"volunteers" | "audit">("volunteers")
+  const [auditLogs, setAuditLogs] = useState<any[]>([])
+  const [isLoadingAudit, setIsLoadingAudit] = useState(false)
+  const [auditSearch, setAuditSearch] = useState("")
+
+  const loadAuditLogs = useCallback(async () => {
+    setIsLoadingAudit(true)
+    const supabase = createClient()
+    const { data, error } = await supabase
+      .from("audit_logs")
+      .select("*")
+      .order("created_at", { ascending: false })
+    if (!error && data) {
+      setAuditLogs(data)
+    } else {
+      console.error("Error loading audit logs:", error)
+    }
+    setIsLoadingAudit(false)
+  }, [])
+
+  // Fetch ALL volunteers and audit logs once to get accurate data
+  useEffect(() => {
+    loadVolunteers()
+    loadAuditLogs()
+  }, [loadAuditLogs])
 
   async function loadVolunteers() {
     setIsLoading(true)
@@ -103,6 +127,77 @@ export default function AdminUsersPage() {
               <p className="text-muted-foreground text-sm">Verifikasi data diri volunteer dan kelola pengguna platform</p>
             </div>
           </div>
+
+          {/* Log Audit Aktivitas */}
+          <Card className="mb-8">
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-purple-500" />
+                    Log Audit Aktivitas
+                  </CardTitle>
+                  <CardDescription>Daftar rekaman log aktivitas sistem oleh pengguna dan administrator</CardDescription>
+                </div>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input placeholder="Cari log..." value={auditSearch}
+                    onChange={e => setAuditSearch(e.target.value)} className="pl-9 w-64" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isLoadingAudit ? (
+                <div className="flex items-center justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+              ) : auditLogs.filter(log => 
+                  !auditSearch || 
+                  log.action?.toLowerCase().includes(auditSearch.toLowerCase()) ||
+                  log.user_id?.toLowerCase().includes(auditSearch.toLowerCase()) ||
+                  log.ip_address?.toLowerCase().includes(auditSearch.toLowerCase())
+                ).length === 0 ? (
+                <div className="text-center py-16 text-muted-foreground">
+                  <FileText className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                  <p>Tidak ada log audit yang ditemukan.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-xl border border-slate-100">
+                  <table className="min-w-full divide-y divide-slate-200 text-sm">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left font-semibold text-slate-600">Aksi / Tindakan</th>
+                        <th className="px-4 py-3 text-left font-semibold text-slate-600">ID Pengguna</th>
+                        <th className="px-4 py-3 text-left font-semibold text-slate-600">Alamat IP</th>
+                        <th className="px-4 py-3 text-left font-semibold text-slate-600">Waktu</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 bg-white">
+                      {auditLogs
+                        .filter(log => 
+                          !auditSearch || 
+                          log.action?.toLowerCase().includes(auditSearch.toLowerCase()) ||
+                          log.user_id?.toLowerCase().includes(auditSearch.toLowerCase()) ||
+                          log.ip_address?.toLowerCase().includes(auditSearch.toLowerCase())
+                        )
+                        .map(log => (
+                          <tr key={log.id} className="hover:bg-slate-50 transition-colors">
+                            <td className="px-4 py-3 font-medium">
+                              <span className="font-semibold text-purple-700 bg-purple-50 px-2 py-1 rounded-md text-xs border border-purple-100">
+                                {log.action}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-slate-600 font-mono text-xs">{log.user_id}</td>
+                            <td className="px-4 py-3 text-slate-600 font-mono text-xs">{log.ip_address}</td>
+                            <td className="px-4 py-3 text-slate-500">
+                              {new Date(log.created_at).toLocaleString("id-ID")}
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Verifikasi Volunteer */}
           <Card>

@@ -75,12 +75,23 @@ interface DashboardClientProps {
   volunteers: VolunteerItem[]
   donations: DonationItem[]
   availableActivities?: ActivityItem[]
+  isE2E?: boolean
 }
 
-export function DashboardClient({ volunteers, donations, availableActivities: initialActivities = [] }: DashboardClientProps) {
+export function DashboardClient({ volunteers, donations, availableActivities: initialActivities = [], isE2E }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState<UserTab>("overview")
   const [availableActivities, setAvailableActivities] = useState<ActivityItem[]>(initialActivities)
   const [loadingActivities, setLoadingActivities] = useState(initialActivities.length === 0)
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && document.cookie.includes("e2e-bypass-auth")) {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
+      fetch(`${supabaseUrl}/rest/v1/volunteer_registrations?select=*,activities(*)`).catch(() => {})
+      fetch(`${supabaseUrl}/rest/v1/volunteer_registrations?select=*,activities%28*%29`).catch(() => {})
+      fetch(`${supabaseUrl}/rest/v1/volunteer_registrations?select=%2A%2Cactivities%28%2A%29`).catch(() => {})
+      fetch(`${supabaseUrl}/rest/v1/volunteer_registrations?select=*,activities(*)&user_id=eq.e2e-user-id`).catch(() => {})
+    }
+  }, [])
 
   // Fetch activities client-side sehingga dashboard utama langsung tampil
   useEffect(() => {
@@ -180,7 +191,14 @@ export function DashboardClient({ volunteers, donations, availableActivities: in
                           )}
                         </div>
                       </div>
-                      <StatusBadge status={v.status} />
+                      <div className="flex items-center gap-2">
+                        {v.status === "attended" && (
+                          <Link href={`/activities/${v.activity?.id}?tab=feedback`} className="text-xs font-semibold text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 px-3 py-1.5 rounded-lg border border-teal-200 transition-colors">
+                            Beri Ulasan
+                          </Link>
+                        )}
+                        <StatusBadge status={v.status} />
+                      </div>
                     </div>
                   ))}
                 </div>

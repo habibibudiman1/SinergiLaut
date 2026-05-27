@@ -7,6 +7,10 @@ import { createServerClient } from '@supabase/ssr'
 const loginAttempts = new Map<string, { count: number; resetAt: number }>()
 
 function checkRateLimit(ip: string, maxAttempts = 10, windowMs = 15 * 60 * 1000): boolean {
+  if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+    return true; // Bypass rate limit for local development and Cypress testing
+  }
+
   const now = Date.now()
   const record = loginAttempts.get(ip)
 
@@ -69,15 +73,25 @@ export async function proxy(request: NextRequest) {
 
   // Refresh session — handle invalid/expired refresh tokens gracefully
   let user = null
-  try {
-    const { data } = await supabase.auth.getUser()
-    user = data.user
-  } catch {
-    // Invalid refresh token — clear cookies and continue as unauthenticated
-    response = NextResponse.next({ request })
-    ;['sb-access-token', 'sb-refresh-token'].forEach(name => {
-      response.cookies.delete(name)
-    })
+  
+  // E2E Test Bypass
+  const e2eCookie = request.cookies.get('e2e-bypass-auth')
+  if (process.env.NODE_ENV === 'development' && e2eCookie) {
+    user = {
+      id: 'mock-user',
+      user_metadata: { role: e2eCookie.value }
+    }
+  } else {
+    try {
+      const { data } = await supabase.auth.getUser()
+      user = data.user
+    } catch {
+      // Invalid refresh token — clear cookies and continue as unauthenticated
+      response = NextResponse.next({ request })
+      ;['sb-access-token', 'sb-refresh-token'].forEach(name => {
+        response.cookies.delete(name)
+      })
+    }
   }
 
   // 3. Protect admin routes
